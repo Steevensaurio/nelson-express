@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LoginScreen from './screens/LoginScreen';
 import MisEntregasScreen from './screens/MisEntregasScreen';
 import EntregaDetalleScreen from './screens/EntregaDetalleScreen';
+import CuentasScreen from './screens/CuentasScreen';
 import PerfilScreen from './screens/PerfilScreen';
 import EditarPerfilScreen from './screens/EditarPerfilScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -17,6 +18,7 @@ const Tab = createBottomTabNavigator();
 
 const ICONOS = {
   Entregas: ['bicycle', 'bicycle-outline'],
+  Cuentas: ['wallet', 'wallet-outline'],
   Perfil: ['person', 'person-outline'],
 };
 
@@ -34,6 +36,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Entregas" component={MisEntregasScreen} options={{ title: 'Mis entregas' }} />
+      <Tab.Screen name="Cuentas" component={CuentasScreen} options={{ title: 'Mis cuentas' }} />
       <Tab.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Mi perfil' }} />
     </Tab.Navigator>
   );

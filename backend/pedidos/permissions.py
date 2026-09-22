@@ -7,3 +7,11 @@ class EsDespachador(BasePermission):
     def has_permission(self, request, view):
         usuario = request.user
         return bool(usuario and usuario.is_authenticated and usuario.es_despachador)
+
+
+class EsMotorizado(BasePermission):
+    message = 'Solo los motorizados pueden acceder a este recurso.'
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        return bool(usuario and usuario.is_authenticated and usuario.es_motorizado)

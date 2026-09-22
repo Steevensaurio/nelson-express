@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from .models import Pedido, Tarifa, Negocio, Producto, Direccion, Usuario, ESTADOS_FINALES, ESTADOS_ACTIVOS, SIGUIENTE_ESTADO, ESTADOS_CANCELABLES
-from .permissions import EsDespachador
+from .permissions import EsDespachador, EsMotorizado
 from .tarifas import envio_entre, opciones_de_envio
 from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.db import transaction
@@ -350,34 +350,52 @@ def _totales(carreras):
     }
 
 
+LIMITE_DIAS_GANANCIAS = 366
+
+
+def _rango_de_fechas(request, limite_dias=LIMITE_DIAS_GANANCIAS):
+    """(desde, hasta) desde ?desde=&hasta= (por defecto hoy), o una Response 400 si no son válidas."""
+    hoy = timezone.localdate()
+    try:
+        desde = date.fromisoformat(request.query_params.get('desde') or hoy.isoformat())
+        hasta = date.fromisoformat(request.query_params.get('hasta') or hoy.isoformat())
+    except ValueError:
+        return None, None, Response({'detail': 'Fechas inválidas (AAAA-MM-DD).'}, status=status.HTTP_400_BAD_REQUEST)
+    if desde > hasta or (hasta - desde).days > limite_dias:
+        return None, None, Response({'detail': 'El rango de fechas no es válido (máximo un año).'}, status=status.HTTP_400_BAD_REQUEST)
+    return desde, hasta, None
+
+
+def _entregas_del_rango(desde, hasta):
+    """Pedidos ENTREGADO cuya entrega cayó en ese rango de días, en hora de Ecuador."""
+    zona = timezone.get_current_timezone()
+    inicio = datetime.combine(desde, time.min, tzinfo=zona)
+    fin = datetime.combine(hasta + timedelta(days=1), time.min, tzinfo=zona)
+    return (
+        Pedido.objects.filter(
+            estado=Pedido.Estado.ENTREGADO, motorizado__isnull=False,
+            entregado_en__gte=inicio, entregado_en__lt=fin,
+        )
+        .select_related('negocio', 'sucursal', 'motorizado')
+        .order_by('-entregado_en', '-id')
+    )
+
+
 class DespachoGananciasView(APIView):
     """Carreras entregadas en un rango de días (hora de Ecuador) y lo que cada motorizado debe a la empresa."""
     permission_classes = [EsDespachador]
     LIMITE_FILAS = 500
-    LIMITE_DIAS = 366
 
     def get(self, request):
-        hoy = timezone.localdate()
+        desde, hasta, error = _rango_de_fechas(request)
+        if error:
+            return error
         try:
-            desde = date.fromisoformat(request.query_params.get('desde') or hoy.isoformat())
-            hasta = date.fromisoformat(request.query_params.get('hasta') or hoy.isoformat())
             motorizado_id = int(request.query_params['motorizado']) if request.query_params.get('motorizado') else None
         except ValueError:
-            return Response({'detail': 'Fechas (AAAA-MM-DD) o motorizado inválidos.'}, status=status.HTTP_400_BAD_REQUEST)
-        if desde > hasta or (hasta - desde).days > self.LIMITE_DIAS:
-            return Response({'detail': 'El rango de fechas no es válido (máximo un año).'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'motorizado inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        zona = timezone.get_current_timezone()
-        inicio = datetime.combine(desde, time.min, tzinfo=zona)
-        fin = datetime.combine(hasta + timedelta(days=1), time.min, tzinfo=zona)
-        entregas = (
-            Pedido.objects.filter(
-                estado=Pedido.Estado.ENTREGADO, motorizado__isnull=False,
-                entregado_en__gte=inicio, entregado_en__lt=fin,
-            )
-            .select_related('negocio', 'sucursal', 'motorizado')
-            .order_by('-entregado_en', '-id')
-        )
+        entregas = _entregas_del_rango(desde, hasta)
         if motorizado_id:
             entregas = entregas.filter(motorizado_id=motorizado_id)
         # ponytail: se suma en Python; con miles de carreras por rango pasar a agregados en la base de datos.
@@ -409,6 +427,40 @@ class DespachoGananciasView(APIView):
                     'id': c.id,
                     'entregado_en': c.entregado_en,
                     'motorizado': {'id': c.motorizado.id, 'nombre': _nombre(c.motorizado)},
+                    'recogida': c.nombre_recogida,
+                    'destino_direccion': c.destino_direccion,
+                    'distancia_km': c.distancia_km,
+                    'costo_envio': c.costo_envio,
+                }
+                for c in carreras[:self.LIMITE_FILAS]
+            ],
+        })
+
+
+class MisGananciasView(APIView):
+    """Lo mismo que arriba, pero solo sobre las propias entregas del motorizado autenticado."""
+    permission_classes = [EsMotorizado]
+    LIMITE_FILAS = 500
+
+    def get(self, request):
+        desde, hasta, error = _rango_de_fechas(request)
+        if error:
+            return error
+
+        carreras = list(_entregas_del_rango(desde, hasta).filter(motorizado=request.user))
+        # Sin carreras en el rango se muestra el porcentaje vigente.
+        porcentajes = {c.comision_porcentaje for c in carreras} or {Tarifa.actual().comision_porcentaje}
+
+        return Response({
+            'desde': desde.isoformat(),
+            'hasta': hasta.isoformat(),
+            'comision_porcentaje': str(porcentajes.pop().normalize()) if len(porcentajes) == 1 else None,
+            'resumen': {**_totales(carreras), 'sin_valor': sum(1 for c in carreras if c.costo_envio is None)},
+            'carreras_truncadas': len(carreras) > self.LIMITE_FILAS,
+            'carreras': [
+                {
+                    'id': c.id,
+                    'entregado_en': c.entregado_en,
                     'recogida': c.nombre_recogida,
                     'destino_direccion': c.destino_direccion,
                     'distancia_km': c.distancia_km,

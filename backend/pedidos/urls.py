@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DespachoPedidoListView, DespachoMotorizadoListView, DespachoAsignarView, CotizarEncargoView, EncargoCreateView, DespachoEncargoCreateView, DespachoGananciasView, CotizarEnvioView, DespachoCancelarView, PedidoListCreateView, PedidoDetailView, PerfilView, NegocioListView, ProductoListView, MisEntregasView, MiEntregaDetailView, ActualizarEstadoPedidoView, DireccionListCreateView, DireccionDetailView
+from .views import DespachoPedidoListView, DespachoMotorizadoListView, DespachoAsignarView, CotizarEncargoView, EncargoCreateView, DespachoEncargoCreateView, DespachoGananciasView, MisGananciasView, CotizarEnvioView, DespachoCancelarView, PedidoListCreateView, PedidoDetailView, PerfilView, NegocioListView, ProductoListView, MisEntregasView, MiEntregaDetailView, ActualizarEstadoPedidoView, DireccionListCreateView, DireccionDetailView
 
 urlpatterns = [
     path('perfil/', PerfilView.as_view()),
@@ -17,6 +17,7 @@ urlpatterns = [
     path('negocios/', NegocioListView.as_view()),
     path('negocios/<int:negocio_id>/productos/', ProductoListView.as_view()),
     path('mis-entregas/', MisEntregasView.as_view()),
+    path('mis-entregas/ganancias/', MisGananciasView.as_view()),
     path('mis-entregas/<int:pk>/', MiEntregaDetailView.as_view()),
     path('pedidos/<int:pk>/estado/', ActualizarEstadoPedidoView.as_view()),
     path('direcciones/', DireccionListCreateView.as_view()),
