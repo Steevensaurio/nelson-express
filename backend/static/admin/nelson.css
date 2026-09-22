@@ -1,0 +1,21 @@
+/* Toques de marca sobre la piel de Jazzmin: negro + azul cielo, igual que las apps. */
+:root {
+  --nelson-azul: #007cab;
+}
+
+.main-sidebar, .brand-link {
+  background-color: #0a0a0a !important;
+}
+
+.nav-sidebar > .nav-item > .nav-link.active {
+  background-color: var(--nelson-azul) !important;
+}
+
+.btn-primary, .bg-primary {
+  background-color: var(--nelson-azul) !important;
+  border-color: var(--nelson-azul) !important;
+}
+
+a, .text-primary {
+  color: var(--nelson-azul) !important;
+}

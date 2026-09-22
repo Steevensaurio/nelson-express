@@ -47,6 +47,7 @@ CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
 INSTALLED_APPS = [
     'daphne',  # debe ir primero: hace que `runserver` sirva ASGI (HTTP + WebSockets)
+    'jazzmin',  # antes de admin: le da la piel nueva (menú lateral, iconos, colores de marca)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -61,6 +62,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Sirve los estáticos (CSS/JS del admin, incluida la piel de Jazzmin) directo desde la app: con
+    # DEBUG=False Django deja de servirlos solo, y en Render no hay un servidor de estáticos aparte.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -181,6 +185,51 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Adonde `collectstatic` junta todo para que WhiteNoise lo sirva (se corre en el build de Render).
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+# El logo y el CSS de marca del admin (backend/static/) se suman a los que trae cada app instalada.
+STATICFILES_DIRS = [BASE_DIR / 'static']
+# Sin el sufijo "Manifest": una plantilla de Jazzmin referencia una carpeta (no un archivo) como
+# estático, y el modo con manifest exige que cada referencia exista de verdad y rompe con un 500.
+# Sigue comprimiendo igual; solo se pierde el nombre con hash para el cache-busting automático.
+STORAGES = {
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
+
+# Piel del admin de Django (ver https://django-jazzmin.readthedocs.io/).
+JAZZMIN_SETTINGS = {
+    'site_title': 'Nelson Express',
+    'site_header': 'Nelson Express',
+    'site_brand': 'Nelson Express',
+    'site_logo': 'img/logo.png',
+    'login_logo': 'img/logo.png',
+    'site_icon': 'img/logo.png',
+    'welcome_sign': 'Panel de administración de Nelson Express',
+    'copyright': 'Nelson Express',
+    'search_model': ['pedidos.Usuario', 'pedidos.Pedido', 'pedidos.Negocio'],
+    'custom_css': 'admin/nelson.css',
+    'show_ui_builder': False,
+    'icons': {
+        'auth.Group': 'fas fa-users-cog',
+        'pedidos.Usuario': 'fas fa-user',
+        'pedidos.PerfilMotorizado': 'fas fa-motorcycle',
+        'pedidos.Tarifa': 'fas fa-dollar-sign',
+        'pedidos.Negocio': 'fas fa-store',
+        'pedidos.Sucursal': 'fas fa-map-marker-alt',
+        'pedidos.Producto': 'fas fa-hamburger',
+        'pedidos.Direccion': 'fas fa-home',
+        'pedidos.Pedido': 'fas fa-receipt',
+    },
+    'order_with_respect_to': ['pedidos', 'pedidos.Pedido', 'pedidos.Negocio', 'pedidos.Usuario', 'auth'],
+}
+
+JAZZMIN_UI_TWEAKS = {
+    'navbar': 'navbar-dark',
+    'no_navbar_border': True,
+    'sidebar': 'sidebar-dark-primary',
+    'sidebar_nav_flat_style': True,
+    'theme': 'flatly',
+}
 
 # Imágenes subidas desde el admin (fotos de productos). En producción deben ir a un almacenamiento
 # externo (S3, Cloudinary...) porque el disco de muchos hosts se borra al reiniciar.
