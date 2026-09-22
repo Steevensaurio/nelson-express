@@ -33,6 +33,15 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # estos tres cubren el desarrollo local sin tener que definir nada en backend/.env.
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,192.168.0.141', cast=Csv())
 
+# Render (y hosts parecidos) terminan el HTTPS en su propio proxy y le reenvían la petición a la app
+# por HTTP simple, avisando el protocolo original en esta cabecera. Sin esto, Django cree que todo
+# llega por HTTP: no marca la cookie de sesión como segura y rechaza el login del admin por CSRF.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Como el dominio de producción no se conoce en desarrollo, viaja por variable de entorno (URL
+# completa con "https://", a diferencia de ALLOWED_HOSTS que solo lleva el dominio).
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+
 
 # Application definition
 
