@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "django-backend",
+      "runtimeExecutable": "backend/venv/Scripts/python.exe",
+      "runtimeArgs": ["backend/manage.py", "runserver", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "cliente-app-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "cliente-app", "run", "web"],
+      "port": 8081
+    },
+    {
+      "name": "motorizado-app-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "motorizado-app", "run", "web", "--", "--port", "8082"],
+      "port": 8082
+    },
+    {
+      "name": "admin-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "admin-web", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+from django.urls import path
+
+from .consumers import PedidosConsumer
+
+websocket_urlpatterns = [
+    path('ws/pedidos/', PedidosConsumer.as_asgi()),
+]
