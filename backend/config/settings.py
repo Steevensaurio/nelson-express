@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +29,9 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.141']
+# En producción se agrega el dominio real por variable de entorno (ej. ALLOWED_HOSTS=mi-app.onrender.com);
+# estos tres cubren el desarrollo local sin tener que definir nada en backend/.env.
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,192.168.0.141', cast=Csv())
 
 
 # Application definition
