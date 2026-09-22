@@ -1,15 +1,17 @@
 {
   "expo": {
-    "name": "cliente-app",
+    "name": "Nelson Express",
     "slug": "cliente-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nelsonexpress.cliente"
     },
     "android": {
+      "package": "com.nelsonexpress.cliente",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

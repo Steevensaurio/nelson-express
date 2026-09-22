@@ -1,15 +1,17 @@
 {
   "expo": {
-    "name": "motorizado-app",
+    "name": "Nelson Express Motorizado",
     "slug": "motorizado-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nelsonexpress.motorizado"
     },
     "android": {
+      "package": "com.nelsonexpress.motorizado",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,6 +21,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1050521e-530b-45fe-b61c-b2bb4ffb21a8"
+      }
     }
   }
 }
