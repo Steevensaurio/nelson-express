@@ -8,8 +8,11 @@ from .models import Pedido, Tarifa, PerfilMotorizado, Usuario, DetallePedido, Ne
 class UsuarioAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Datos Nelson Express', {'fields': ('rol', 'telefono')}),
+        # Deciden a qué apps puede entrar la cuenta; se pueden marcar las dos a la vez.
+        ('Capacidades', {'fields': ('es_motorizado', 'es_despachador')}),
     )
-    list_display = ('username', 'email', 'rol', 'is_staff')
+    list_display = ('username', 'email', 'rol', 'es_motorizado', 'es_despachador', 'is_staff')
+    list_filter = UserAdmin.list_filter + ('es_motorizado', 'es_despachador')
 
 
 @admin.register(PerfilMotorizado)

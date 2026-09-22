@@ -70,7 +70,7 @@ class PedidosConsumer(AsyncJsonWebsocketConsumer):
         self.autenticado = True
         self.vigilante.cancel()
         self.grupos = [grupo_usuario(usuario.pk)]
-        if usuario.rol == Usuario.Rol.ADMIN:
+        if usuario.es_despachador:
             self.grupos.append(GRUPO_DESPACHO)
         for grupo in self.grupos:
             await self.channel_layer.group_add(grupo, self.channel_name)

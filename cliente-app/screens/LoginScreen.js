@@ -22,11 +22,13 @@ export default function LoginScreen({ onLoginSuccess }) {
     setEntrando(true);
     setError('');
     try {
-      const response = await api.post('/token/', {
+      // Cualquier cuenta puede pedir comida, incluida la de un motorizado en su día libre o la del
+      // despachador: esta app no filtra por rol, a diferencia de la del motorizado y el panel.
+      const { access } = (await api.post('/token/', {
         username: username.trim(),
         password,
-      });
-      onLoginSuccess(response.data.access);
+      })).data;
+      onLoginSuccess(access);
     } catch (err) {
       setError(
         err.response

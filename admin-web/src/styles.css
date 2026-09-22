@@ -593,14 +593,16 @@ select:disabled {
   color: var(--texto) !important;
 }
 
-.ubicacion-ok {
-  color: var(--verde);
-  font-size: 12px;
+.selector-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.ubicacion-mala {
-  color: var(--rojo);
+.selector-mapa-ayuda {
+  margin: 0;
   font-size: 12px;
+  color: var(--tenue);
 }
 
 .encargo-pie {

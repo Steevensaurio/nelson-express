@@ -192,8 +192,10 @@ class DireccionSerializer(serializers.ModelSerializer):
 class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['username', 'rol', 'first_name', 'last_name', 'telefono']
-        read_only_fields = ['username', 'rol']
+        # es_motorizado/es_despachador van de solo lectura: cada app las lee para decidir si deja
+        # entrar a la cuenta, y no pueden auto-otorgárselas editando su propio perfil.
+        fields = ['username', 'rol', 'es_motorizado', 'es_despachador', 'first_name', 'last_name', 'telefono']
+        read_only_fields = ['username', 'rol', 'es_motorizado', 'es_despachador']
 
     def validate_telefono(self, value):
         return validar_telefono(value)
@@ -214,7 +216,7 @@ class PerfilMotorizadoSerializer(PerfilSerializer):
             'vehiculo_placa', 'vehiculo_modelo', 'vehiculo_color',
             'entregas_completadas', 'entregas_hoy', 'date_joined',
         ]
-        read_only_fields = ['username', 'rol', 'date_joined']
+        read_only_fields = ['username', 'rol', 'es_motorizado', 'es_despachador', 'date_joined']
 
     def _entregas(self, usuario):
         return Pedido.objects.filter(motorizado=usuario, estado=Pedido.Estado.ENTREGADO)
@@ -342,7 +344,7 @@ class CancelarPedidoSerializer(serializers.Serializer):
 
 class AsignarMotorizadoSerializer(serializers.Serializer):
     motorizado = serializers.PrimaryKeyRelatedField(
-        queryset=Usuario.objects.filter(rol=Usuario.Rol.MOTORIZADO, is_active=True),
+        queryset=Usuario.objects.filter(es_motorizado=True, is_active=True),
         allow_null=True,
     )
 
@@ -422,8 +424,10 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
     def create(self, datos):
         nombre = datos.pop('cliente_nombre').strip()
         telefono = datos.pop('cliente_telefono')
-        # Si ya hay un cliente con ese teléfono se reutiliza; si no, se crea uno sin contraseña (no puede iniciar sesión).
-        cliente = Usuario.objects.filter(rol=Usuario.Rol.CLIENTE, telefono=telefono).first()
+        # Cualquier cuenta puede pedir (no solo las creadas como "cliente"): si ya existe alguien con
+        # ese teléfono se reutiliza -aunque sea motorizado o despachador pidiendo para sí mismo-;
+        # si no, se crea una cuenta nueva sin contraseña (no puede iniciar sesión por su cuenta).
+        cliente = Usuario.objects.filter(telefono=telefono).first()
         if cliente is None:
             cliente = Usuario(
                 username=f'tel_{re.sub(r"[^0-9]", "", telefono)}', rol=Usuario.Rol.CLIENTE,

@@ -60,6 +60,12 @@ export default function EntregaDetalleScreen({ route }) {
     Linking.openURL(`tel:${entrega.contacto.telefono.replace(/[\s-]/g, '')}`).catch(() => {});
   };
 
+  // La dirección en texto a veces viene incompleta; esto abre Google Maps con las coordenadas exactas,
+  // con ruta calculada desde donde está el motorizado ahora mismo.
+  const comoLlegar = (lat, lng) => {
+    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`).catch(() => {});
+  };
+
   const avanzarEstado = async () => {
     setActualizando(true);
     setError('');
@@ -117,6 +123,12 @@ export default function EntregaDetalleScreen({ route }) {
           {entrega.recogida.referencia ? (
             <Text style={styles.referencia}>{entrega.recogida.referencia}</Text>
           ) : null}
+          <TouchableOpacity
+            style={styles.comoLlegarBoton}
+            onPress={() => comoLlegar(entrega.recogida.lat, entrega.recogida.lng)}
+          >
+            <Text style={styles.comoLlegarTexto}>📍 Cómo llegar</Text>
+          </TouchableOpacity>
           {entrega.contacto ? (
             <View style={styles.contactoRecogida}>
               <Text style={styles.secundario}>Lo entrega: {entrega.contacto.nombre}</Text>
@@ -144,6 +156,12 @@ export default function EntregaDetalleScreen({ route }) {
           {entrega.destino_referencia ? (
             <Text style={styles.referencia}>{entrega.destino_referencia}</Text>
           ) : null}
+          <TouchableOpacity
+            style={styles.comoLlegarBoton}
+            onPress={() => comoLlegar(entrega.destino_lat, entrega.destino_lng)}
+          >
+            <Text style={styles.comoLlegarTexto}>📍 Cómo llegar</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
@@ -266,6 +284,20 @@ const styles = StyleSheet.create({
   avisoReasignadaTexto: {
     color: '#7a4b00',
     fontSize: 13,
+  },
+  comoLlegarBoton: {
+    alignSelf: 'flex-start',
+    borderColor: '#007cab',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  comoLlegarTexto: {
+    color: '#007cab',
+    fontSize: 13,
+    fontWeight: '600',
   },
   contactoRecogida: {
     marginTop: 10,

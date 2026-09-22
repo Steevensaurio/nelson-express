@@ -10,8 +10,15 @@ class Usuario(AbstractUser):
         MOTORIZADO = 'MOTORIZADO', 'Motorizado'
         ADMIN = 'ADMIN', 'Administrador'
 
+    # Ya no decide accesos (ver abajo): es solo un dato informativo de cómo se creó la cuenta.
     rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.CLIENTE)
     telefono = models.CharField(max_length=20, blank=True)
+
+    # Estas dos banderas, independientes entre sí, son las que deciden a qué apps puede entrar la
+    # cuenta y se pueden combinar (ej. un cliente al que se activa como motorizado sin crear otra
+    # cuenta). "Cliente" no necesita bandera: cualquier cuenta puede usar esa app.
+    es_motorizado = models.BooleanField(default=False, help_text='Puede entrar a la app de motorizados.')
+    es_despachador = models.BooleanField(default=False, help_text='Puede entrar al panel de despacho.')
 
     def __str__(self):
         return f'{self.username} ({self.rol})'

@@ -34,13 +34,13 @@ export function AuthProvider({ children }) {
     return () => api.interceptors.response.eject(id);
   }, [logout]);
 
-  // Al recargar la página, se recupera la sesión y se confirma que el rol sigue siendo ADMIN.
+  // Al recargar la página, se recupera la sesión y se confirma que sigue teniendo la capacidad.
   useEffect(() => {
     if (!tokenGuardado) return;
     aplicarToken(tokenGuardado);
     api.get('/perfil/')
       .then(({ data }) => {
-        if (data.rol !== 'ADMIN') return logout();
+        if (!data.es_despachador) return logout();
         setUsuario(data);
         setToken(tokenGuardado);
       })
@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
     aplicarToken(tokens.access);
     try {
       const { data: perfil } = await api.get('/perfil/');
-      if (perfil.rol !== 'ADMIN') throw new Error('SIN_ACCESO');
+      if (!perfil.es_despachador) throw new Error('SIN_ACCESO');
       sessionStorage.setItem(CLAVE_TOKEN, tokens.access);
       setUsuario(perfil);
       setToken(tokens.access);

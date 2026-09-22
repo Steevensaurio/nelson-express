@@ -21,8 +21,16 @@ export default function LoginScreen({ onLoginSuccess }) {
     setEntrando(true);
     setError('');
     try {
-      const response = await api.post('/token/', { username: username.trim(), password });
-      onLoginSuccess(response.data.access);
+      const { access } = (await api.post('/token/', { username: username.trim(), password })).data;
+      // El usuario y la contraseña son válidos, pero hace falta la capacidad de motorizado activada
+      // (un cliente sin activar, o un despachador sin activar, no deben poder entrar aquí).
+      const { es_motorizado } = (await api.get('/perfil/', { headers: { Authorization: `Bearer ${access}` } })).data;
+      if (!es_motorizado) {
+        setError('Esta cuenta no tiene acceso a la app de motorizados.');
+        setEntrando(false);
+        return;
+      }
+      onLoginSuccess(access);
     } catch (err) {
       setError(
         err.response

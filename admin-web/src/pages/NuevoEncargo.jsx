@@ -2,53 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import Barra from '../components/Barra.jsx';
-
-// Saca latitud y longitud de un enlace de Google Maps (pin del lugar o centro del mapa) o de "lat, lng".
-export function extraerCoordenadas(texto) {
-  const t = texto.trim();
-  const patrones = [
-    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // pin del lugar en un enlace de Google Maps
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/, // centro del mapa en un enlace
-    /^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/, // "lat, lng" pegado tal cual (clic derecho en el mapa)
-    /[?&](?:q|ll|query)=(-?\d+\.\d+),(-?\d+\.\d+)/,
-  ];
-  for (const patron of patrones) {
-    const m = t.match(patron);
-    if (m) {
-      const lat = Number(m[1]);
-      const lng = Number(m[2]);
-      if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
-    }
-  }
-  return null;
-}
-
-function CampoUbicacion({ valor, onChange }) {
-  const coords = valor.trim() ? extraerCoordenadas(valor) : null;
-  return (
-    <label className="campo-ancho">
-      Ubicación (enlace de Google Maps o coordenadas)
-      <input value={valor} onChange={(e) => onChange(e.target.value)} placeholder="Pega el enlace o «-0.2500, -79.1700»" />
-      {valor.trim() ? (
-        coords ? (
-          <span className="ubicacion-ok">✔ {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</span>
-        ) : (
-          <span className="ubicacion-mala">
-            No se encontraron coordenadas. Copia el enlace completo de la barra del navegador (los enlaces cortos
-            no sirven) o haz clic derecho en el mapa y copia las coordenadas.
-          </span>
-        )
-      ) : null}
-    </label>
-  );
-}
+import SelectorMapa from '../components/SelectorMapa.jsx';
 
 const VACIO = {
   clienteNombre: '', clienteTelefono: '', descripcion: '',
-  recogidaDireccion: '', recogidaReferencia: '', recogidaUbicacion: '',
+  recogidaDireccion: '', recogidaReferencia: '', recogida: null,
   contactoNombre: '', contactoTelefono: '',
   pagar: false, monto: '',
-  destinoDireccion: '', destinoReferencia: '', destinoUbicacion: '',
+  destinoDireccion: '', destinoReferencia: '', destino: null,
 };
 
 const errorDe = (err) => {
@@ -69,8 +30,15 @@ export default function NuevoEncargo() {
   const cambiar = (campo) => (valor) => setF((prev) => ({ ...prev, [campo]: valor }));
   const texto = (campo) => ({ value: f[campo], onChange: (e) => cambiar(campo)(e.target.value) });
 
-  const recogida = extraerCoordenadas(f.recogidaUbicacion);
-  const destino = extraerCoordenadas(f.destinoUbicacion);
+  // El pin en el mapa fija la ubicación; la dirección autocompletada se puede seguir editando a mano.
+  const elegirEnMapa = (campoUbicacion, campoDireccion) => ({ lat, lng, direccion }) =>
+    setF((prev) => ({
+      ...prev,
+      [campoUbicacion]: { lat, lng },
+      [campoDireccion]: direccion ?? prev[campoDireccion],
+    }));
+
+  const { recogida, destino } = f;
 
   // El envío lo calcula el servidor en cuanto hay recogida y entrega.
   useEffect(() => {
@@ -84,7 +52,7 @@ export default function NuevoEncargo() {
       .then(({ data }) => vigente && setEnvio(data))
       .catch(() => vigente && setEnvio(null));
     return () => { vigente = false; };
-  }, [f.recogidaUbicacion, f.destinoUbicacion]);
+  }, [recogida?.lat, recogida?.lng, destino?.lat, destino?.lng]);
 
   const completo =
     f.clienteNombre.trim() && f.clienteTelefono.trim() && f.descripcion.trim() && f.recogidaDireccion.trim() &&
@@ -157,9 +125,9 @@ export default function NuevoEncargo() {
 
           <fieldset>
             <legend>Recogida</legend>
+            <SelectorMapa value={f.recogida} onChange={elegirEnMapa('recogida', 'recogidaDireccion')} />
             <label>Dirección<input {...texto('recogidaDireccion')} /></label>
             <label>Referencia<input {...texto('recogidaReferencia')} /></label>
-            <CampoUbicacion valor={f.recogidaUbicacion} onChange={cambiar('recogidaUbicacion')} />
             <label>Persona que entrega<input {...texto('contactoNombre')} /></label>
             <label>Su teléfono<input {...texto('contactoTelefono')} inputMode="tel" /></label>
             <label className="campo-check campo-ancho">
@@ -173,9 +141,9 @@ export default function NuevoEncargo() {
 
           <fieldset>
             <legend>Entrega</legend>
+            <SelectorMapa value={f.destino} onChange={elegirEnMapa('destino', 'destinoDireccion')} />
             <label>Dirección<input {...texto('destinoDireccion')} /></label>
             <label>Referencia<input {...texto('destinoReferencia')} /></label>
-            <CampoUbicacion valor={f.destinoUbicacion} onChange={cambiar('destinoUbicacion')} />
           </fieldset>
 
           <div className="encargo-pie">

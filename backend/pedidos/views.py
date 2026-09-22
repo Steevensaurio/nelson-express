@@ -135,7 +135,7 @@ class PerfilView(generics.RetrieveUpdateAPIView):
     http_method_names = ['get', 'patch', 'head', 'options']
 
     def get_serializer_class(self):
-        if self.request.user.rol == Usuario.Rol.MOTORIZADO:
+        if self.request.user.es_motorizado:
             return PerfilMotorizadoSerializer
         return PerfilSerializer
 
@@ -256,7 +256,7 @@ class DespachoMotorizadoListView(generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            Usuario.objects.filter(rol=Usuario.Rol.MOTORIZADO, is_active=True)
+            Usuario.objects.filter(es_motorizado=True, is_active=True)
             .annotate(
                 entregas_activas=Count(
                     'pedidos_como_motorizado',

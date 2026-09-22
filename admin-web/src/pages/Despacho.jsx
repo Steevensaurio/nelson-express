@@ -3,6 +3,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useTiempoReal } from '../useTiempoReal.js';
 import Barra from '../components/Barra.jsx';
+import { MOSTRAR_PRECIOS } from '../config.js';
 
 const INTERVALO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -192,7 +193,7 @@ export default function Despacho() {
                   <th>Recogida</th>
                   <th>Cliente</th>
                   <th>Entrega</th>
-                  <th className="derecha">Total</th>
+                  <th className="derecha">{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</th>
                   <th>Estado</th>
                   <th>Motorizado</th>
                   <th></th>
@@ -237,10 +238,16 @@ export default function Despacho() {
                         {p.destino_referencia ? <div className="tenue cursiva">{p.destino_referencia}</div> : null}
                       </td>
                       <td className="derecha">
-                        ${Number(p.total).toFixed(2)}
-                        {p.costo_envio != null ? (
-                          <div className="tenue">envío ${Number(p.costo_envio).toFixed(2)}</div>
-                        ) : null}
+                        {MOSTRAR_PRECIOS ? (
+                          <>
+                            ${Number(p.total).toFixed(2)}
+                            {p.costo_envio != null ? (
+                              <div className="tenue">envío ${Number(p.costo_envio).toFixed(2)}</div>
+                            ) : null}
+                          </>
+                        ) : (
+                          p.costo_envio != null ? `$${Number(p.costo_envio).toFixed(2)}` : '—'
+                        )}
                       </td>
                       <td>
                         <span className={`insignia ${p.estado}`}>{ETIQUETA_ESTADO[p.estado]}</span>
