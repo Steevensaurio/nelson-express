@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c04d273c-beda-402d-816c-d08ca830be89"
+      }
+    },
+    "owner": "steeven.dev"
   }
 }
