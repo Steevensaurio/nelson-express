@@ -1,23 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
-import SelectorMapa from '../components/SelectorMapa';
+import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 
 export default function ConfirmarPedidoScreen({ route, navigation }) {
   const { negocioId, negocioNombre, carrito } = route.params;
 
   const [direcciones, setDirecciones] = useState([]);
-  const [direccionSeleccionadaId, setDireccionSeleccionadaId] = useState(null);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [mostrarMapa, setMostrarMapa] = useState(false);
-  const [nuevaEtiqueta, setNuevaEtiqueta] = useState('');
-  const [nuevaDireccion, setNuevaDireccion] = useState('');
-  const [direccionBloqueada, setDireccionBloqueada] = useState(false);
-  const [nuevaReferencia, setNuevaReferencia] = useState('');
-  const [nuevaLat, setNuevaLat] = useState('');
-  const [nuevaLng, setNuevaLng] = useState('');
+  const [destinoValor, setDestinoValor] = useState(null); // { direccion, referencia, lat, lng }
   const [perfil, setPerfil] = useState(null);
   const [envio, setEnvio] = useState(null); // { sugerida, opciones: [{ sucursal, distancia_km, costo_envio }] }
   const [sucursalElegida, setSucursalElegida] = useState(null); // null = la más cercana (automática)
@@ -29,6 +21,8 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
       setDirecciones(response.data);
     });
   };
+
+  const agregarDireccionGuardada = (direccion) => setDirecciones(prev => [...prev, direccion]);
 
   useEffect(() => {
     cargarDirecciones();
@@ -44,21 +38,20 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
 
   // Cada vez que cambia la dirección elegida se pide el envío al servidor (él es quien calcula el precio).
   useEffect(() => {
-    const direccion = direcciones.find(d => d.id === direccionSeleccionadaId);
     setEnvio(null);
     setErrorEnvio('');
-    if (!direccion) return undefined;
+    if (!destinoValor) return undefined;
 
     let vigente = true;
     api.post('/pedidos/cotizar/', {
       negocio: negocioId,
-      destino_lat: direccion.lat,
-      destino_lng: direccion.lng,
+      destino_lat: destinoValor.lat,
+      destino_lng: destinoValor.lng,
     })
       .then(response => vigente && setEnvio(response.data))
       .catch(err => vigente && setErrorEnvio(err.response?.data?.detail ?? 'No disponible'));
     return () => { vigente = false; };
-  }, [direccionSeleccionadaId, direcciones, negocioId]);
+  }, [destinoValor?.lat, destinoValor?.lng, negocioId]);
 
   const perfilIncompleto = perfil !== null && !(perfil.first_name && perfil.telefono);
 
@@ -70,47 +63,14 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
   const opcionActiva = opcionElegida ?? opciones.find(o => o.sucursal.id === envio?.sugerida);
   const total = subtotal + (opcionActiva ? parseFloat(opcionActiva.costo_envio) : 0);
 
-  const guardarDireccion = async () => {
-    const response = await api.post('/direcciones/', {
-      etiqueta: nuevaEtiqueta,
-      direccion: nuevaDireccion,
-      referencia: nuevaReferencia,
-      lat: nuevaLat,
-      lng: nuevaLng,
-    });
-    setDirecciones(prev => [...prev, response.data]);
-    setDireccionSeleccionadaId(response.data.id);
-    setMostrarFormulario(false);
-    setNuevaEtiqueta('');
-    setNuevaDireccion('');
-    setDireccionBloqueada(false);
-    setNuevaReferencia('');
-    setNuevaLat('');
-    setNuevaLng('');
-  };
-
-  const seleccionarUbicacion = (lat, lng, direccionSugerida) => {
-    setNuevaLat(lat.toString());
-    setNuevaLng(lng.toString());
-    if (direccionSugerida) {
-      setNuevaDireccion(direccionSugerida);
-      setDireccionBloqueada(true);
-    } else {
-      if (direccionBloqueada) setNuevaDireccion('');
-      setDireccionBloqueada(false);
-    }
-    setMostrarMapa(false);
-  };
-
   const confirmar = async () => {
-    const direccion = direcciones.find(d => d.id === direccionSeleccionadaId);
     try {
       await api.post('/pedidos/', {
         negocio: negocioId,
-        destino_direccion: direccion.direccion,
-        destino_referencia: direccion.referencia,
-        destino_lat: direccion.lat,
-        destino_lng: direccion.lng,
+        destino_direccion: destinoValor.direccion,
+        destino_referencia: destinoValor.referencia,
+        destino_lat: destinoValor.lat,
+        destino_lng: destinoValor.lng,
         // Solo se envía si el cliente eligió una sucursal; si no, el servidor asigna la más cercana.
         ...(opcionElegida ? { sucursal: opcionElegida.sucursal.id } : {}),
         detalles: carrito.map(item => ({ producto: item.producto, cantidad: item.cantidad })),
@@ -154,7 +114,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
                 ? `$${parseFloat(opcionActiva.costo_envio).toFixed(2)}`
                 : errorEnvio
                   ? 'No disponible'
-                  : direccionSeleccionadaId ? 'Calculando…' : 'Elige una dirección'}
+                  : destinoValor ? 'Calculando…' : 'Elige una dirección'}
             </Text>
           </View>
           {MOSTRAR_PRECIOS ? (
@@ -169,59 +129,12 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
 
         <Text style={styles.subtitulo}>Dirección de entrega</Text>
 
-        {direcciones.map(item => (
-          <TouchableOpacity
-            key={item.id}
-            style={[
-              styles.direccionCard,
-              item.id === direccionSeleccionadaId && styles.direccionCardSeleccionada,
-            ]}
-            onPress={() => setDireccionSeleccionadaId(item.id)}
-          >
-            <Text style={styles.direccionEtiqueta}>{item.etiqueta}</Text>
-            <Text style={styles.direccionTexto}>{item.direccion}</Text>
-            {item.referencia ? <Text style={styles.direccionReferencia}>{item.referencia}</Text> : null}
-          </TouchableOpacity>
-        ))}
-
-        {mostrarFormulario ? (
-          <View style={styles.formulario}>
-            <TextInput style={styles.input} value={nuevaEtiqueta} onChangeText={setNuevaEtiqueta} placeholder="Etiqueta (ej. Casa)" />
-
-            <TouchableOpacity style={styles.mapaBoton} onPress={() => setMostrarMapa(true)}>
-              <Text style={styles.mapaBotonTexto}>
-                {nuevaLat && nuevaLng ? `📍 Ubicación elegida (${parseFloat(nuevaLat).toFixed(4)}, ${parseFloat(nuevaLng).toFixed(4)})` : '📍 Elegir ubicación en el mapa'}
-              </Text>
-            </TouchableOpacity>
-
-            <TextInput
-              style={[styles.input, direccionBloqueada && styles.inputBloqueado]}
-              value={nuevaDireccion}
-              onChangeText={setNuevaDireccion}
-              editable={!direccionBloqueada}
-              placeholder="Dirección (se completa al elegir en el mapa)"
-            />
-            <TextInput
-              style={styles.input}
-              value={nuevaReferencia}
-              onChangeText={setNuevaReferencia}
-              maxLength={255}
-              placeholder="Referencia (ej. casa de dos pisos, al lado de la tienda azul)"
-            />
-
-            <TouchableOpacity
-              style={[styles.guardarBoton, !(nuevaLat && nuevaLng) && styles.confirmarBotonDeshabilitado]}
-              disabled={!(nuevaLat && nuevaLng)}
-              onPress={guardarDireccion}
-            >
-              <Text style={styles.guardarTexto}>Guardar dirección</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity onPress={() => setMostrarFormulario(true)}>
-            <Text style={styles.agregarTexto}>+ Agregar nueva dirección</Text>
-          </TouchableOpacity>
-        )}
+        <SelectorDireccion
+          direcciones={direcciones}
+          valor={destinoValor}
+          onCambiar={setDestinoValor}
+          onNuevaDireccion={agregarDireccionGuardada}
+        />
 
         {errorEnvio && errorEnvio !== 'No disponible' ? <Text style={styles.error}>{errorEnvio}</Text> : null}
 
@@ -263,10 +176,6 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
             )}
           </View>
         ) : null}
-
-        <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
-          <SelectorMapa onConfirmar={seleccionarUbicacion} onCancelar={() => setMostrarMapa(false)} />
-        </Modal>
 
         {perfilIncompleto ? (
           <TouchableOpacity style={styles.avisoPerfil} onPress={() => navigation.navigate('MisDatos')}>
@@ -392,10 +301,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 2,
   },
-  inputBloqueado: {
-    backgroundColor: '#eee',
-    color: '#666',
-  },
   avisoPerfil: {
     backgroundColor: '#fff4e0',
     borderColor: '#e08a1e',
@@ -413,45 +318,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#e08a1e',
     marginTop: 6,
-  },
-  agregarTexto: {
-    color: '#007cab',
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  formulario: {
-    marginVertical: 10,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBoton: {
-    backgroundColor: '#fff',
-    borderColor: '#007cab',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBotonTexto: {
-    color: '#007cab',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  guardarBoton: {
-    backgroundColor: '#007cab',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  guardarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
   confirmarBoton: {
     backgroundColor: '#007cab',

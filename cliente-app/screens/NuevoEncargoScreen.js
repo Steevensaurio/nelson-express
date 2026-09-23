@@ -1,30 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Switch, StyleSheet, Modal,
+  View, Text, TextInput, TouchableOpacity, ScrollView, Switch, StyleSheet,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
-import SelectorMapa from '../components/SelectorMapa';
+import SelectorDireccion from '../components/SelectorDireccion';
 
 const COLOR = '#007cab';
 
 export default function NuevoEncargoScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [paso, setPaso] = useState(1);
   const [descripcion, setDescripcion] = useState('');
-  const [recogida, setRecogida] = useState(null); // { lat, lng } elegido en el mapa
-  const [recogidaDireccion, setRecogidaDireccion] = useState('');
-  const [recogidaReferencia, setRecogidaReferencia] = useState('');
-  const [mostrarMapa, setMostrarMapa] = useState(false);
+  const [recogidaValor, setRecogidaValor] = useState(null); // { direccion, referencia, lat, lng }
   const [recogidaContactoNombre, setRecogidaContactoNombre] = useState('');
   const [recogidaContactoTelefono, setRecogidaContactoTelefono] = useState('');
+  const [entregaValor, setEntregaValor] = useState(null);
   const [entregaContactoNombre, setEntregaContactoNombre] = useState('');
   const [entregaContactoTelefono, setEntregaContactoTelefono] = useState('');
   const [pagar, setPagar] = useState(false);
   const [monto, setMonto] = useState('');
   const [direcciones, setDirecciones] = useState([]);
-  const [direccionId, setDireccionId] = useState(null);
   const [perfil, setPerfil] = useState(null);
   const [envio, setEnvio] = useState(null);
   const [errorEnvio, setErrorEnvio] = useState(false);
@@ -39,32 +37,33 @@ export default function NuevoEncargoScreen({ navigation }) {
     }, [])
   );
 
-  const destino = direcciones.find(d => d.id === direccionId);
+  const agregarDireccionGuardada = (direccion) => setDirecciones(prev => [...prev, direccion]);
 
-  // El envío lo calcula el servidor cuando ya hay punto de recogida y destino.
+  // El envío lo calcula el servidor cuando ya hay punto de recogida y de entrega.
   useEffect(() => {
     setEnvio(null);
     setErrorEnvio(false);
-    if (!recogida || !destino) return undefined;
+    if (!recogidaValor || !entregaValor) return undefined;
 
     let vigente = true;
     api.post('/encargos/cotizar/', {
-      recogida_lat: recogida.lat,
-      recogida_lng: recogida.lng,
-      destino_lat: destino.lat,
-      destino_lng: destino.lng,
+      recogida_lat: recogidaValor.lat,
+      recogida_lng: recogidaValor.lng,
+      destino_lat: entregaValor.lat,
+      destino_lng: entregaValor.lng,
     })
       .then(r => vigente && setEnvio(r.data))
       .catch(() => vigente && setErrorEnvio(true));
     return () => { vigente = false; };
-  }, [recogida, destino?.id]);
+  }, [recogidaValor?.lat, recogidaValor?.lng, entregaValor?.lat, entregaValor?.lng]);
 
   const perfilIncompleto = perfil !== null && !(perfil.first_name && perfil.telefono);
 
-  const puedeEnviar =
-    descripcion.trim() && recogida && recogidaDireccion.trim() &&
-    destino && envio && (!pagar || parseFloat(monto) > 0) &&
-    !perfilIncompleto && !enviando;
+  const puedePaso1 = Boolean(descripcion.trim() && recogidaValor?.direccion?.trim());
+  const puedeEnviar = Boolean(
+    entregaValor?.direccion?.trim() && envio && (!pagar || parseFloat(monto) > 0) &&
+    !perfilIncompleto && !enviando
+  );
 
   const enviar = async () => {
     setEnviando(true);
@@ -72,20 +71,20 @@ export default function NuevoEncargoScreen({ navigation }) {
     try {
       await api.post('/encargos/', {
         descripcion: descripcion.trim(),
-        recogida_direccion: recogidaDireccion.trim(),
-        recogida_referencia: recogidaReferencia.trim(),
-        recogida_lat: recogida.lat,
-        recogida_lng: recogida.lng,
+        recogida_direccion: recogidaValor.direccion.trim(),
+        recogida_referencia: recogidaValor.referencia.trim(),
+        recogida_lat: recogidaValor.lat,
+        recogida_lng: recogidaValor.lng,
         recogida_contacto_nombre: recogidaContactoNombre.trim(),
         recogida_contacto_telefono: recogidaContactoTelefono.trim(),
         entrega_contacto_nombre: entregaContactoNombre.trim(),
         entrega_contacto_telefono: entregaContactoTelefono.trim(),
         pagar_en_recogida: pagar,
         ...(pagar ? { monto_estimado: parseFloat(monto).toFixed(2) } : {}),
-        destino_direccion: destino.direccion,
-        destino_referencia: destino.referencia,
-        destino_lat: destino.lat,
-        destino_lng: destino.lng,
+        destino_direccion: entregaValor.direccion.trim(),
+        destino_referencia: entregaValor.referencia.trim(),
+        destino_lat: entregaValor.lat,
+        destino_lng: entregaValor.lng,
       });
       navigation.navigate('Main', { screen: 'MisPedidos' });
     } catch (err) {
@@ -98,157 +97,155 @@ export default function NuevoEncargoScreen({ navigation }) {
     }
   };
 
-  const seleccionarUbicacion = (lat, lng, direccionSugerida) => {
-    setRecogida({ lat, lng });
-    if (direccionSugerida && !recogidaDireccion) setRecogidaDireccion(direccionSugerida);
-    setMostrarMapa(false);
-  };
-
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.ayuda}>
-          Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío
-          {' '}(y lo que el motorizado deba pagar en el lugar, si aplica).
-        </Text>
-
-        <Text style={styles.seccion}>¿Qué debemos recoger?</Text>
-        <TextInput
-          style={[styles.input, styles.multilinea]}
-          value={descripcion}
-          onChangeText={setDescripcion}
-          placeholder="Ej. una caja mediana con documentos"
-          maxLength={255}
-          multiline
-        />
-
-        <Text style={styles.seccion}>Lugar de recogida</Text>
-        <TouchableOpacity style={styles.mapaBoton} onPress={() => setMostrarMapa(true)}>
-          <Text style={styles.mapaBotonTexto}>
-            {recogida
-              ? `📍 Ubicación elegida (${recogida.lat.toFixed(4)}, ${recogida.lng.toFixed(4)})`
-              : '📍 Elegir ubicación en el mapa'}
-          </Text>
-        </TouchableOpacity>
-        <TextInput style={styles.input} value={recogidaDireccion} onChangeText={setRecogidaDireccion} placeholder="Dirección" />
-        <TextInput
-          style={styles.input}
-          value={recogidaReferencia}
-          onChangeText={setRecogidaReferencia}
-          maxLength={255}
-          placeholder="Referencia (ej. local azul, junto a la farmacia)"
-        />
-
-        <View style={styles.grupoContacto}>
-          <Text style={styles.seccion}>¿Quién entrega ahí?</Text>
-          <Text style={styles.nota}>Déjalo vacío si tú mismo lo entregas.</Text>
-          <TextInput
-            style={styles.input}
-            value={recogidaContactoNombre}
-            onChangeText={setRecogidaContactoNombre}
-            placeholder="Nombre"
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            value={recogidaContactoTelefono}
-            onChangeText={setRecogidaContactoTelefono}
-            placeholder="Teléfono (ej. 0991234567)"
-            keyboardType="phone-pad"
-          />
+        <View style={styles.pasos}>
+          <Text style={[styles.pasoTexto, paso === 1 && styles.pasoActivo]}>1. Recogida</Text>
+          <Text style={styles.pasoSeparador}>—</Text>
+          <Text style={[styles.pasoTexto, paso === 2 && styles.pasoActivo]}>2. Entrega</Text>
         </View>
 
-        <View style={styles.filaSwitch}>
-          <Text style={styles.switchTexto}>El motorizado debe pagar algo al recoger</Text>
-          <Switch value={pagar} onValueChange={setPagar} trackColor={{ true: COLOR }} />
-        </View>
-        {pagar ? (
+        {paso === 1 ? (
           <>
-            <TextInput
-              style={styles.input}
-              value={monto}
-              onChangeText={setMonto}
-              placeholder="Monto aproximado (ej. 12.50)"
-              keyboardType="decimal-pad"
-            />
-            <Text style={styles.nota}>Al recibir le pagas lo que gastó más el envío.</Text>
-          </>
-        ) : null}
-
-        <Text style={styles.seccion}>Dirección de entrega</Text>
-        {direcciones.map(item => (
-          <TouchableOpacity
-            key={item.id}
-            style={[styles.direccionCard, item.id === direccionId && styles.direccionCardSeleccionada]}
-            onPress={() => setDireccionId(item.id)}
-          >
-            <Text style={styles.direccionEtiqueta}>{item.etiqueta}</Text>
-            <Text style={styles.direccionTexto}>{item.direccion}</Text>
-            {item.referencia ? <Text style={styles.direccionReferencia}>{item.referencia}</Text> : null}
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity onPress={() => navigation.navigate('MisDirecciones')}>
-          <Text style={styles.agregarTexto}>+ Agregar o cambiar mis direcciones</Text>
-        </TouchableOpacity>
-
-        <View style={styles.grupoContacto}>
-          <Text style={styles.seccion}>¿Quién recibe ahí?</Text>
-          <Text style={styles.nota}>Déjalo vacío si tú mismo lo recibes.</Text>
-          <TextInput
-            style={styles.input}
-            value={entregaContactoNombre}
-            onChangeText={setEntregaContactoNombre}
-            placeholder="Nombre"
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            value={entregaContactoTelefono}
-            onChangeText={setEntregaContactoTelefono}
-            placeholder="Teléfono (ej. 0991234567)"
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        <View style={styles.resumen}>
-          <Text style={styles.resumenTexto}>
-            Envío{envio ? ` (${parseFloat(envio.distancia_km).toFixed(1)} km)` : ''}
-          </Text>
-          <Text style={styles.resumenPrecio}>
-            {envio
-              ? `$${parseFloat(envio.costo_envio).toFixed(2)}`
-              : errorEnvio
-                ? 'No disponible'
-                : 'Elige recogida y entrega'}
-          </Text>
-        </View>
-
-        {perfilIncompleto ? (
-          <TouchableOpacity style={styles.avisoPerfil} onPress={() => navigation.navigate('MisDatos')}>
-            <Text style={styles.avisoPerfilTexto}>
-              Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
+            <Text style={styles.ayuda}>
+              Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío
+              {' '}(y lo que el motorizado deba pagar en el lugar, si aplica).
             </Text>
-            <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
-          </TouchableOpacity>
-        ) : null}
 
-        <TouchableOpacity
-          style={[styles.boton, !puedeEnviar && styles.botonDeshabilitado]}
-          disabled={!puedeEnviar}
-          onPress={enviar}
-        >
-          <Text style={styles.botonTexto}>{enviando ? 'Enviando...' : 'Pedir encargo'}</Text>
-        </TouchableOpacity>
+            <Text style={styles.seccion}>¿Qué debemos recoger?</Text>
+            <TextInput
+              style={[styles.input, styles.multilinea]}
+              value={descripcion}
+              onChangeText={setDescripcion}
+              placeholder="Ej. una caja mediana con documentos"
+              maxLength={255}
+              multiline
+            />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Text style={styles.seccion}>Lugar de recogida</Text>
+            <SelectorDireccion
+              direcciones={direcciones}
+              valor={recogidaValor}
+              onCambiar={setRecogidaValor}
+              onNuevaDireccion={agregarDireccionGuardada}
+            />
+
+            <View style={styles.grupoContacto}>
+              <Text style={styles.seccion}>¿Quién entrega ahí?</Text>
+              <Text style={styles.nota}>Déjalo vacío si tú mismo lo entregas.</Text>
+              <TextInput
+                style={styles.input}
+                value={recogidaContactoNombre}
+                onChangeText={setRecogidaContactoNombre}
+                placeholder="Nombre"
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                value={recogidaContactoTelefono}
+                onChangeText={setRecogidaContactoTelefono}
+                placeholder="Teléfono (ej. 0991234567)"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.boton, !puedePaso1 && styles.botonDeshabilitado]}
+              disabled={!puedePaso1}
+              onPress={() => setPaso(2)}
+            >
+              <Text style={styles.botonTexto}>Continuar</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.seccion}>Dirección de entrega</Text>
+            <SelectorDireccion
+              direcciones={direcciones}
+              valor={entregaValor}
+              onCambiar={setEntregaValor}
+              onNuevaDireccion={agregarDireccionGuardada}
+            />
+
+            <View style={styles.grupoContacto}>
+              <Text style={styles.seccion}>¿Quién recibe ahí?</Text>
+              <Text style={styles.nota}>Déjalo vacío si tú mismo lo recibes.</Text>
+              <TextInput
+                style={styles.input}
+                value={entregaContactoNombre}
+                onChangeText={setEntregaContactoNombre}
+                placeholder="Nombre"
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                value={entregaContactoTelefono}
+                onChangeText={setEntregaContactoTelefono}
+                placeholder="Teléfono (ej. 0991234567)"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.filaSwitch}>
+              <Text style={styles.switchTexto}>El motorizado debe pagar algo al recoger</Text>
+              <Switch value={pagar} onValueChange={setPagar} trackColor={{ true: COLOR }} />
+            </View>
+            {pagar ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  value={monto}
+                  onChangeText={setMonto}
+                  placeholder="Monto aproximado (ej. 12.50)"
+                  keyboardType="decimal-pad"
+                />
+                <Text style={styles.nota}>Al recibir le pagas lo que gastó más el envío.</Text>
+              </>
+            ) : null}
+
+            <View style={styles.resumen}>
+              <Text style={styles.resumenTexto}>
+                Envío{envio ? ` (${parseFloat(envio.distancia_km).toFixed(1)} km)` : ''}
+              </Text>
+              <Text style={styles.resumenPrecio}>
+                {envio
+                  ? `$${parseFloat(envio.costo_envio).toFixed(2)}`
+                  : errorEnvio
+                    ? 'No disponible'
+                    : entregaValor ? 'Calculando…' : 'Elige la dirección de entrega'}
+              </Text>
+            </View>
+
+            {perfilIncompleto ? (
+              <TouchableOpacity style={styles.avisoPerfil} onPress={() => navigation.navigate('MisDatos')}>
+                <Text style={styles.avisoPerfilTexto}>
+                  Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
+                </Text>
+                <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <View style={styles.filaBotones}>
+              <TouchableOpacity style={styles.botonAtras} onPress={() => setPaso(1)}>
+                <Text style={styles.botonAtrasTexto}>Atrás</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.boton, styles.botonFlex, !puedeEnviar && styles.botonDeshabilitado]}
+                disabled={!puedeEnviar}
+                onPress={enviar}
+              >
+                <Text style={styles.botonTexto}>{enviando ? 'Enviando...' : 'Pedir encargo'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+          </>
+        )}
       </ScrollView>
-
-      <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
-        <SelectorMapa onConfirmar={seleccionarUbicacion} onCancelar={() => setMostrarMapa(false)} />
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -256,6 +253,15 @@ export default function NuevoEncargoScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f2f2f2' },
   contenido: { padding: 16 },
+  pasos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  pasoTexto: { fontSize: 13, color: '#999', fontWeight: 'bold' },
+  pasoActivo: { color: COLOR },
+  pasoSeparador: { color: '#ccc', marginHorizontal: 8 },
   ayuda: { color: '#666', fontSize: 13, marginBottom: 16 },
   seccion: { fontSize: 16, fontWeight: 'bold', marginTop: 8, marginBottom: 8 },
   input: {
@@ -268,15 +274,6 @@ const styles = StyleSheet.create({
   },
   multilinea: { minHeight: 70, textAlignVertical: 'top' },
   nota: { fontSize: 12, color: '#666', marginBottom: 10 },
-  mapaBoton: {
-    backgroundColor: '#fff',
-    borderColor: COLOR,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBotonTexto: { color: COLOR, fontWeight: 'bold', textAlign: 'center' },
   grupoContacto: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -293,19 +290,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   switchTexto: { flex: 1, fontSize: 14, paddingRight: 8 },
-  direccionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  direccionCardSeleccionada: { borderColor: COLOR },
-  direccionEtiqueta: { fontSize: 15, fontWeight: 'bold' },
-  direccionTexto: { fontSize: 13, color: '#666' },
-  direccionReferencia: { fontSize: 12, color: '#999', fontStyle: 'italic', marginTop: 2 },
-  agregarTexto: { color: COLOR, fontWeight: 'bold', marginVertical: 10 },
   resumen: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -333,7 +317,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
+  botonFlex: { flex: 1, marginTop: 0 },
   botonDeshabilitado: { backgroundColor: '#aaa' },
   botonTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  filaBotones: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    alignItems: 'stretch',
+  },
+  botonAtras: {
+    borderColor: COLOR,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonAtrasTexto: { color: COLOR, fontSize: 16, fontWeight: 'bold' },
   error: { color: 'red', marginTop: 10, textAlign: 'center' },
 });

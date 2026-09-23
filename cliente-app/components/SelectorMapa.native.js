@@ -1,7 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+
+// Mismo mapa gratuito (Leaflet + OpenStreetMap, sin API key) que ya usa el panel del despachador,
+// cargado en un WebView: react-native-maps solo funciona con Google Maps en Android y necesita una
+// clave de pago para el APK compilado (en Expo Go "funciona" porque usa la clave de desarrollo de Expo).
+const CENTRO_SANTO_DOMINGO = { lat: -0.253, lng: -79.173 };
+
+const paginaMapa = ({ lat, lng, zoom, conMarcador }) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #mapa { height: 100%; margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const mapa = L.map('mapa').setView([${lat}, ${lng}], ${zoom});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+    }).addTo(mapa);
+
+    let marcador = ${conMarcador ? `L.marker([${lat}, ${lng}], { draggable: true }).addTo(mapa)` : 'null'};
+    if (marcador) marcador.on('dragend', () => avisar(marcador.getLatLng()));
+
+    function avisar(posicion) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ lat: posicion.lat, lng: posicion.lng }));
+    }
+
+    mapa.on('click', (e) => {
+      if (marcador) {
+        marcador.setLatLng(e.latlng);
+      } else {
+        marcador = L.marker(e.latlng, { draggable: true }).addTo(mapa);
+        marcador.on('dragend', () => avisar(marcador.getLatLng()));
+      }
+      avisar(e.latlng);
+    });
+  </script>
+</body>
+</html>
+`;
 
 const formatearDireccion = (r) => {
   if (!r) return '';
@@ -15,6 +60,7 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
   const [coordenada, setCoordenada] = useState(coordenadaInicial ?? null);
   const [cargando, setCargando] = useState(!coordenadaInicial);
   const [confirmando, setConfirmando] = useState(false);
+  const webviewRef = useRef(null);
 
   useEffect(() => {
     if (coordenadaInicial) return;
@@ -31,6 +77,15 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
       setCargando(false);
     })();
   }, []);
+
+  const recibirMensaje = (e) => {
+    try {
+      const { lat, lng } = JSON.parse(e.nativeEvent.data);
+      setCoordenada({ latitude: lat, longitude: lng });
+    } catch (err) {
+      // mensaje inesperado del WebView: se ignora
+    }
+  };
 
   const confirmar = async () => {
     setConfirmando(true);
@@ -61,20 +116,22 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
     );
   }
 
+  const html = paginaMapa({
+    lat: coordenada?.latitude ?? CENTRO_SANTO_DOMINGO.lat,
+    lng: coordenada?.longitude ?? CENTRO_SANTO_DOMINGO.lng,
+    zoom: coordenada ? 16 : 13,
+    conMarcador: Boolean(coordenada),
+  });
+
   return (
     <View style={styles.container}>
-      <MapView
+      <WebView
+        ref={webviewRef}
         style={styles.mapa}
-        initialRegion={{
-          latitude: coordenada?.latitude ?? -0.1806,
-          longitude: coordenada?.longitude ?? -78.4678,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-        onPress={(e) => setCoordenada(e.nativeEvent.coordinate)}
-      >
-        {coordenada && <Marker coordinate={coordenada} />}
-      </MapView>
+        originWhitelist={['*']}
+        source={{ html }}
+        onMessage={recibirMensaje}
+      />
 
       <View style={styles.ayuda}>
         <Text style={styles.ayudaTexto}>
