@@ -48,6 +48,13 @@ class Negocio(models.Model):
     nombre = models.CharField(max_length=100)
     # Desactivar oculta el negocio a los clientes sin borrar sus pedidos (borrarlo los borra en cascada).
     activo = models.BooleanField(default=True)
+    # No es un campo de subida: el archivo se sube al repo a mano (backend/pedidos/static/negocios/)
+    # y aquí solo se escribe su nombre. Así la foto sobrevive a un redeploy en Render sin depender de
+    # almacenamiento externo (el disco de Render es efímero; lo que se sube por el admin se perdería).
+    imagen = models.CharField(
+        max_length=100, blank=True,
+        help_text='Nombre del archivo en pedidos/static/negocios/ (ej. don-pollo.png). Se sube al repo, no aquí.',
+    )
 
     def __str__(self):
         return self.nombre

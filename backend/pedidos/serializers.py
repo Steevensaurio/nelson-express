@@ -1,6 +1,7 @@
 import re
 
 from django.db import transaction
+from django.templatetags.static import static
 from django.utils import timezone
 from rest_framework import serializers
 from .tarifas import envio_entre, opciones_de_envio
@@ -61,10 +62,18 @@ class SucursalSerializer(serializers.ModelSerializer):
 
 class NegocioSerializer(serializers.ModelSerializer):
     sucursales = SucursalSerializer(many=True, read_only=True)
+    imagen = serializers.SerializerMethodField()
 
     class Meta:
         model = Negocio
-        fields = ['id', 'nombre', 'sucursales']
+        fields = ['id', 'nombre', 'sucursales', 'imagen']
+
+    def get_imagen(self, negocio):
+        if not negocio.imagen:
+            return None
+        url = static(f'negocios/{negocio.imagen}')
+        request = self.context.get('request')
+        return request.build_absolute_uri(url) if request else url
 
 
 class NegocioResumenSerializer(serializers.ModelSerializer):

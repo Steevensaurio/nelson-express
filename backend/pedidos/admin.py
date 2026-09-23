@@ -38,7 +38,7 @@ class SucursalInline(admin.TabularInline):
 
 @admin.register(Negocio)
 class NegocioAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'activo', 'cantidad_sucursales')
+    list_display = ('nombre', 'activo', 'imagen', 'cantidad_sucursales')
     list_filter = ('activo',)
     inlines = [SucursalInline]
 

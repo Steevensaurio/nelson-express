@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Text, View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, Image, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
@@ -13,6 +13,18 @@ const resumenSucursales = (sucursales) => {
   if (sucursales.length === 1) return sucursales[0].direccion;
   return `${abiertas.length} ${abiertas.length === 1 ? 'sucursal abierta' : 'sucursales abiertas'}`;
 };
+
+// Foto del negocio o, si no tiene, un recuadro con un ícono.
+function FotoNegocio({ negocio }) {
+  if (negocio.imagen) {
+    return <Image source={{ uri: negocio.imagen }} style={styles.icono} resizeMode="cover" />;
+  }
+  return (
+    <View style={styles.icono}>
+      <Ionicons name="storefront-outline" size={36} color={COLOR_PRIMARIO} />
+    </View>
+  );
+}
 
 export default function NegociosScreen({ navigation }) {
   const [negocios, setNegocios] = useState([]);
@@ -48,9 +60,7 @@ export default function NegociosScreen({ navigation }) {
           onPress={() => navigation.navigate('Menu', { negocioId: item.id, negocioNombre: item.nombre })}
           activeOpacity={0.85}
         >
-          <View style={styles.icono}>
-            <Ionicons name="storefront-outline" size={36} color={COLOR_PRIMARIO} />
-          </View>
+          <FotoNegocio negocio={item} />
           <View style={styles.info}>
             <Text style={styles.nombre} numberOfLines={2}>{item.nombre}</Text>
             <Text style={styles.direccion} numberOfLines={2}>{resumenSucursales(item.sucursales)}</Text>
