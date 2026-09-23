@@ -7,6 +7,9 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
 
 // El empaquetador no resuelve solo los íconos por defecto de Leaflet; hay que indicarlos a mano.
+// Sin borrar este método, Leaflet sigue calculando su propia ruta y la pega delante de la nuestra
+// (queda algo como ".../images//node_modules/.../marker-icon.png"), rompiendo la imagen.
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
 
 // Centro inicial del mapa: Santo Domingo, donde están los negocios.
