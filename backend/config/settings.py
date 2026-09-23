@@ -74,7 +74,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# En desarrollo, permite que el frontend de React (localhost:5173/3000) llame a esta API.
+# Los orígenes de desarrollo local siempre están permitidos; los de producción (ej. el panel en
+# Netlify) se agregan por variable de entorno, igual que ALLOWED_HOSTS.
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -82,7 +83,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8082',
     'http://192.168.0.141:8081',
     'http://192.168.0.141:8082',
-]
+] + config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
