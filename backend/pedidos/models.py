@@ -152,9 +152,14 @@ class Pedido(models.Model):
     recogida_lat = models.DecimalField(max_digits=9, decimal_places=6)
     recogida_lng = models.DecimalField(max_digits=9, decimal_places=6)
     recogida_referencia = models.CharField(max_length=255, blank=True)
-    # Encargo: quién entrega el paquete en el punto de recogida.
-    contacto_nombre = models.CharField(max_length=100, blank=True)
-    contacto_telefono = models.CharField(max_length=20, blank=True)
+    # Encargo: quién entrega el paquete en la recogida y quién lo recibe en la entrega. No siempre son
+    # la misma persona, y ninguna de las dos tiene por qué ser el cliente que pide el encargo (puede
+    # mandar a buscar algo a nombre de otra persona, o pedir que se lo entreguen a otra persona). Vacío
+    # significa "el propio cliente" (se completa con sus datos al mostrarlo; ver RecogidaMixin).
+    recogida_contacto_nombre = models.CharField(max_length=100, blank=True)
+    recogida_contacto_telefono = models.CharField(max_length=20, blank=True)
+    entrega_contacto_nombre = models.CharField(max_length=100, blank=True)
+    entrega_contacto_telefono = models.CharField(max_length=20, blank=True)
     # Encargo: el motorizado debe pagar algo al recoger (monto aproximado; se le reembolsa al entregar).
     pagar_en_recogida = models.BooleanField(default=False)
     monto_estimado = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)

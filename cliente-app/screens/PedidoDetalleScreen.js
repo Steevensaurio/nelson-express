@@ -77,7 +77,7 @@ export default function PedidoDetalleScreen({ route }) {
             <Text style={styles.referencia}>{pedido.recogida.referencia}</Text>
           ) : null}
           <Text style={styles.secundario}>
-            Lo entrega: {pedido.contacto.nombre} · {pedido.contacto.telefono}
+            Lo entrega: {pedido.recogida_contacto.nombre} · {pedido.recogida_contacto.telefono}
           </Text>
         </View>
       ) : (
@@ -93,6 +93,11 @@ export default function PedidoDetalleScreen({ route }) {
         <Text style={styles.valor}>{pedido.destino_direccion}</Text>
         {pedido.destino_referencia ? (
           <Text style={styles.referencia}>{pedido.destino_referencia}</Text>
+        ) : null}
+        {esEncargo ? (
+          <Text style={styles.secundario}>
+            Lo recibe: {pedido.entrega_contacto.nombre} · {pedido.entrega_contacto.telefono}
+          </Text>
         ) : null}
       </View>
 

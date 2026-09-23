@@ -216,7 +216,7 @@ export default function Despacho() {
                           <>
                             <div className="tenue productos">{p.descripcion}</div>
                             <div className="tenue">
-                              Entrega: {p.contacto.nombre} · {p.contacto.telefono}
+                              Entrega: {p.recogida_contacto.nombre} · {p.recogida_contacto.telefono}
                             </div>
                             <div className="tenue">{p.recogida.direccion}</div>
                             {p.pagar_en_recogida ? (
@@ -236,6 +236,11 @@ export default function Despacho() {
                       <td>
                         {p.destino_direccion}
                         {p.destino_referencia ? <div className="tenue cursiva">{p.destino_referencia}</div> : null}
+                        {p.tipo === 'ENCARGO' ? (
+                          <div className="tenue">
+                            Recibe: {p.entrega_contacto.nombre} · {p.entrega_contacto.telefono}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="derecha">
                         {MOSTRAR_PRECIOS ? (

@@ -56,8 +56,8 @@ export default function EntregaDetalleScreen({ route }) {
     Linking.openURL(`tel:${entrega.cliente.telefono.replace(/[\s-]/g, '')}`).catch(() => {});
   };
 
-  const llamarAlContacto = () => {
-    Linking.openURL(`tel:${entrega.contacto.telefono.replace(/[\s-]/g, '')}`).catch(() => {});
+  const llamarA = (telefono) => {
+    Linking.openURL(`tel:${telefono.replace(/[\s-]/g, '')}`).catch(() => {});
   };
 
   // La dirección en texto a veces viene incompleta; esto abre Google Maps con las coordenadas exactas,
@@ -129,12 +129,12 @@ export default function EntregaDetalleScreen({ route }) {
           >
             <Text style={styles.comoLlegarTexto}>📍 Cómo llegar</Text>
           </TouchableOpacity>
-          {entrega.contacto ? (
+          {entrega.recogida_contacto ? (
             <View style={styles.contactoRecogida}>
-              <Text style={styles.secundario}>Lo entrega: {entrega.contacto.nombre}</Text>
-              {entrega.contacto.telefono ? (
-                <TouchableOpacity onPress={llamarAlContacto}>
-                  <Text style={styles.telefono}>📞 {entrega.contacto.telefono}</Text>
+              <Text style={styles.secundario}>Lo entrega: {entrega.recogida_contacto.nombre}</Text>
+              {entrega.recogida_contacto.telefono ? (
+                <TouchableOpacity onPress={() => llamarA(entrega.recogida_contacto.telefono)}>
+                  <Text style={styles.telefono}>📞 {entrega.recogida_contacto.telefono}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -162,6 +162,16 @@ export default function EntregaDetalleScreen({ route }) {
           >
             <Text style={styles.comoLlegarTexto}>📍 Cómo llegar</Text>
           </TouchableOpacity>
+          {entrega.entrega_contacto ? (
+            <View style={styles.contactoRecogida}>
+              <Text style={styles.secundario}>Lo recibe: {entrega.entrega_contacto.nombre}</Text>
+              {entrega.entrega_contacto.telefono ? (
+                <TouchableOpacity onPress={() => llamarA(entrega.entrega_contacto.telefono)}>
+                  <Text style={styles.telefono}>📞 {entrega.entrega_contacto.telefono}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.card}>

@@ -19,9 +19,12 @@ def validar_telefono(value):
 
 
 class RecogidaMixin(serializers.Serializer):
-    """Dónde se recoge el pedido y, en los encargos, quién lo entrega. Igual en comida y encargo."""
+    """Dónde se recoge el pedido y, en los encargos, quién entrega y quién recibe. No siempre es la
+    misma persona en los dos extremos, y ninguna tiene por qué ser el propio cliente — pero cuando el
+    campo viene vacío, es porque sí lo es, y se completa con sus datos para no dejar nada en blanco."""
     recogida = serializers.SerializerMethodField()
-    contacto = serializers.SerializerMethodField()
+    recogida_contacto = serializers.SerializerMethodField()
+    entrega_contacto = serializers.SerializerMethodField()
 
     def get_recogida(self, pedido):
         return {
@@ -35,13 +38,19 @@ class RecogidaMixin(serializers.Serializer):
     def telefono_visible(self, pedido):
         return True
 
-    def get_contacto(self, pedido):
+    def _contacto(self, pedido, nombre, telefono):
         if pedido.tipo != Pedido.Tipo.ENCARGO:
             return None
         return {
-            'nombre': pedido.contacto_nombre,
-            'telefono': pedido.contacto_telefono if self.telefono_visible(pedido) else None,
+            'nombre': nombre or pedido.cliente.get_full_name() or pedido.cliente.username,
+            'telefono': (telefono or pedido.cliente.telefono) if self.telefono_visible(pedido) else None,
         }
+
+    def get_recogida_contacto(self, pedido):
+        return self._contacto(pedido, pedido.recogida_contacto_nombre, pedido.recogida_contacto_telefono)
+
+    def get_entrega_contacto(self, pedido):
+        return self._contacto(pedido, pedido.entrega_contacto_nombre, pedido.entrega_contacto_telefono)
 
 
 class SucursalSerializer(serializers.ModelSerializer):
@@ -166,7 +175,8 @@ class PedidoSerializer(RecogidaMixin, serializers.ModelSerializer):
             'negocio',
             'sucursal',
             'recogida',
-            'contacto',
+            'recogida_contacto',
+            'entrega_contacto',
             'pagar_en_recogida',
             'monto_estimado',
             'estado',
@@ -286,7 +296,7 @@ class PedidoMotorizadoSerializer(RecogidaMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Pedido
-        fields = ['id', 'tipo', 'descripcion', 'negocio', 'sucursal', 'recogida', 'contacto', 'pagar_en_recogida', 'monto_estimado', 'cliente', 'destino_direccion', 'destino_referencia', 'destino_lat', 'destino_lng', 'estado', 'motivo_cancelacion', 'distancia_km', 'costo_envio', 'creado_en', 'detalles']
+        fields = ['id', 'tipo', 'descripcion', 'negocio', 'sucursal', 'recogida', 'recogida_contacto', 'entrega_contacto', 'pagar_en_recogida', 'monto_estimado', 'cliente', 'destino_direccion', 'destino_referencia', 'destino_lat', 'destino_lng', 'estado', 'motivo_cancelacion', 'distancia_km', 'costo_envio', 'creado_en', 'detalles']
 
 
 class UsuarioResumenSerializer(serializers.ModelSerializer):
@@ -323,7 +333,8 @@ class DespachoPedidoSerializer(RecogidaMixin, serializers.ModelSerializer):
     class Meta:
         model = Pedido
         fields = [
-            'id', 'tipo', 'descripcion', 'estado', 'creado_en', 'negocio', 'sucursal', 'recogida', 'contacto',
+            'id', 'tipo', 'descripcion', 'estado', 'creado_en', 'negocio', 'sucursal', 'recogida',
+            'recogida_contacto', 'entrega_contacto',
             'pagar_en_recogida', 'monto_estimado', 'cliente', 'motorizado',
             'destino_direccion', 'destino_referencia', 'costo_envio', 'distancia_km', 'total', 'motivo_cancelacion', 'detalles',
         ]
@@ -368,24 +379,32 @@ class CotizarEncargoSerializer(serializers.Serializer):
 
 
 class EncargoCreateSerializer(serializers.ModelSerializer):
-    """Un encargo: recoger algo en cualquier lugar y llevarlo al destino. El envío lo calcula el servidor."""
+    """Un encargo: recoger algo en cualquier lugar y llevarlo al destino. El envío lo calcula el servidor.
+
+    Los cuatro campos de contacto son opcionales: vacío significa "el propio cliente" en ese extremo.
+    No siempre entrega y recibe la misma persona, y ninguna de las dos tiene por qué ser quien pide
+    el encargo (puede mandar a recoger algo a nombre de otro, o pedir que se lo entreguen a alguien más).
+    """
 
     class Meta:
         model = Pedido
         fields = [
             'descripcion', 'recogida_direccion', 'recogida_referencia', 'recogida_lat', 'recogida_lng',
-            'contacto_nombre', 'contacto_telefono', 'pagar_en_recogida', 'monto_estimado',
+            'recogida_contacto_nombre', 'recogida_contacto_telefono',
+            'entrega_contacto_nombre', 'entrega_contacto_telefono',
+            'pagar_en_recogida', 'monto_estimado',
             'destino_direccion', 'destino_referencia', 'destino_lat', 'destino_lng',
             'distancia_km', 'costo_envio',
         ]
         read_only_fields = ['distancia_km', 'costo_envio']
         extra_kwargs = {
             'descripcion': {'required': True, 'allow_blank': False},
-            'contacto_nombre': {'required': True, 'allow_blank': False},
-            'contacto_telefono': {'required': True, 'allow_blank': False},
         }
 
-    def validate_contacto_telefono(self, valor):
+    def validate_recogida_contacto_telefono(self, valor):
+        return validar_telefono(valor)
+
+    def validate_entrega_contacto_telefono(self, valor):
         return validar_telefono(valor)
 
     def validate(self, datos):

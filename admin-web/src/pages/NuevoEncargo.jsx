@@ -7,7 +7,8 @@ import SelectorMapa from '../components/SelectorMapa.jsx';
 const VACIO = {
   clienteNombre: '', clienteTelefono: '', descripcion: '',
   recogidaDireccion: '', recogidaReferencia: '', recogida: null,
-  contactoNombre: '', contactoTelefono: '',
+  recogidaContactoNombre: '', recogidaContactoTelefono: '',
+  entregaContactoNombre: '', entregaContactoTelefono: '',
   pagar: false, monto: '',
   destinoDireccion: '', destinoReferencia: '', destino: null,
 };
@@ -56,7 +57,7 @@ export default function NuevoEncargo() {
 
   const completo =
     f.clienteNombre.trim() && f.clienteTelefono.trim() && f.descripcion.trim() && f.recogidaDireccion.trim() &&
-    recogida && f.contactoNombre.trim() && f.contactoTelefono.trim() && f.destinoDireccion.trim() && destino &&
+    recogida && f.destinoDireccion.trim() && destino &&
     (!f.pagar || Number(f.monto) > 0);
 
   const crear = async (evento) => {
@@ -72,8 +73,10 @@ export default function NuevoEncargo() {
         recogida_referencia: f.recogidaReferencia.trim(),
         recogida_lat: recogida.lat.toFixed(6),
         recogida_lng: recogida.lng.toFixed(6),
-        contacto_nombre: f.contactoNombre.trim(),
-        contacto_telefono: f.contactoTelefono.trim(),
+        recogida_contacto_nombre: f.recogidaContactoNombre.trim(),
+        recogida_contacto_telefono: f.recogidaContactoTelefono.trim(),
+        entrega_contacto_nombre: f.entregaContactoNombre.trim(),
+        entrega_contacto_telefono: f.entregaContactoTelefono.trim(),
         pagar_en_recogida: f.pagar,
         ...(f.pagar ? { monto_estimado: Number(f.monto).toFixed(2) } : {}),
         destino_direccion: f.destinoDireccion.trim(),
@@ -128,8 +131,11 @@ export default function NuevoEncargo() {
             <SelectorMapa value={f.recogida} onChange={elegirEnMapa('recogida', 'recogidaDireccion')} />
             <label>Dirección<input {...texto('recogidaDireccion')} /></label>
             <label>Referencia<input {...texto('recogidaReferencia')} /></label>
-            <label>Persona que entrega<input {...texto('contactoNombre')} /></label>
-            <label>Su teléfono<input {...texto('contactoTelefono')} inputMode="tel" /></label>
+            <div className="grupo-contacto campo-ancho">
+              <p className="tenue">¿Quién entrega ahí? Vacío si es el propio cliente.</p>
+              <label>Nombre<input {...texto('recogidaContactoNombre')} /></label>
+              <label>Teléfono<input {...texto('recogidaContactoTelefono')} inputMode="tel" /></label>
+            </div>
             <label className="campo-check campo-ancho">
               <input type="checkbox" checked={f.pagar} onChange={(e) => cambiar('pagar')(e.target.checked)} />
               El motorizado debe pagar algo al recoger
@@ -144,6 +150,11 @@ export default function NuevoEncargo() {
             <SelectorMapa value={f.destino} onChange={elegirEnMapa('destino', 'destinoDireccion')} />
             <label>Dirección<input {...texto('destinoDireccion')} /></label>
             <label>Referencia<input {...texto('destinoReferencia')} /></label>
+            <div className="grupo-contacto campo-ancho">
+              <p className="tenue">¿Quién recibe ahí? Vacío si es el propio cliente.</p>
+              <label>Nombre<input {...texto('entregaContactoNombre')} /></label>
+              <label>Teléfono<input {...texto('entregaContactoTelefono')} inputMode="tel" /></label>
+            </div>
           </fieldset>
 
           <div className="encargo-pie">

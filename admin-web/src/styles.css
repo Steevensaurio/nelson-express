@@ -593,6 +593,21 @@ select:disabled {
   color: var(--texto) !important;
 }
 
+.grupo-contacto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: var(--fondo);
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.grupo-contacto p {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+}
+
 .selector-mapa {
   display: flex;
   flex-direction: column;

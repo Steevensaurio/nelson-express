@@ -17,8 +17,10 @@ export default function NuevoEncargoScreen({ navigation }) {
   const [recogidaDireccion, setRecogidaDireccion] = useState('');
   const [recogidaReferencia, setRecogidaReferencia] = useState('');
   const [mostrarMapa, setMostrarMapa] = useState(false);
-  const [contactoNombre, setContactoNombre] = useState('');
-  const [contactoTelefono, setContactoTelefono] = useState('');
+  const [recogidaContactoNombre, setRecogidaContactoNombre] = useState('');
+  const [recogidaContactoTelefono, setRecogidaContactoTelefono] = useState('');
+  const [entregaContactoNombre, setEntregaContactoNombre] = useState('');
+  const [entregaContactoTelefono, setEntregaContactoTelefono] = useState('');
   const [pagar, setPagar] = useState(false);
   const [monto, setMonto] = useState('');
   const [direcciones, setDirecciones] = useState([]);
@@ -60,8 +62,8 @@ export default function NuevoEncargoScreen({ navigation }) {
   const perfilIncompleto = perfil !== null && !(perfil.first_name && perfil.telefono);
 
   const puedeEnviar =
-    descripcion.trim() && recogida && recogidaDireccion.trim() && contactoNombre.trim() &&
-    contactoTelefono.trim() && destino && envio && (!pagar || parseFloat(monto) > 0) &&
+    descripcion.trim() && recogida && recogidaDireccion.trim() &&
+    destino && envio && (!pagar || parseFloat(monto) > 0) &&
     !perfilIncompleto && !enviando;
 
   const enviar = async () => {
@@ -74,8 +76,10 @@ export default function NuevoEncargoScreen({ navigation }) {
         recogida_referencia: recogidaReferencia.trim(),
         recogida_lat: recogida.lat,
         recogida_lng: recogida.lng,
-        contacto_nombre: contactoNombre.trim(),
-        contacto_telefono: contactoTelefono.trim(),
+        recogida_contacto_nombre: recogidaContactoNombre.trim(),
+        recogida_contacto_telefono: recogidaContactoTelefono.trim(),
+        entrega_contacto_nombre: entregaContactoNombre.trim(),
+        entrega_contacto_telefono: entregaContactoTelefono.trim(),
         pagar_en_recogida: pagar,
         ...(pagar ? { monto_estimado: parseFloat(monto).toFixed(2) } : {}),
         destino_direccion: destino.direccion,
@@ -87,8 +91,8 @@ export default function NuevoEncargoScreen({ navigation }) {
     } catch (err) {
       const d = err.response?.data;
       setError(
-        d?.detail ?? d?.contacto_telefono?.[0] ?? d?.monto_estimado?.[0] ?? d?.descripcion?.[0] ??
-          'No se pudo crear el encargo'
+        d?.detail ?? d?.recogida_contacto_telefono?.[0] ?? d?.entrega_contacto_telefono?.[0] ??
+          d?.monto_estimado?.[0] ?? d?.descripcion?.[0] ?? 'No se pudo crear el encargo'
       );
       setEnviando(false);
     }
@@ -138,16 +142,24 @@ export default function NuevoEncargoScreen({ navigation }) {
           placeholder="Referencia (ej. local azul, junto a la farmacia)"
         />
 
-        <Text style={styles.seccion}>Persona que lo entrega</Text>
-        <TextInput style={styles.input} value={contactoNombre} onChangeText={setContactoNombre} placeholder="Nombre" autoCapitalize="words" />
-        <TextInput
-          style={styles.input}
-          value={contactoTelefono}
-          onChangeText={setContactoTelefono}
-          placeholder="Teléfono (ej. 0991234567)"
-          keyboardType="phone-pad"
-        />
-        <Text style={styles.nota}>El motorizado la llamará al llegar.</Text>
+        <View style={styles.grupoContacto}>
+          <Text style={styles.seccion}>¿Quién entrega ahí?</Text>
+          <Text style={styles.nota}>Déjalo vacío si tú mismo lo entregas.</Text>
+          <TextInput
+            style={styles.input}
+            value={recogidaContactoNombre}
+            onChangeText={setRecogidaContactoNombre}
+            placeholder="Nombre"
+            autoCapitalize="words"
+          />
+          <TextInput
+            style={styles.input}
+            value={recogidaContactoTelefono}
+            onChangeText={setRecogidaContactoTelefono}
+            placeholder="Teléfono (ej. 0991234567)"
+            keyboardType="phone-pad"
+          />
+        </View>
 
         <View style={styles.filaSwitch}>
           <Text style={styles.switchTexto}>El motorizado debe pagar algo al recoger</Text>
@@ -181,6 +193,25 @@ export default function NuevoEncargoScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.navigate('MisDirecciones')}>
           <Text style={styles.agregarTexto}>+ Agregar o cambiar mis direcciones</Text>
         </TouchableOpacity>
+
+        <View style={styles.grupoContacto}>
+          <Text style={styles.seccion}>¿Quién recibe ahí?</Text>
+          <Text style={styles.nota}>Déjalo vacío si tú mismo lo recibes.</Text>
+          <TextInput
+            style={styles.input}
+            value={entregaContactoNombre}
+            onChangeText={setEntregaContactoNombre}
+            placeholder="Nombre"
+            autoCapitalize="words"
+          />
+          <TextInput
+            style={styles.input}
+            value={entregaContactoTelefono}
+            onChangeText={setEntregaContactoTelefono}
+            placeholder="Teléfono (ej. 0991234567)"
+            keyboardType="phone-pad"
+          />
+        </View>
 
         <View style={styles.resumen}>
           <Text style={styles.resumenTexto}>
@@ -246,6 +277,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   mapaBotonTexto: { color: COLOR, fontWeight: 'bold', textAlign: 'center' },
+  grupoContacto: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
   filaSwitch: {
     flexDirection: 'row',
     alignItems: 'center',
