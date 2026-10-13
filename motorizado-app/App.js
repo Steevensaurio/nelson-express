@@ -12,7 +12,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { RealtimeProvider } from './context/RealtimeContext';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useFonts, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
+import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { colores, fuente, opcionesCabecera } from './constants/tema';
 
@@ -38,7 +38,7 @@ function MainTabs() {
         ...opcionesCabecera,
         tabBarActiveTintColor: colores.primarioOscuro,
         tabBarInactiveTintColor: colores.suave,
-        tabBarLabelStyle: { fontFamily: fuente.displayMedio, fontSize: 14, letterSpacing: 0.5, textTransform: 'uppercase' },
+        tabBarLabelStyle: { fontFamily: fuente.negrita, fontSize: 12 },
         tabBarStyle: { backgroundColor: colores.tarjeta, borderTopColor: colores.borde },
       })}
     >
@@ -73,7 +73,7 @@ function AppNavigator() {
 }
 
 export default function App() {
-  const [fuentesListas, errorFuentes] = useFonts({ BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold });
+  const [fuentesListas, errorFuentes] = useFonts({ Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold });
   const lista = fuentesListas || Boolean(errorFuentes);
 
   useEffect(() => {

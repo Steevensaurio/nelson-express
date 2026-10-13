@@ -26,15 +26,32 @@ export const colores = {
   peligroSuave: '#fdecea',
 };
 
-// Tipografía de marca: Barlow Condensed, parecida al rótulo condensado del logo. Es la "voz" de títulos,
-// precios, números y botones; el cuerpo de texto sigue en la fuente del sistema. Con una familia
-// personalizada no se usa fontWeight: cada peso es su propia familia.
+// Tipografía única: Nunito. Cada peso es su propia familia (con una familia personalizada no se usa
+// fontWeight); `familiaPorPeso` traduce un fontWeight a su familia y lo usa el componente Text de ui.js.
 export const fuente = {
-  display: 'BarlowCondensed_800ExtraBold',
-  displayMedio: 'BarlowCondensed_700Bold',
+  normal: 'Nunito_400Regular',
+  media: 'Nunito_600SemiBold',
+  negrita: 'Nunito_700Bold',
+  extra: 'Nunito_800ExtraBold',
 };
 
-export const radio = { chico: 8, medio: 12, grande: 14, pastilla: 999 };
+export function familiaPorPeso(peso) {
+  switch (String(peso ?? '400')) {
+    case '500':
+    case '600':
+      return fuente.media;
+    case '700':
+    case 'bold':
+      return fuente.negrita;
+    case '800':
+    case '900':
+      return fuente.extra;
+    default:
+      return fuente.normal;
+  }
+}
+
+export const radio = { chico: 8, medio: 12, grande: 16, pastilla: 999 };
 
 export const sombraTarjeta = {
   elevation: 1,
@@ -48,6 +65,6 @@ export const sombraTarjeta = {
 export const opcionesCabecera = {
   headerStyle: { backgroundColor: colores.tarjeta },
   headerTintColor: colores.texto,
-  headerTitleStyle: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.4 },
+  headerTitleStyle: { fontFamily: fuente.extra, fontSize: 20 },
   headerShadowVisible: false,
 };
