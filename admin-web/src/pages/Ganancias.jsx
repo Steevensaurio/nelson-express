@@ -68,8 +68,9 @@ export default function Ganancias() {
     <div className="pagina">
       <Barra />
 
-      <main className="contenido">
-        <section className="filtros-ganancias">
+      <main className="contenido" id="contenido">
+        <h1 className="solo-lectores">Ganancias</h1>
+        <section className="filtros-ganancias" aria-label="Filtros">
           <div className="atajos">
             {ATAJOS.map((a) => (
               <button key={a.texto} className="secundario" onClick={() => aplicarAtajo(a.rango)}>{a.texto}</button>
@@ -94,7 +95,7 @@ export default function Ganancias() {
           </label>
         </section>
 
-        {error ? <p className="error-banner">{error}</p> : null}
+        {error ? <p className="error-banner" role="alert">{error}</p> : null}
 
         {resumen ? (
           <>
@@ -129,13 +130,14 @@ export default function Ganancias() {
                 <div className="tabla-encabezado"><h2>Por motorizado</h2></div>
                 <div className="tabla-scroll">
                   <table>
+                    <caption className="solo-lectores">Ganancias por motorizado</caption>
                     <thead>
                       <tr>
-                        <th>Motorizado</th>
-                        <th className="derecha">Carreras</th>
-                        <th className="derecha">Total generado</th>
-                        <th className="derecha">Me debe entregar</th>
-                        <th className="derecha">Se queda</th>
+                        <th scope="col">Motorizado</th>
+                        <th scope="col" className="derecha">Carreras</th>
+                        <th scope="col" className="derecha">Total generado</th>
+                        <th scope="col" className="derecha">Me debe entregar</th>
+                        <th scope="col" className="derecha">Se queda</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -164,15 +166,16 @@ export default function Ganancias() {
               </div>
               <div className="tabla-scroll">
                 <table>
+                  <caption className="solo-lectores">Carreras entregadas en el rango elegido</caption>
                   <thead>
                     <tr>
-                      <th>Pedido</th>
-                      <th>Entregado</th>
-                      <th>Motorizado</th>
-                      <th>Recogida</th>
-                      <th>Destino</th>
-                      <th className="derecha">Km</th>
-                      <th className="derecha">Valor de la carrera</th>
+                      <th scope="col">Pedido</th>
+                      <th scope="col">Entregado</th>
+                      <th scope="col">Motorizado</th>
+                      <th scope="col">Recogida</th>
+                      <th scope="col">Destino</th>
+                      <th scope="col" className="derecha">Km</th>
+                      <th scope="col" className="derecha">Valor de la carrera</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -195,7 +198,7 @@ export default function Ganancias() {
               </div>
             </section>
           </>
-        ) : !error ? <p className="cargando">Cargando…</p> : null}
+        ) : !error ? <p className="cargando" role="status">Cargando…</p> : null}
       </main>
     </div>
   );

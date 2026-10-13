@@ -8,7 +8,7 @@ export default function Barra() {
     <header className="barra">
       <div className="barra-izquierda">
         <img className="barra-logo" src="/logo-circular.png" alt="Nelson Express" />
-        <nav className="barra-nav">
+        <nav className="barra-nav" aria-label="Principal">
           <NavLink to="/" end>Despacho</NavLink>
           <NavLink to="/encargo">Nuevo encargo</NavLink>
           <NavLink to="/ganancias">Ganancias</NavLink>

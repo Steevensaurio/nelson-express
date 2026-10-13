@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
-import { Text, View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colorEstado, esFinal } from '../constants/estados';
-import { colores, sombraTarjeta } from '../constants/tema';
+import { colorEstado, esFinal, etiquetaEstado } from '../constants/estados';
+import { colores, radio } from '../constants/tema';
+import { Icono, Insignia, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -52,166 +52,152 @@ export default function MisEntregasScreen({ navigation }) {
 
   return (
     <View style={styles.pantalla}>
-      <View style={styles.filtros}>
+      <View style={styles.filtros} accessibilityRole="tablist">
         {[
           { texto: 'En curso', cantidad: enCurso.length, historial: false },
           { texto: 'Historial', cantidad: historial.length, historial: true },
-        ].map((f) => (
-          <TouchableOpacity
-            key={f.texto}
-            style={[styles.filtro, verHistorial === f.historial && styles.filtroActivo]}
-            onPress={() => setVerHistorial(f.historial)}
-          >
-            <Text style={[styles.filtroTexto, verHistorial === f.historial && styles.filtroTextoActivo]}>
-              {f.texto} ({f.cantidad})
-            </Text>
-          </TouchableOpacity>
-        ))}
+        ].map((f) => {
+          const activo = verHistorial === f.historial;
+          return (
+            <Pressable
+              key={f.texto}
+              accessibilityRole="tab"
+              aria-selected={activo}
+              accessibilityLabel={`${f.texto}, ${f.cantidad} ${f.cantidad === 1 ? 'entrega' : 'entregas'}`}
+              style={[styles.filtro, activo && styles.filtroActivo]}
+              onPress={() => setVerHistorial(f.historial)}
+            >
+              <Text style={[styles.filtroTexto, activo && styles.filtroTextoActivo]}>{f.texto}</Text>
+              <View style={[styles.contador, activo && styles.contadorActivo]}>
+                <Text style={[styles.contadorTexto, activo && styles.contadorTextoActivo]}>{f.cantidad}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
       <FlatList
         ref={lista}
         style={styles.container}
+        contentContainerStyle={styles.lista}
         data={verHistorial ? historial : enCurso}
         refreshing={refrescando}
         onRefresh={refrescar}
         keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={
-          <Text style={styles.vacio}>
-            {verHistorial ? 'Aún no tienes entregas finalizadas' : 'No tienes entregas en curso'}
-          </Text>
+          <View style={styles.vacio}>
+            <Icono nombre={verHistorial ? 'archive-outline' : 'bicycle'} tamano={44} color={colores.suave} />
+            <Text style={styles.vacioTexto}>
+              {verHistorial ? 'Aún no tienes entregas finalizadas' : 'No tienes entregas en curso'}
+            </Text>
+          </View>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card, esFinal(item.estado) && styles.cardFinalizada]}
-            onPress={() => navigation.navigate('EntregaDetalle', { entrega: item })}
-          >
-            <View style={styles.encabezado}>
-              <Text style={styles.numero}>
-                #{item.id}
-                {item.costo_envio != null ? `  ·  $${parseFloat(item.costo_envio).toFixed(2)}` : ''}
-              </Text>
-              <View style={[styles.badge, { backgroundColor: colorEstado[item.estado] }]}>
-                <Text style={styles.badgeTexto}>{item.estado}</Text>
-              </View>
-            </View>
+        renderItem={({ item }) => {
+          const valor = item.costo_envio != null ? `$${parseFloat(item.costo_envio).toFixed(2)}` : null;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Entrega ${item.id}${valor ? `, ${valor}` : ''}. Estado: ${etiquetaEstado[item.estado]}. Recoger en ${item.recogida.nombre}, ${item.recogida.direccion}. Entregar en ${item.destino_direccion}. Ver detalle`}
+              onPress={() => navigation.navigate('EntregaDetalle', { entrega: item })}
+              android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
+            >
+              <View style={[styles.franja, { backgroundColor: colorEstado[item.estado] }]} />
+              <View style={styles.cuerpo}>
+                <View style={styles.encabezado}>
+                  <Insignia estado={item.estado} />
+                  <View style={styles.precioCol}>
+                    {valor ? <Text style={styles.precio}>{valor}</Text> : null}
+                    <Text style={styles.numero}>#{item.id}</Text>
+                  </View>
+                </View>
 
-            <View style={styles.fila}>
-              <Ionicons name="storefront-outline" size={16} color={colores.tenue} />
-              <View style={styles.filaContenido}>
-                <Text style={styles.etiqueta}>Recoger en</Text>
-                <Text style={styles.valor}>{item.recogida.nombre} · {item.recogida.direccion}</Text>
-              </View>
-            </View>
+                <View style={styles.fila}>
+                  <View style={styles.filaIcono}>
+                    <Icono nombre={item.tipo === 'ENCARGO' ? 'cube-outline' : 'storefront-outline'} tamano={18} color={colores.primarioOscuro} />
+                  </View>
+                  <View style={styles.filaContenido}>
+                    <Text style={styles.etiqueta}>Recoger en</Text>
+                    <Text style={styles.valor}>{item.recogida.nombre}</Text>
+                    <Text style={styles.detalle}>{item.recogida.direccion}</Text>
+                  </View>
+                </View>
 
-            <View style={styles.fila}>
-              <Ionicons name="location-outline" size={16} color={colores.tenue} />
-              <View style={styles.filaContenido}>
-                <Text style={styles.etiqueta}>Entregar en</Text>
-                <Text style={styles.valor}>{item.destino_direccion}</Text>
-                {item.destino_referencia ? (
-                  <Text style={styles.referencia}>{item.destino_referencia}</Text>
-                ) : null}
+                <View style={styles.fila}>
+                  <View style={styles.filaIcono}>
+                    <Icono nombre="location-outline" tamano={18} color={colores.primarioOscuro} />
+                  </View>
+                  <View style={styles.filaContenido}>
+                    <Text style={styles.etiqueta}>Entregar en</Text>
+                    <Text style={styles.valor}>{item.destino_direccion}</Text>
+                    {item.destino_referencia ? <Text style={styles.referencia}>{item.destino_referencia}</Text> : null}
+                  </View>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
+              <Icono nombre="chevron-forward" tamano={20} color={colores.suave} estilo={styles.flecha} />
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colores.fondo,
-  },
-  pantalla: {
-    flex: 1,
-    backgroundColor: colores.fondo,
-  },
-  filtros: {
-    flexDirection: 'row',
-    gap: 8,
-    padding: 12,
-    paddingBottom: 4,
-  },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
+  container: { backgroundColor: colores.fondo },
+  lista: { padding: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
+  filtros: { flexDirection: 'row', gap: 10, padding: 12, paddingBottom: 4 },
   filtro: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: colores.tarjeta,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    minHeight: 48,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  filtroActivo: {
-    backgroundColor: colores.primario,
-    borderColor: colores.primario,
-  },
-  filtroTexto: {
-    fontWeight: '600',
-    color: colores.tenue,
-  },
-  filtroTextoActivo: {
-    color: '#fff',
-  },
-  card: {
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: radio.pastilla,
     backgroundColor: colores.tarjeta,
+    borderWidth: 1.5,
+    borderColor: colores.bordeCampo,
+  },
+  filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
+  filtroTexto: { fontWeight: '700', fontSize: 15, color: colores.tenue },
+  filtroTextoActivo: { color: '#fff' },
+  contador: {
+    minWidth: 24,
+    height: 24,
     borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    marginVertical: 6,
-    ...sombraTarjeta,
-  },
-  cardFinalizada: {
-    opacity: 0.7,
-  },
-  encabezado: {
-    flexDirection: 'row',
+    paddingHorizontal: 6,
+    backgroundColor: '#e8edf0',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    justifyContent: 'center',
   },
-  numero: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colores.texto,
+  contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
+  contadorTexto: { fontSize: 13, fontWeight: '800', color: colores.tenue },
+  contadorTextoActivo: { color: '#fff' },
+
+  card: { ...estiloTarjeta, padding: 0, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  cardPresionada: { opacity: 0.9 },
+  franja: { width: 6, alignSelf: 'stretch' },
+  cuerpo: { flex: 1, padding: 14 },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  precioCol: { alignItems: 'flex-end' },
+  precio: { fontSize: 22, fontWeight: '800', color: colores.verde },
+  numero: { fontSize: 13, fontWeight: '700', color: colores.suave },
+  fila: { flexDirection: 'row', gap: 12, marginTop: 14 },
+  filaIcono: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colores.acentoSuave,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badge: {
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  badgeTexto: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  fila: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
-  filaContenido: {
-    flex: 1,
-  },
-  etiqueta: {
-    fontSize: 12,
-    color: colores.suave,
-  },
-  valor: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colores.texto,
-  },
-  referencia: {
-    fontSize: 13,
-    color: colores.tenue,
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  vacio: {
-    textAlign: 'center',
-    color: colores.suave,
-    marginVertical: 24,
-  },
+  filaContenido: { flex: 1 },
+  etiqueta: { fontSize: 12, fontWeight: '700', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4 },
+  valor: { fontSize: 16, fontWeight: '700', color: colores.texto, marginTop: 1 },
+  detalle: { fontSize: 14, color: colores.tenue, marginTop: 1 },
+  referencia: { fontSize: 14, color: colores.tenue, fontStyle: 'italic', marginTop: 2 },
+  flecha: { marginRight: 10 },
+  vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

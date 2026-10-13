@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colores, radio } from '../constants/tema';
+import { Boton, Icono } from './ui';
 
 // Mismo mapa gratuito (Leaflet + OpenStreetMap, sin API key) que ya usa el panel del despachador,
 // cargado en un WebView: react-native-maps solo funciona con Google Maps en Android y necesita una
@@ -61,6 +64,7 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
   const [cargando, setCargando] = useState(!coordenadaInicial);
   const [confirmando, setConfirmando] = useState(false);
   const webviewRef = useRef(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (coordenadaInicial) return;
@@ -109,9 +113,9 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
 
   if (cargando) {
     return (
-      <View style={styles.cargandoContainer}>
-        <ActivityIndicator size="large" color="#007cab" />
-        <Text style={styles.cargandoTexto}>Obteniendo tu ubicación...</Text>
+      <View style={styles.cargandoContainer} accessibilityLiveRegion="polite">
+        <ActivityIndicator size="large" color={colores.primario} />
+        <Text style={styles.cargandoTexto}>Obteniendo tu ubicación…</Text>
       </View>
     );
   }
@@ -131,90 +135,80 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
         originWhitelist={['*']}
         source={{ html }}
         onMessage={recibirMensaje}
+        accessibilityLabel="Mapa para elegir la ubicación. Toca un punto para marcarlo"
       />
 
-      <View style={styles.ayuda}>
+      <View style={[styles.ayuda, { top: insets.top + 64 }]} accessibilityLiveRegion="polite">
+        <Icono nombre="information-circle" tamano={20} color={colores.primarioOscuro} />
         <Text style={styles.ayudaTexto}>
           {coordenada
-            ? 'Toca otro punto para ajustar, o "Confirmar" para usar este'
-            : 'No se pudo obtener tu ubicación — toca el mapa para marcarla a mano'}
+            ? 'Toca otro punto para ajustar, o confirma este'
+            : 'No se pudo obtener tu ubicación. Toca el mapa para marcarla a mano'}
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.cancelarBoton} onPress={onCancelar}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Cancelar"
+        onPress={onCancelar}
+        hitSlop={6}
+        style={({ pressed }) => [styles.cancelarBoton, { top: insets.top + 10 }, pressed && styles.cancelarPresionado]}
+      >
+        <Icono nombre="close" tamano={20} color={colores.peligro} />
         <Text style={styles.cancelarTexto}>Cancelar</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {coordenada && (
-        <TouchableOpacity
-          style={[styles.confirmarBoton, confirmando && styles.confirmarBotonOcupado]}
-          onPress={confirmar}
-          disabled={confirmando}
-        >
-          <Text style={styles.confirmarTexto}>
-            {confirmando ? 'Obteniendo dirección...' : 'Confirmar ubicación'}
-          </Text>
-        </TouchableOpacity>
+        <View style={[styles.barra, { paddingBottom: 12 + insets.bottom }]}>
+          <Boton
+            titulo={confirmando ? 'Obteniendo dirección…' : 'Confirmar ubicación'}
+            icono="checkmark"
+            onPress={confirmar}
+            cargando={confirmando}
+          />
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  cargandoContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cargandoTexto: {
-    marginTop: 10,
-    color: '#666',
-  },
-  mapa: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  cargandoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo },
+  cargandoTexto: { marginTop: 12, color: colores.tenue, fontSize: 16 },
+  mapa: { flex: 1 },
   ayuda: {
     position: 'absolute',
-    top: 50,
-    left: 10,
-    right: 10,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 10,
-    elevation: 3,
+    padding: 12,
+    borderRadius: radio.medio,
+    elevation: 4,
   },
-  ayudaTexto: {
-    textAlign: 'center',
-    fontSize: 13,
-  },
+  ayudaTexto: { flex: 1, fontSize: 14, color: colores.texto },
   cancelarBoton: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#fff',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    elevation: 3,
-  },
-  cancelarTexto: {
-    color: '#c0392b',
-    fontWeight: 'bold',
-  },
-  confirmarBoton: {
-    backgroundColor: '#007cab',
-    padding: 16,
+    left: 12,
+    minHeight: 44,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    borderRadius: radio.pastilla,
+    elevation: 4,
   },
-  confirmarBotonOcupado: {
-    backgroundColor: '#aaa',
-  },
-  confirmarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  cancelarPresionado: { backgroundColor: colores.peligroSuave },
+  cancelarTexto: { color: colores.peligro, fontWeight: '800', fontSize: 15 },
+  barra: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colores.borde,
   },
 });

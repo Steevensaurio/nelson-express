@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from '../components/SelectorMapa';
+import { colores, radio } from '../constants/tema';
+import { Boton, Campo, Icono, estiloTarjeta } from '../components/ui';
 
 export default function MisDireccionesScreen() {
   const [direcciones, setDirecciones] = useState([]);
@@ -43,6 +45,7 @@ export default function MisDireccionesScreen() {
     setReferencia(item.referencia ?? '');
     setLat(item.lat.toString());
     setLng(item.lng.toString());
+    setError('');
     setMostrarFormulario(true);
   };
 
@@ -55,6 +58,7 @@ export default function MisDireccionesScreen() {
     setReferencia('');
     setLat('');
     setLng('');
+    setError('');
   };
 
   const guardar = async () => {
@@ -79,71 +83,101 @@ export default function MisDireccionesScreen() {
     cancelar();
   };
 
+  const formulario = mostrarFormulario ? (
+    <View style={styles.formulario}>
+      <Text accessibilityRole="header" style={styles.formularioTitulo}>
+        {editandoId ? 'Editar dirección' : 'Nueva dirección'}
+      </Text>
+
+      <Campo etiqueta="Etiqueta" value={etiqueta} onChangeText={setEtiqueta} placeholder="Ej. Casa, Trabajo" />
+
+      <Text style={styles.etiquetaMapa}>Ubicación</Text>
+      <Boton
+        titulo={lat && lng ? `Ubicación elegida (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})` : 'Elegir ubicación en el mapa'}
+        variante="secundario"
+        icono={lat && lng ? 'location' : 'map-outline'}
+        onPress={() => setMostrarMapa(true)}
+        estilo={styles.botonMapa}
+      />
+
+      <Campo
+        etiqueta="Dirección"
+        value={direccion}
+        onChangeText={setDireccion}
+        bloqueado={direccionBloqueada}
+        placeholder="Se completa al elegir en el mapa"
+        ayuda={direccionBloqueada ? 'Tomada del mapa. Vuelve a elegir el punto para cambiarla.' : undefined}
+      />
+      <Campo
+        etiqueta="Referencia"
+        value={referencia}
+        onChangeText={setReferencia}
+        maxLength={255}
+        placeholder="Ej. casa de dos pisos, portón verde"
+      />
+
+      {error ? (
+        <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
+          <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
+          <Text style={styles.errorTexto}>{error}</Text>
+        </View>
+      ) : null}
+
+      <Boton
+        titulo={editandoId ? 'Guardar cambios' : 'Guardar dirección'}
+        icono="checkmark"
+        onPress={guardar}
+        deshabilitado={!(lat && lng)}
+      />
+      {editandoId ? (
+        <Boton titulo="Eliminar dirección" variante="peligroSuave" icono="trash-outline" onPress={eliminar} estilo={styles.espacio} />
+      ) : null}
+      <Boton titulo="Cancelar" variante="fantasma" onPress={cancelar} estilo={styles.espacio} />
+    </View>
+  ) : (
+    <Boton
+      titulo="Agregar nueva dirección"
+      icono="add-circle-outline"
+      variante="secundario"
+      onPress={() => setMostrarFormulario(true)}
+      estilo={styles.agregar}
+    />
+  );
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <FlatList
         data={direcciones}
         keyExtractor={(item) => item.id.toString()}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.lista}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => empezarEdicion(item)}>
-            <Text style={styles.etiqueta}>{item.etiqueta}</Text>
-            <Text style={styles.direccion}>{item.direccion}</Text>
-            {item.referencia ? <Text style={styles.referencia}>{item.referencia}</Text> : null}
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={<Text style={styles.vacio}>Todavía no tienes direcciones guardadas</Text>}
-      />
-
-      {mostrarFormulario ? (
-        <View style={styles.formulario}>
-          <TextInput style={styles.input} value={etiqueta} onChangeText={setEtiqueta} placeholder="Etiqueta (ej. Casa)" />
-
-          <TouchableOpacity style={styles.mapaBoton} onPress={() => setMostrarMapa(true)}>
-            <Text style={styles.mapaBotonTexto}>
-              {lat && lng ? `📍 Ubicación elegida (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})` : '📍 Elegir ubicación en el mapa'}
-            </Text>
-          </TouchableOpacity>
-
-          <TextInput
-            style={[styles.input, direccionBloqueada && styles.inputBloqueado]}
-            value={direccion}
-            onChangeText={setDireccion}
-            editable={!direccionBloqueada}
-            placeholder="Dirección (se completa al elegir en el mapa)"
-          />
-          <TextInput
-            style={styles.input}
-            value={referencia}
-            onChangeText={setReferencia}
-            maxLength={255}
-            placeholder="Referencia (ej. casa de dos pisos, al lado de la tienda azul)"
-          />
-
-          <TouchableOpacity
-            style={[styles.guardarBoton, !(lat && lng) && styles.guardarBotonDeshabilitado]}
-            disabled={!(lat && lng)}
-            onPress={guardar}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${item.etiqueta}. ${item.direccion}. Editar`}
+            onPress={() => empezarEdicion(item)}
+            android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPresionada, item.id === editandoId && styles.cardEditando]}
           >
-            <Text style={styles.guardarTexto}>{editandoId ? 'Guardar cambios' : 'Guardar dirección'}</Text>
-          </TouchableOpacity>
-          {editandoId && (
-            <TouchableOpacity style={styles.eliminarBoton} onPress={eliminar}>
-              <Text style={styles.eliminarTexto}>Eliminar dirección</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={cancelar}>
-            <Text style={styles.cancelarTexto}>Cancelar</Text>
-          </TouchableOpacity>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.agregarBoton} onPress={() => setMostrarFormulario(true)}>
-          <Text style={styles.agregarTexto}>+ Agregar nueva dirección</Text>
-        </TouchableOpacity>
-      )}
+            <View style={styles.cardIcono}>
+              <Icono nombre="location-outline" tamano={22} color={colores.primarioOscuro} />
+            </View>
+            <View style={styles.cardCuerpo}>
+              <Text style={styles.etiqueta}>{item.etiqueta}</Text>
+              <Text style={styles.direccion}>{item.direccion}</Text>
+              {item.referencia ? <Text style={styles.referencia}>{item.referencia}</Text> : null}
+            </View>
+            <Icono nombre="create-outline" tamano={20} color={colores.suave} />
+          </Pressable>
+        )}
+        ListEmptyComponent={
+          <View style={styles.vacio}>
+            <Icono nombre="location-outline" tamano={44} color={colores.suave} />
+            <Text style={styles.vacioTexto}>Todavía no tienes direcciones guardadas</Text>
+          </View>
+        }
+        ListFooterComponent={formulario}
+      />
 
       <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
         <SelectorMapa
@@ -157,104 +191,39 @@ export default function MisDireccionesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 16,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-  },
-  etiqueta: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  direccion: {
-    fontSize: 13,
-    color: '#666',
-  },
-  referencia: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  inputBloqueado: {
-    backgroundColor: '#eee',
-    color: '#666',
-  },
-  vacio: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 40,
-  },
-  formulario: {
-    marginTop: 10,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBoton: {
-    backgroundColor: '#fff',
-    borderColor: '#007cab',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBotonTexto: {
-    color: '#007cab',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  guardarBoton: {
-    backgroundColor: '#007cab',
-    padding: 12,
-    borderRadius: 12,
+  container: { flex: 1, backgroundColor: colores.fondo },
+  lista: { padding: 16, paddingBottom: 32, gap: 12 },
+  card: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
+  cardPresionada: { opacity: 0.9 },
+  cardEditando: { borderWidth: 2, borderColor: colores.primario },
+  cardIcono: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colores.acentoSuave,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  guardarBotonDeshabilitado: {
-    backgroundColor: '#aaa',
-  },
-  guardarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  eliminarBoton: {
-    backgroundColor: '#c0392b',
-    padding: 12,
-    borderRadius: 12,
+  cardCuerpo: { flex: 1 },
+  etiqueta: { fontSize: 16, fontWeight: '800', color: colores.texto },
+  direccion: { fontSize: 14, color: colores.tenue, marginTop: 2 },
+  referencia: { fontSize: 13, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
+  vacio: { alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 16 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  formulario: { ...estiloTarjeta, marginTop: 4 },
+  formularioTitulo: { fontSize: 18, fontWeight: '800', color: colores.texto, marginBottom: 14 },
+  etiquetaMapa: { fontSize: 14, fontWeight: '600', color: colores.texto, marginBottom: 6 },
+  botonMapa: { marginBottom: 14 },
+  espacio: { marginTop: 10 },
+  agregar: { marginTop: 4 },
+  errorCaja: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-  },
-  eliminarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelarTexto: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 10,
-  },
-  agregarBoton: {
+    gap: 8,
+    backgroundColor: colores.peligroSuave,
+    borderRadius: radio.chico,
     padding: 12,
-    alignItems: 'center',
+    marginBottom: 14,
   },
-  agregarTexto: {
-    color: '#007cab',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
-  },
+  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
 });

@@ -23,10 +23,10 @@ export default function Login() {
   };
 
   return (
-    <main className="login">
+    <main className="login" id="contenido">
       <img className="login-logo" src="/logo-circular.png" alt="Nelson Express" />
       <form className="login-tarjeta" onSubmit={enviar}>
-        <p className="login-sub">Panel de despacho</p>
+        <h1 className="login-sub">Panel de despacho</h1>
 
         <label>
           Usuario
@@ -37,7 +37,7 @@ export default function Login() {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         </label>
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? <p className="error" role="alert">{error}</p> : null}
 
         <button type="submit" disabled={enviando || !username.trim() || !password}>
           {enviando ? 'Ingresando…' : 'Ingresar'}

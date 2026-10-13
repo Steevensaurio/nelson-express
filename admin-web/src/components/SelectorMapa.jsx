@@ -25,16 +25,29 @@ async function direccionDesdeCoordenadas(lat, lng) {
   return datos.display_name ?? '';
 }
 
+// Acepta "-0.2530, -79.1730" (con coma, punto y coma o espacio) y valida los rangos reales.
+function leerCoordenadas(texto) {
+  const m = texto.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lng = Number(m[2]);
+  return Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null;
+}
+
 function Clics({ onElegir }) {
   useMapEvents({ click: (e) => onElegir(e.latlng.lat, e.latlng.lng) });
   return null;
 }
 
 // Mapa para elegir un punto: un clic coloca el marcador (se puede arrastrar después) y autocompleta
-// la dirección. onChange recibe {lat, lng, direccion}; direccion llega null si falla la búsqueda,
-// para no borrar lo que el despachador ya haya escrito a mano.
-export default function SelectorMapa({ value, onChange }) {
+// la dirección. También se puede escribir "lat, lng", para quien no use el puntero. onChange recibe
+// {lat, lng, direccion}; direccion llega null si falla la búsqueda, para no borrar lo que el
+// despachador ya haya escrito a mano.
+export default function SelectorMapa({ value, onChange, etiqueta = 'Mapa' }) {
   const [buscando, setBuscando] = useState(false);
+  const [texto, setTexto] = useState('');
+  const [errorTexto, setErrorTexto] = useState('');
+  const idError = `error-coordenadas-${etiqueta.replace(/\s+/g, '-').toLowerCase()}`;
 
   const elegir = async (lat, lng) => {
     onChange({ lat, lng, direccion: null });
@@ -48,8 +61,20 @@ export default function SelectorMapa({ value, onChange }) {
     }
   };
 
+  const aplicarTexto = () => {
+    if (!texto.trim()) return;
+    const punto = leerCoordenadas(texto);
+    if (!punto) {
+      setErrorTexto('Escribe latitud y longitud separadas por coma, por ejemplo -0.2530, -79.1730.');
+      return;
+    }
+    setErrorTexto('');
+    setTexto('');
+    elegir(punto.lat, punto.lng);
+  };
+
   return (
-    <div className="selector-mapa campo-ancho">
+    <div className="selector-mapa campo-ancho" role="group" aria-label={etiqueta}>
       <MapContainer
         center={value ?? CENTRO_SANTO_DOMINGO}
         zoom={value ? 16 : 13}
@@ -68,7 +93,28 @@ export default function SelectorMapa({ value, onChange }) {
           />
         ) : null}
       </MapContainer>
-      <p className="selector-mapa-ayuda">
+
+      <label className="selector-mapa-coordenadas">
+        O escribe las coordenadas (latitud, longitud)
+        <input
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={aplicarTexto}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              aplicarTexto();
+            }
+          }}
+          placeholder="-0.2530, -79.1730"
+          inputMode="decimal"
+          aria-invalid={errorTexto ? 'true' : undefined}
+          aria-describedby={errorTexto ? idError : undefined}
+        />
+      </label>
+      {errorTexto ? <p className="error" id={idError} role="alert">{errorTexto}</p> : null}
+
+      <p className="selector-mapa-ayuda" role="status">
         {value
           ? buscando
             ? 'Buscando la dirección…'

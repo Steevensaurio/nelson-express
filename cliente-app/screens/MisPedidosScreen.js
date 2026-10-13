@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
-import { Text, View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colorEstado, esFinal } from '../constants/estados';
+import { colorEstado, esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
+import { colores, radio } from '../constants/tema';
+import { Icono, Insignia, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -51,51 +53,78 @@ export default function MisPedidosScreen({ navigation }) {
 
   return (
     <View style={styles.pantalla}>
-      <View style={styles.filtros}>
+      <View style={styles.filtros} accessibilityRole="tablist">
         {[
           { texto: 'Activos', cantidad: activos.length, historial: false },
           { texto: 'Historial', cantidad: historial.length, historial: true },
-        ].map((f) => (
-          <TouchableOpacity
-            key={f.texto}
-            style={[styles.filtro, verHistorial === f.historial && styles.filtroActivo]}
-            onPress={() => setVerHistorial(f.historial)}
-          >
-            <Text style={[styles.filtroTexto, verHistorial === f.historial && styles.filtroTextoActivo]}>
-              {f.texto} ({f.cantidad})
-            </Text>
-          </TouchableOpacity>
-        ))}
+        ].map((f) => {
+          const activo = verHistorial === f.historial;
+          return (
+            <Pressable
+              key={f.texto}
+              accessibilityRole="tab"
+              aria-selected={activo}
+              accessibilityLabel={`${f.texto}, ${f.cantidad} ${f.cantidad === 1 ? 'pedido' : 'pedidos'}`}
+              style={[styles.filtro, activo && styles.filtroActivo]}
+              onPress={() => setVerHistorial(f.historial)}
+            >
+              <Text style={[styles.filtroTexto, activo && styles.filtroTextoActivo]}>{f.texto}</Text>
+              <View style={[styles.contador, activo && styles.contadorActivo]}>
+                <Text style={[styles.contadorTexto, activo && styles.contadorTextoActivo]}>{f.cantidad}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
       <FlatList
         ref={lista}
         style={styles.container}
+        contentContainerStyle={styles.lista}
         refreshing={refrescando}
         onRefresh={refrescar}
         data={verHistorial ? historial : activos}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => {
           const total = item.detalles.reduce((suma, d) => suma + d.precio_unitario * d.cantidad, 0) + parseFloat(item.costo_envio ?? 0);
+          const esEncargo = item.tipo === 'ENCARGO';
+          const titulo = esEncargo ? `Encargo: ${item.descripcion}` : item.negocio.nombre;
           return (
-            <TouchableOpacity
-              style={styles.card}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${titulo}. Estado: ${etiquetaEstado[item.estado]}. Entrega en ${item.destino_direccion}. Ver detalle`}
               onPress={() => navigation.navigate('PedidoDetalle', { pedido: item })}
+              android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
             >
-              <View style={[styles.badge, { backgroundColor: colorEstado[item.estado] }]}>
-                <Text style={styles.badgeTexto}>{item.estado}</Text>
+              <View style={[styles.franja, { backgroundColor: colorEstado[item.estado] }]} />
+              <View style={styles.cuerpo}>
+                <View style={styles.encabezado}>
+                  <Insignia estado={item.estado} />
+                  <Text style={styles.numero}>#{item.id}</Text>
+                </View>
+                <View style={styles.titular}>
+                  <View style={styles.tipoIcono}>
+                    <Icono nombre={esEncargo ? 'cube-outline' : 'restaurant-outline'} tamano={18} color={colores.primarioOscuro} />
+                  </View>
+                  <Text style={styles.nombre} numberOfLines={1}>{titulo}</Text>
+                </View>
+                <View style={styles.destinoFila}>
+                  <Icono nombre="location-outline" tamano={15} color={colores.suave} />
+                  <Text style={styles.destino} numberOfLines={2}>{item.destino_direccion}</Text>
+                </View>
+                {MOSTRAR_PRECIOS ? <Text style={styles.total}>${total.toFixed(2)}</Text> : null}
               </View>
-              <Text style={styles.nombre} numberOfLines={1}>
-                {item.tipo === 'ENCARGO' ? `Encargo: ${item.descripcion}` : item.negocio.nombre}
-              </Text>
-              <Text style={styles.destino}>{item.destino_direccion}</Text>
-              {MOSTRAR_PRECIOS ? <Text style={styles.total}>${total.toFixed(2)}</Text> : null}
-            </TouchableOpacity>
+              <Icono nombre="chevron-forward" tamano={20} color={colores.suave} estilo={styles.flecha} />
+            </Pressable>
           );
         }}
         ListEmptyComponent={
-          <Text style={styles.vacio}>
-            {verHistorial ? 'Aún no tienes pedidos entregados ni cancelados' : 'No tienes pedidos activos'}
-          </Text>
+          <View style={styles.vacio}>
+            <Icono nombre={verHistorial ? 'archive-outline' : 'receipt-outline'} tamano={44} color={colores.suave} />
+            <Text style={styles.vacioTexto}>
+              {verHistorial ? 'Aún no tienes pedidos entregados ni cancelados' : 'No tienes pedidos activos'}
+            </Text>
+          </View>
         }
       />
     </View>
@@ -103,79 +132,57 @@ export default function MisPedidosScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  pantalla: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-  },
-  filtros: {
-    flexDirection: 'row',
-    gap: 8,
-    padding: 12,
-    paddingBottom: 4,
-  },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
+  filtros: { flexDirection: 'row', gap: 10, padding: 12, paddingBottom: 4 },
   filtro: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
+    minHeight: 48,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  filtroActivo: {
-    backgroundColor: '#007cab',
-    borderColor: '#007cab',
-  },
-  filtroTexto: {
-    fontWeight: '600',
-    color: '#666',
-  },
-  filtroTextoActivo: {
-    color: '#fff',
-  },
-  container: {
-    backgroundColor: '#f2f2f2',
-  },
-  card: {
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: radio.pastilla,
     backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: colores.bordeCampo,
+  },
+  filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
+  filtroTexto: { fontWeight: '700', fontSize: 15, color: colores.tenue },
+  filtroTextoActivo: { color: '#fff' },
+  contador: {
+    minWidth: 24,
+    height: 24,
     borderRadius: 12,
-    padding: 16,
-    margin: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    paddingHorizontal: 6,
+    backgroundColor: '#e8edf0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+  contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
+  contadorTexto: { fontSize: 13, fontWeight: '800', color: colores.tenue },
+  contadorTextoActivo: { color: '#fff' },
+  container: { backgroundColor: colores.fondo },
+  lista: { padding: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
+  card: { ...estiloTarjeta, padding: 0, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  cardPresionada: { opacity: 0.9 },
+  franja: { width: 6, alignSelf: 'stretch' },
+  cuerpo: { flex: 1, padding: 14 },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  numero: { fontSize: 13, fontWeight: '700', color: colores.suave },
+  titular: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  tipoIcono: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colores.acentoSuave,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeTexto: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  nombre: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  destino: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  total: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginTop: 8,
-  },
-  vacio: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 40,
-  },
+  nombre: { flex: 1, fontSize: 17, fontWeight: '800', color: colores.texto },
+  destinoFila: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginTop: 8 },
+  destino: { flex: 1, fontSize: 14, color: colores.tenue },
+  total: { fontSize: 16, fontWeight: '800', marginTop: 8 },
+  flecha: { marginRight: 10 },
+  vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

@@ -38,8 +38,9 @@ function MainTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         ...opcionesCabecera,
-        tabBarActiveTintColor: colores.primario,
-        tabBarInactiveTintColor: '#8a8a8a',
+        tabBarActiveTintColor: colores.primarioOscuro,
+        tabBarInactiveTintColor: colores.suave,
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
         tabBarStyle: { backgroundColor: colores.tarjeta, borderTopColor: colores.borde },
       })}
     >

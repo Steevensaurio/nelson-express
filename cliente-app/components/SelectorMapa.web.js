@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { colores, radio } from '../constants/tema';
+import { Boton, Campo, Icono } from './ui';
 
 export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicial }) {
   const [lat, setLat] = useState(coordenadaInicial ? coordenadaInicial.latitude.toString() : '');
@@ -11,54 +13,31 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
 
   return (
     <View style={styles.container}>
-      <Text style={styles.aviso}>
-        El mapa interactivo solo funciona en la app móvil (Expo Go). Esta es una versión de respaldo para seguir probando en el navegador durante el desarrollo.
-      </Text>
-      <TextInput style={styles.input} value={lat} onChangeText={setLat} placeholder="Latitud" keyboardType="numeric" />
-      <TextInput style={styles.input} value={lng} onChangeText={setLng} placeholder="Longitud" keyboardType="numeric" />
-      <TouchableOpacity style={styles.confirmarBoton} onPress={confirmar}>
-        <Text style={styles.confirmarTexto}>Confirmar ubicación</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onCancelar}>
-        <Text style={styles.cancelarTexto}>Cancelar</Text>
-      </TouchableOpacity>
+      <View style={styles.aviso}>
+        <Icono nombre="information-circle-outline" tamano={20} color={colores.primarioOscuro} />
+        <Text style={styles.avisoTexto}>
+          El mapa interactivo solo funciona en la app móvil. Esta es una versión de respaldo para seguir probando en el navegador durante el desarrollo.
+        </Text>
+      </View>
+      <Campo etiqueta="Latitud" value={lat} onChangeText={setLat} placeholder="Ej. -0.2530" keyboardType="numeric" />
+      <Campo etiqueta="Longitud" value={lng} onChangeText={setLng} placeholder="Ej. -79.1730" keyboardType="numeric" />
+      <Boton titulo="Confirmar ubicación" icono="checkmark" onPress={confirmar} deshabilitado={!(lat && lng)} />
+      <Boton titulo="Cancelar" variante="fantasma" onPress={onCancelar} estilo={styles.cancelar} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 16,
-  },
+  container: { flex: 1, backgroundColor: colores.fondo, padding: 16 },
   aviso: {
-    color: '#666',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.medio,
+    padding: 14,
     marginBottom: 16,
-    fontSize: 13,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  confirmarBoton: {
-    backgroundColor: '#007cab',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  confirmarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelarTexto: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 14,
-  },
+  avisoTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
+  cancelar: { marginTop: 10 },
 });

@@ -55,10 +55,18 @@ export default function NuevoEncargo() {
     return () => { vigente = false; };
   }, [recogida?.lat, recogida?.lng, destino?.lat, destino?.lng]);
 
-  const completo =
-    f.clienteNombre.trim() && f.clienteTelefono.trim() && f.descripcion.trim() && f.recogidaDireccion.trim() &&
-    recogida && f.destinoDireccion.trim() && destino &&
-    (!f.pagar || Number(f.monto) > 0);
+  // Lo que falta para poder crear el encargo: se muestra junto al botón en vez de dejarlo apagado sin explicación.
+  const faltan = [
+    !f.clienteNombre.trim() && 'nombre del cliente',
+    !f.clienteTelefono.trim() && 'teléfono del cliente',
+    !f.descripcion.trim() && 'qué recoger',
+    !recogida && 'punto de recogida en el mapa',
+    !f.recogidaDireccion.trim() && 'dirección de recogida',
+    f.pagar && !(Number(f.monto) > 0) && 'monto que debe pagar el motorizado',
+    !destino && 'punto de entrega en el mapa',
+    !f.destinoDireccion.trim() && 'dirección de entrega',
+  ].filter(Boolean);
+  const completo = faltan.length === 0;
 
   const crear = async (evento) => {
     evento.preventDefault();
@@ -96,19 +104,19 @@ export default function NuevoEncargo() {
   return (
     <div className="pagina">
       <Barra />
-      <main className="contenido">
-        <h2>Nuevo encargo</h2>
+      <main className="contenido" id="contenido">
+        <h1>Nuevo encargo</h1>
         <p className="tenue">
           Para clientes que piden por llamada o WhatsApp. Se crea a su nombre y queda Pendiente en el panel de despacho.
         </p>
 
         {creado ? (
-          <p className="aviso-ok">
+          <p className="aviso-ok" role="status">
             Encargo #{creado.id} creado para {creado.cliente.nombre} (envío ${Number(creado.costo_envio).toFixed(2)}).{' '}
             <Link to="/">Ver en Despacho</Link>
           </p>
         ) : null}
-        {error ? <p className="error-banner">{error}</p> : null}
+        {error ? <p className="error-banner" role="alert">{error}</p> : null}
 
         <form className="formulario-encargo" onSubmit={crear}>
           <fieldset>
@@ -128,7 +136,7 @@ export default function NuevoEncargo() {
 
           <fieldset>
             <legend>Recogida</legend>
-            <SelectorMapa value={f.recogida} onChange={elegirEnMapa('recogida', 'recogidaDireccion')} />
+            <SelectorMapa etiqueta="Mapa de recogida" value={f.recogida} onChange={elegirEnMapa('recogida', 'recogidaDireccion')} />
             <label>Dirección<input {...texto('recogidaDireccion')} /></label>
             <label>Referencia<input {...texto('recogidaReferencia')} /></label>
             <div className="grupo-contacto campo-ancho">
@@ -147,7 +155,7 @@ export default function NuevoEncargo() {
 
           <fieldset>
             <legend>Entrega</legend>
-            <SelectorMapa value={f.destino} onChange={elegirEnMapa('destino', 'destinoDireccion')} />
+            <SelectorMapa etiqueta="Mapa de entrega" value={f.destino} onChange={elegirEnMapa('destino', 'destinoDireccion')} />
             <label>Dirección<input {...texto('destinoDireccion')} /></label>
             <label>Referencia<input {...texto('destinoReferencia')} /></label>
             <div className="grupo-contacto campo-ancho">
@@ -157,13 +165,17 @@ export default function NuevoEncargo() {
             </div>
           </fieldset>
 
+          <p className="tenue campo-ancho" id="faltan" role="status">
+            {completo ? '' : `Falta: ${faltan.join(', ')}.`}
+          </p>
+
           <div className="encargo-pie">
-            <span className="encargo-envio">
+            <span className="encargo-envio" role="status">
               {envio
                 ? `Envío: $${Number(envio.costo_envio).toFixed(2)} (${Number(envio.distancia_km).toFixed(1)} km)`
                 : 'El envío se calcula al indicar la recogida y la entrega'}
             </span>
-            <button type="submit" className="primario" disabled={!completo || !envio || enviando}>
+            <button type="submit" className="primario" disabled={!completo || !envio || enviando} aria-describedby="faltan">
               {enviando ? 'Creando…' : 'Crear encargo'}
             </button>
           </div>

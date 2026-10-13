@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Text, View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, sombraTarjeta } from '../constants/tema';
+import { colores, radio } from '../constants/tema';
+import { Icono, estiloTarjeta } from '../components/ui';
 
 const dosDigitos = (n) => String(n).padStart(2, '0');
 const aISO = (fecha) => `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
@@ -83,35 +84,62 @@ export default function CuentasScreen() {
       keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={
         <>
-          <View style={styles.atajos}>
-            {ATAJOS.map((a) => (
-              <TouchableOpacity
-                key={a.texto}
-                style={[styles.atajo, atajo === a.texto && styles.atajoActivo]}
-                onPress={() => elegirAtajo(a.texto)}
-              >
-                <Text style={[styles.atajoTexto, atajo === a.texto && styles.atajoTextoActivo]}>{a.texto}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.atajos} accessibilityRole="tablist">
+            {ATAJOS.map((a) => {
+              const activo = atajo === a.texto;
+              return (
+                <Pressable
+                  key={a.texto}
+                  accessibilityRole="tab"
+                  aria-selected={activo}
+                  accessibilityLabel={a.texto}
+                  style={[styles.atajo, activo && styles.atajoActivo]}
+                  onPress={() => elegirAtajo(a.texto)}
+                >
+                  <Text style={[styles.atajoTexto, activo && styles.atajoTextoActivo]}>{a.texto}</Text>
+                </Pressable>
+              );
+            })}
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
+          ) : null}
 
           {resumen && !cargando ? (
             <>
-              <View style={styles.tarjetaGrande}>
-                <Text style={styles.tarjetaGrandeNumero}>{resumen.carreras}</Text>
-                <Text style={styles.tarjetaGrandeTexto}>
-                  {resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}
-                </Text>
+              <View
+                style={styles.tarjetaGrande}
+                accessible
+                accessibilityLabel={`${resumen.carreras} ${resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}`}
+              >
+                <View style={styles.tarjetaGrandeIcono}>
+                  <Icono nombre="checkmark-done" tamano={26} color="#fff" />
+                </View>
+                <View>
+                  <Text style={styles.tarjetaGrandeNumero}>{resumen.carreras}</Text>
+                  <Text style={styles.tarjetaGrandeTexto}>
+                    {resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.filaTarjetas}>
-                <View style={[styles.tarjeta, styles.tarjetaDebes]}>
+                <View
+                  style={[styles.tarjeta, styles.tarjetaDebes]}
+                  accessible
+                  accessibilityLabel={`Debes entregar${porcentaje ? ` ${porcentaje}` : ''}: ${resumen.comision} dólares`}
+                >
+                  <Icono nombre="arrow-up-circle" tamano={26} color={colores.naranja} />
                   <Text style={styles.tarjetaNumero}>${resumen.comision}</Text>
                   <Text style={styles.tarjetaTexto}>Debes entregar{porcentaje ? ` (${porcentaje})` : ''}</Text>
                 </View>
-                <View style={[styles.tarjeta, styles.tarjetaGanas]}>
+                <View
+                  style={[styles.tarjeta, styles.tarjetaGanas]}
+                  accessible
+                  accessibilityLabel={`Te quedas tú: ${resumen.neto} dólares`}
+                >
+                  <Icono nombre="wallet" tamano={26} color={colores.verde} />
                   <Text style={styles.tarjetaNumero}>${resumen.neto}</Text>
                   <Text style={styles.tarjetaTexto}>Te quedas tú</Text>
                 </View>
@@ -120,19 +148,26 @@ export default function CuentasScreen() {
               <Text style={styles.totalGenerado}>Total generado en envíos: ${resumen.total}</Text>
 
               {resumen.sin_valor > 0 ? (
-                <Text style={styles.aviso}>
-                  {resumen.sin_valor} {resumen.sin_valor === 1 ? 'entrega no tiene' : 'entregas no tienen'} valor de
-                  envío registrado y cuentan como $0.00.
-                </Text>
+                <View style={styles.aviso}>
+                  <Icono nombre="information-circle" tamano={20} color={colores.naranja} />
+                  <Text style={styles.avisoTexto}>
+                    {resumen.sin_valor} {resumen.sin_valor === 1 ? 'entrega no tiene' : 'entregas no tienen'} valor de
+                    envío registrado y cuentan como $0.00.
+                  </Text>
+                </View>
               ) : null}
 
-              <Text style={styles.seccion}>Detalle</Text>
+              <Text accessibilityRole="header" style={styles.seccion}>Detalle</Text>
             </>
           ) : null}
         </>
       }
       renderItem={({ item }) => (
-        <View style={styles.fila}>
+        <View
+          style={styles.fila}
+          accessible
+          accessibilityLabel={`${item.recogida} hacia ${item.destino_direccion}, ${horaCorta(item.entregado_en)}, ${item.costo_envio != null ? `${item.costo_envio} dólares` : 'sin valor'}`}
+        >
           <View style={styles.filaInfo}>
             <Text style={styles.filaRecogida} numberOfLines={1}>{item.recogida}</Text>
             <Text style={styles.filaDestino} numberOfLines={1}>{item.destino_direccion}</Text>
@@ -142,155 +177,86 @@ export default function CuentasScreen() {
         </View>
       )}
       ListEmptyComponent={
-        !cargando ? <Text style={styles.vacio}>No tienes entregas completadas en este período.</Text> : null
+        !cargando ? (
+          <View style={styles.vacio}>
+            <Icono nombre="wallet-outline" tamano={44} color={colores.suave} />
+            <Text style={styles.vacioTexto}>No tienes entregas completadas en este período.</Text>
+          </View>
+        ) : null
       }
     />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colores.fondo,
-  },
-  contenido: {
-    padding: 16,
-  },
-  atajos: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
+  container: { backgroundColor: colores.fondo },
+  contenido: { padding: 16 },
+  atajos: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   atajo: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 20,
+    minHeight: 48,
+    borderRadius: radio.pastilla,
     backgroundColor: colores.tarjeta,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: 1.5,
+    borderColor: colores.bordeCampo,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  atajoActivo: {
-    backgroundColor: colores.primario,
-    borderColor: colores.primario,
-  },
-  atajoTexto: {
-    fontWeight: '600',
-    fontSize: 13,
-    color: colores.tenue,
-  },
-  atajoTextoActivo: {
-    color: '#fff',
-  },
+  atajoActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
+  atajoTexto: { fontWeight: '700', fontSize: 14, color: colores.tenue },
+  atajoTextoActivo: { color: '#fff' },
+
   tarjetaGrande: {
-    backgroundColor: colores.tarjeta,
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 10,
-    ...sombraTarjeta,
-  },
-  tarjetaGrandeNumero: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colores.texto,
-  },
-  tarjetaGrandeTexto: {
-    fontSize: 13,
-    color: colores.tenue,
-    marginTop: 2,
-  },
-  filaTarjetas: {
+    ...estiloTarjeta,
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  tarjeta: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    ...sombraTarjeta,
+    gap: 16,
+    marginBottom: 12,
   },
-  tarjetaDebes: {
-    backgroundColor: '#fff4e0',
+  tarjetaGrandeIcono: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colores.primario,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tarjetaGanas: {
-    backgroundColor: '#e6f6ec',
-  },
-  tarjetaNumero: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colores.texto,
-  },
-  tarjetaTexto: {
-    fontSize: 12,
-    color: colores.tenue,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  totalGenerado: {
-    fontSize: 12,
-    color: colores.tenue,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
+  tarjetaGrandeNumero: { fontSize: 36, fontWeight: '800', color: colores.texto, lineHeight: 40 },
+  tarjetaGrandeTexto: { fontSize: 14, color: colores.tenue },
+
+  filaTarjetas: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  tarjeta: { flex: 1, borderRadius: radio.grande, padding: 16, alignItems: 'center', gap: 6 },
+  tarjetaDebes: { backgroundColor: '#fff4e0' },
+  tarjetaGanas: { backgroundColor: '#e6f6ec' },
+  tarjetaNumero: { fontSize: 26, fontWeight: '800', color: colores.texto },
+  tarjetaTexto: { fontSize: 13, fontWeight: '600', color: colores.tenue, textAlign: 'center' },
+  totalGenerado: { fontSize: 13, color: colores.tenue, textAlign: 'center', marginBottom: 12 },
   aviso: {
-    fontSize: 12,
-    color: '#7a4b00',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
     backgroundColor: '#fff4e0',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: radio.medio,
+    padding: 12,
+    marginBottom: 12,
   },
-  seccion: {
-    fontSize: 12,
-    color: colores.suave,
-    textTransform: 'uppercase',
-    marginTop: 6,
-    marginBottom: 6,
-  },
+  avisoTexto: { flex: 1, fontSize: 13, color: '#5c3300', lineHeight: 18 },
+  seccion: { fontSize: 13, fontWeight: '800', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 6, marginBottom: 8 },
   fila: {
+    ...estiloTarjeta,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colores.tarjeta,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
-    ...sombraTarjeta,
-  },
-  filaInfo: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  filaRecogida: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colores.texto,
-  },
-  filaDestino: {
-    fontSize: 12,
-    color: colores.tenue,
-    marginTop: 1,
-  },
-  filaFecha: {
-    fontSize: 11,
-    color: colores.suave,
-    marginTop: 3,
-  },
-  filaValor: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: colores.texto,
-  },
-  vacio: {
-    textAlign: 'center',
-    color: colores.suave,
-    marginTop: 24,
-  },
-  error: {
-    color: colores.peligro,
-    textAlign: 'center',
+    padding: 14,
     marginBottom: 10,
+    borderRadius: radio.medio,
   },
+  filaInfo: { flex: 1, paddingRight: 10 },
+  filaRecogida: { fontSize: 15, fontWeight: '700', color: colores.texto },
+  filaDestino: { fontSize: 13, color: colores.tenue, marginTop: 1 },
+  filaFecha: { fontSize: 12, color: colores.suave, marginTop: 3 },
+  filaValor: { fontSize: 17, fontWeight: '800', color: colores.verde },
+  vacio: { alignItems: 'center', gap: 12, marginTop: 40, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  error: { color: colores.peligro, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
 });

@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Text, FlatList, View, Image, Modal, Pressable, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { MOSTRAR_PRECIOS } from '../constants/config';
+import { colores, radio } from '../constants/tema';
+import { Boton, Icono, estiloTarjeta } from '../components/ui';
 
-const COLOR_PRIMARIO = '#007cab';
-
-// Foto del producto o, si no tiene, un recuadro con un ícono.
+// Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
 function FotoProducto({ producto, style }) {
   if (producto.imagen) {
-    return <Image source={{ uri: producto.imagen }} style={[styles.foto, style]} resizeMode="cover" />;
+    return <Image source={{ uri: producto.imagen }} style={[styles.foto, style]} resizeMode="cover" accessible={false} />;
   }
   return (
     <View style={[styles.foto, styles.fotoVacia, style]}>
-      <Ionicons name="fast-food-outline" size={36} color={COLOR_PRIMARIO} />
+      <Icono nombre="fast-food-outline" tamano={40} color={colores.primarioOscuro} />
     </View>
   );
 }
@@ -79,33 +78,40 @@ export default function MenuScreen({ route, navigation }) {
         renderItem={({ item }) => {
           const cantidad = cantidades[item.id] || 0;
           return (
-            <TouchableOpacity style={styles.card} onPress={() => abrirProducto(item)} activeOpacity={0.85}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${item.nombre}${cantidad > 0 ? `, ${cantidad} en el carrito` : ''}. Toca para ver detalles y agregar`}
+              onPress={() => abrirProducto(item)}
+              android_ripple={{ color: 'rgba(0,124,171,0.15)' }}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
+            >
               <FotoProducto producto={item} />
-              {cantidad > 0 ? (
-                <View style={styles.insignia}>
+              <View style={[styles.insignia, cantidad === 0 && styles.insigniaMas]}>
+                {cantidad > 0 ? (
                   <Text style={styles.insigniaTexto}>{cantidad}</Text>
-                </View>
-              ) : null}
+                ) : (
+                  <Icono nombre="add" tamano={20} color={colores.primarioOscuro} />
+                )}
+              </View>
               <View style={styles.info}>
                 <Text style={styles.nombre} numberOfLines={2}>{item.nombre}</Text>
                 {MOSTRAR_PRECIOS ? (
                   <Text style={styles.precio}>${parseFloat(item.precio).toFixed(2)}</Text>
                 ) : null}
               </View>
-            </TouchableOpacity>
+            </Pressable>
           );
         }}
       />
 
       {totalItems > 0 && (
-        <TouchableOpacity
-          style={[styles.confirmarBoton, { marginBottom: 8 + insets.bottom }]}
-          onPress={confirmarPedido}
-        >
-          <Text style={styles.confirmarTexto}>
-            Confirmar pedido ({totalItems}){MOSTRAR_PRECIOS ? ` · $${totalPrecio.toFixed(2)}` : ''}
-          </Text>
-        </TouchableOpacity>
+        <View style={[styles.barraConfirmar, { paddingBottom: 12 + insets.bottom }]}>
+          <Boton
+            titulo={`Confirmar pedido (${totalItems})${MOSTRAR_PRECIOS ? ` · $${totalPrecio.toFixed(2)}` : ''}`}
+            icono="bag-check-outline"
+            onPress={confirmarPedido}
+          />
+        </View>
       )}
 
       <Modal
@@ -114,17 +120,28 @@ export default function MenuScreen({ route, navigation }) {
         animationType="slide"
         onRequestClose={cerrarProducto}
       >
-        <Pressable style={styles.fondoModal} onPress={cerrarProducto}>
+        <Pressable style={styles.fondoModal} onPress={cerrarProducto} accessible={false}>
           {seleccionado ? (
             // Pressable interno: tocar la hoja no cierra el modal.
-            <Pressable style={[styles.hoja, { paddingBottom: 16 + insets.bottom }]} onPress={() => {}}>
+            <Pressable
+              style={[styles.hoja, { paddingBottom: 16 + insets.bottom }]}
+              onPress={() => {}}
+              accessible={false}
+              aria-modal
+            >
               <FotoProducto producto={seleccionado} style={styles.fotoGrande} />
-              <TouchableOpacity style={styles.cerrar} onPress={cerrarProducto} accessibilityLabel="Cerrar">
-                <Ionicons name="close" size={22} color="#1b1b1b" />
-              </TouchableOpacity>
+              <Pressable
+                style={styles.cerrar}
+                onPress={cerrarProducto}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar"
+              >
+                <Icono nombre="close" tamano={22} color={colores.texto} />
+              </Pressable>
 
               <View style={styles.hojaCuerpo}>
-                <Text style={styles.hojaNombre}>{seleccionado.nombre}</Text>
+                <Text accessibilityRole="header" style={styles.hojaNombre}>{seleccionado.nombre}</Text>
                 {MOSTRAR_PRECIOS ? (
                   <Text style={styles.hojaPrecio}>${parseFloat(seleccionado.precio).toFixed(2)}</Text>
                 ) : null}
@@ -133,30 +150,51 @@ export default function MenuScreen({ route, navigation }) {
                 ) : null}
 
                 <View style={styles.selector}>
-                  <TouchableOpacity
-                    style={[styles.selectorBoton, cantidadModal <= 1 && styles.selectorDeshabilitado]}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.selectorBoton,
+                      cantidadModal <= 1 && styles.selectorDeshabilitado,
+                      pressed && styles.selectorPresionado,
+                    ]}
                     disabled={cantidadModal <= 1}
                     onPress={() => setCantidadModal(c => c - 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Disminuir cantidad"
+                    aria-disabled={cantidadModal <= 1}
                   >
-                    <Ionicons name="remove" size={22} color="#1b1b1b" />
-                  </TouchableOpacity>
-                  <Text style={styles.selectorCantidad}>{cantidadModal}</Text>
-                  <TouchableOpacity style={styles.selectorBoton} onPress={() => setCantidadModal(c => c + 1)}>
-                    <Ionicons name="add" size={22} color="#1b1b1b" />
-                  </TouchableOpacity>
+                    <Icono nombre="remove" tamano={24} color={colores.texto} />
+                  </Pressable>
+                  <Text
+                    style={styles.selectorCantidad}
+                    accessibilityLabel={`Cantidad: ${cantidadModal}`}
+                    accessibilityLiveRegion="polite"
+                  >
+                    {cantidadModal}
+                  </Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.selectorBoton, pressed && styles.selectorPresionado]}
+                    onPress={() => setCantidadModal(c => c + 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Aumentar cantidad"
+                  >
+                    <Icono nombre="add" tamano={24} color={colores.texto} />
+                  </Pressable>
                 </View>
 
-                <TouchableOpacity style={styles.agregarBoton} onPress={() => guardarEnCarrito(cantidadModal)}>
-                  <Text style={styles.agregarTexto}>
-                    {enCarrito ? 'Actualizar carrito' : 'Agregar al carrito'}
-                    {MOSTRAR_PRECIOS ? ` · $${(parseFloat(seleccionado.precio) * cantidadModal).toFixed(2)}` : ''}
-                  </Text>
-                </TouchableOpacity>
+                <Boton
+                  titulo={`${enCarrito ? 'Actualizar carrito' : 'Agregar al carrito'}${MOSTRAR_PRECIOS ? ` · $${(parseFloat(seleccionado.precio) * cantidadModal).toFixed(2)}` : ''}`}
+                  icono="cart-outline"
+                  onPress={() => guardarEnCarrito(cantidadModal)}
+                />
 
                 {enCarrito ? (
-                  <TouchableOpacity onPress={() => guardarEnCarrito(0)}>
-                    <Text style={styles.quitarTexto}>Quitar del carrito</Text>
-                  </TouchableOpacity>
+                  <Boton
+                    titulo="Quitar del carrito"
+                    variante="peligroSuave"
+                    icono="trash-outline"
+                    onPress={() => guardarEnCarrito(0)}
+                    estilo={styles.quitar}
+                  />
                 ) : null}
               </View>
             </Pressable>
@@ -168,137 +206,72 @@ export default function MenuScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-  },
-  lista: {
-    padding: 10,
-    paddingBottom: 24,
-  },
-  columnas: {
-    gap: 10,
-    marginBottom: 10,
-  },
-  vacio: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 40,
-  },
+  container: { flex: 1, backgroundColor: colores.fondo },
+  lista: { padding: 12, paddingBottom: 24 },
+  columnas: { gap: 12, marginBottom: 12 },
+  vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },
   card: {
+    ...estiloTarjeta,
     flex: 1,
-    maxWidth: '49%', // un producto suelto en la última fila no se estira a todo el ancho
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    maxWidth: '48.5%', // un producto suelto en la última fila no se estira a todo el ancho
+    padding: 0,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
-  foto: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    backgroundColor: '#e0f5fd',
-  },
-  fotoVacia: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: {
-    padding: 10,
-  },
-  nombre: {
-    fontSize: 14,
-    fontWeight: '600',
-    minHeight: 36,
-    color: '#1b1b1b',
-  },
-  precio: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 4,
-  },
+  cardPresionada: { opacity: 0.9 },
+  foto: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colores.acentoSuave },
+  fotoVacia: { alignItems: 'center', justifyContent: 'center' },
+  info: { padding: 12 },
+  nombre: { fontSize: 15, fontWeight: '700', minHeight: 38, color: colores.texto },
+  precio: { fontSize: 16, fontWeight: '800', color: '#000', marginTop: 4 },
   insignia: {
     position: 'absolute',
     top: 8,
     right: 8,
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
-    paddingHorizontal: 6,
-    backgroundColor: COLOR_PRIMARIO,
+    minWidth: 30,
+    height: 30,
+    borderRadius: 15,
+    paddingHorizontal: 7,
+    backgroundColor: colores.primario,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 3,
   },
-  insigniaTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 13,
+  insigniaMas: { backgroundColor: '#fff' },
+  insigniaTexto: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  barraConfirmar: {
+    backgroundColor: colores.tarjeta,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colores.borde,
   },
-  confirmarBoton: {
-    backgroundColor: COLOR_PRIMARIO,
-    padding: 16,
-    marginHorizontal: 10,
-    marginTop: 4,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  confirmarTexto: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  fondoModal: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
+  fondoModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   hoja: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colores.tarjeta,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     overflow: 'hidden',
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center',
   },
-  fotoGrande: {
-    aspectRatio: 16 / 10,
-  },
+  fotoGrande: { aspectRatio: 16 / 10 },
   cerrar: {
     position: 'absolute',
     top: 12,
     right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
   },
-  hojaCuerpo: {
-    padding: 16,
-  },
-  hojaNombre: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b1b1b',
-  },
-  hojaPrecio: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 4,
-  },
-  hojaDescripcion: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-  },
+  hojaCuerpo: { padding: 18 },
+  hojaNombre: { fontSize: 22, fontWeight: '800', color: colores.texto },
+  hojaPrecio: { fontSize: 19, fontWeight: '800', color: '#000', marginTop: 4 },
+  hojaDescripcion: { fontSize: 15, color: colores.tenue, marginTop: 8, lineHeight: 21 },
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,37 +280,15 @@ const styles = StyleSheet.create({
     marginVertical: 18,
   },
   selectorBoton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#eee',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#e8edf0',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectorDeshabilitado: {
-    opacity: 0.4,
-  },
-  selectorCantidad: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    minWidth: 36,
-    textAlign: 'center',
-  },
-  agregarBoton: {
-    backgroundColor: COLOR_PRIMARIO,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  agregarTexto: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  quitarTexto: {
-    color: '#c0392b',
-    textAlign: 'center',
-    fontWeight: '600',
-    marginTop: 14,
-  },
+  selectorPresionado: { backgroundColor: colores.acentoSuave },
+  selectorDeshabilitado: { opacity: 0.45 },
+  selectorCantidad: { fontSize: 24, fontWeight: '800', minWidth: 40, textAlign: 'center' },
+  quitar: { marginTop: 10 },
 });

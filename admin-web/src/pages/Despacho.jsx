@@ -3,6 +3,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useTiempoReal } from '../useTiempoReal.js';
 import Barra from '../components/Barra.jsx';
+import Modal from '../components/Modal.jsx';
 import { MOSTRAR_PRECIOS } from '../config.js';
 
 const INTERVALO_MS = 5000;
@@ -138,10 +139,11 @@ export default function Despacho() {
     <div className="pagina">
       <Barra />
 
-      <main className="contenido">
-        {sinConexion ? <p className="aviso">Sin conexión con el servidor. Reintentando…</p> : null}
+      <main className="contenido" id="contenido">
+        <h1 className="solo-lectores">Despacho</h1>
+        {sinConexion ? <p className="aviso" role="status">Sin conexión con el servidor. Reintentando…</p> : null}
         {error ? (
-          <p className="error-banner">
+          <p className="error-banner" role="alert">
             {error} <button className="enlace" onClick={() => setError('')}>Cerrar</button>
           </p>
         ) : null}
@@ -152,7 +154,8 @@ export default function Despacho() {
             return (
               <button
                 key={f.id}
-                className={`resumen-tarjeta ${filtro === f.id ? 'activa' : ''} ${f.id === 'sin-asignar' && cantidad > 0 ? 'urgente' : ''}`}
+                className={`resumen-tarjeta tarjeta-${f.id} ${filtro === f.id ? 'activa' : ''} ${f.id === 'sin-asignar' && cantidad > 0 ? 'urgente' : ''}`}
+                aria-pressed={filtro === f.id}
                 onClick={() => setFiltro(f.id)}
               >
                 <span className="resumen-numero">{cantidad}</span>
@@ -179,7 +182,7 @@ export default function Despacho() {
           <div className="tabla-encabezado">
             <h2>Pedidos</h2>
             <span className="tenue">
-              <span className={`punto-vivo ${enVivo ? 'activo' : ''}`} />
+              <span className={`punto-vivo ${enVivo ? 'activo' : ''}`} aria-hidden="true" />
               {enVivo ? 'En vivo' : `Sin tiempo real · cada ${INTERVALO_MS / 1000} s`}
               {actualizado ? ` · ${actualizado.toLocaleTimeString()}` : ' · Cargando…'}
             </span>
@@ -187,16 +190,17 @@ export default function Despacho() {
 
           <div className="tabla-scroll">
             <table>
+              <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
               <thead>
                 <tr>
-                  <th>Pedido</th>
-                  <th>Recogida</th>
-                  <th>Cliente</th>
-                  <th>Entrega</th>
-                  <th className="derecha">{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</th>
-                  <th>Estado</th>
-                  <th>Motorizado</th>
-                  <th></th>
+                  <th scope="col">Pedido</th>
+                  <th scope="col">Recogida</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Entrega</th>
+                  <th scope="col" className="derecha">{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Motorizado</th>
+                  <th scope="col"><span className="solo-lectores">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -262,6 +266,7 @@ export default function Despacho() {
                       </td>
                       <td>
                         <select
+                          aria-label={`Motorizado del pedido ${p.id}`}
                           value={p.motorizado?.id ?? ''}
                           disabled={esFinal(p) || asignando === p.id}
                           onChange={(e) => asignar(p, e.target.value)}
@@ -277,7 +282,7 @@ export default function Despacho() {
                       </td>
                       <td>
                         {esCancelable(p) ? (
-                          <button className="peligro" onClick={() => abrirCancelacion(p)}>Cancelar</button>
+                          <button className="peligro" aria-label={`Cancelar pedido ${p.id}`} onClick={() => abrirCancelacion(p)}>Cancelar</button>
                         ) : null}
                       </td>
                     </tr>
@@ -295,30 +300,31 @@ export default function Despacho() {
       </main>
 
       {aCancelar ? (
-        <div className="fondo-modal" onClick={() => !cancelando && setACancelar(null)}>
-          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <h2>Cancelar pedido #{aCancelar.id}</h2>
-            <p className="tenue">
-              {aCancelar.recogida.nombre} · {aCancelar.cliente.nombre}. El cliente y el motorizado verán el cambio al instante.
-            </p>
-            <label htmlFor="motivo">Motivo (opcional)</label>
-            <textarea
-              id="motivo"
-              value={motivo}
-              maxLength={255}
-              rows={3}
-              autoFocus
-              placeholder="Ej.: el cliente llamó para anular"
-              onChange={(e) => setMotivo(e.target.value)}
-            />
-            <div className="modal-acciones">
-              <button className="secundario" disabled={cancelando} onClick={() => setACancelar(null)}>Volver</button>
-              <button className="peligro solido" disabled={cancelando} onClick={confirmarCancelacion}>
-                {cancelando ? 'Cancelando…' : 'Cancelar pedido'}
-              </button>
-            </div>
+        <Modal
+          titulo={`Cancelar pedido #${aCancelar.id}`}
+          idTitulo="titulo-cancelar"
+          onCerrar={() => !cancelando && setACancelar(null)}
+        >
+          <p className="tenue">
+            {aCancelar.recogida.nombre} · {aCancelar.cliente.nombre}. El cliente y el motorizado verán el cambio al instante.
+          </p>
+          <label htmlFor="motivo">Motivo (opcional)</label>
+          <textarea
+            id="motivo"
+            value={motivo}
+            maxLength={255}
+            rows={3}
+            autoFocus
+            placeholder="Ej.: el cliente llamó para anular"
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+          <div className="modal-acciones">
+            <button className="secundario" disabled={cancelando} onClick={() => setACancelar(null)}>Volver</button>
+            <button className="peligro solido" disabled={cancelando} onClick={confirmarCancelacion}>
+              {cancelando ? 'Cancelando…' : 'Cancelar pedido'}
+            </button>
           </div>
-        </div>
+        </Modal>
       ) : null}
     </div>
   );

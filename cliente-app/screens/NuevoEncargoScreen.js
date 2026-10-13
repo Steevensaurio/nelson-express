@@ -1,14 +1,81 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Switch, StyleSheet,
-  KeyboardAvoidingView, Platform,
+  View, Text, Pressable, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
+import { colores, radio } from '../constants/tema';
+import { Boton, Campo, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
-const COLOR = '#007cab';
+const PASOS = ['Recogida', 'Entrega'];
+
+function Pasos({ paso }) {
+  return (
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel="Pasos del encargo"
+      aria-valuemin={1}
+      aria-valuemax={PASOS.length}
+      aria-valuenow={paso}
+      aria-valuetext={`Paso ${paso} de ${PASOS.length}: ${PASOS[paso - 1]}`}
+      style={styles.pasos}
+    >
+      {PASOS.map((nombre, i) => {
+        const numero = i + 1;
+        const activo = numero === paso;
+        const hecho = numero < paso;
+        return (
+          <View key={nombre} style={styles.pasoGrupo}>
+            {i > 0 ? <View style={[styles.pasoLinea, paso > i && styles.pasoLineaHecha]} /> : null}
+            <View style={[styles.pasoCirculo, (activo || hecho) && styles.pasoCirculoActivo]}>
+              {hecho ? (
+                <Icono nombre="checkmark" tamano={18} color="#fff" />
+              ) : (
+                <Text style={[styles.pasoNumero, activo && styles.pasoNumeroActivo]}>{numero}</Text>
+              )}
+            </View>
+            <Text style={[styles.pasoTexto, activo && styles.pasoTextoActivo]}>{nombre}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// Dos datos opcionales (nombre y teléfono) de quien entrega o recibe; vacío = el propio cliente.
+function GrupoContacto({ titulo, ayuda, icono, nombre, onNombre, telefono, onTelefono }) {
+  return (
+    <View style={styles.grupoContacto}>
+      <View style={styles.grupoCabecera}>
+        <View style={styles.grupoIcono}>
+          <Icono nombre={icono} tamano={20} color={colores.primarioOscuro} />
+        </View>
+        <View style={styles.grupoTextos}>
+          <Titulo estilo={styles.grupoTitulo}>{titulo}</Titulo>
+          <Text style={styles.grupoAyuda}>{ayuda}</Text>
+        </View>
+      </View>
+      <Campo
+        etiqueta="Nombre (opcional)"
+        value={nombre}
+        onChangeText={onNombre}
+        placeholder="Ej. Juan Pérez"
+        autoCapitalize="words"
+      />
+      <Campo
+        etiqueta="Teléfono (opcional)"
+        value={telefono}
+        onChangeText={onTelefono}
+        placeholder="Ej. 0991234567"
+        keyboardType="phone-pad"
+        estilo={styles.ultimo}
+      />
+    </View>
+  );
+}
 
 export default function NuevoEncargoScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -97,36 +164,42 @@ export default function NuevoEncargoScreen({ navigation }) {
     }
   };
 
+  const textoEnvio = envio
+    ? `$${parseFloat(envio.costo_envio).toFixed(2)}`
+    : errorEnvio
+      ? 'No disponible'
+      : entregaValor ? 'Calculando…' : 'Elige la dirección de entrega';
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.pasos}>
-          <Text style={[styles.pasoTexto, paso === 1 && styles.pasoActivo]}>1. Recogida</Text>
-          <Text style={styles.pasoSeparador}>—</Text>
-          <Text style={[styles.pasoTexto, paso === 2 && styles.pasoActivo]}>2. Entrega</Text>
-        </View>
+        <Pasos paso={paso} />
 
         {paso === 1 ? (
           <>
-            <Text style={styles.ayuda}>
-              Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío
-              {' '}(y lo que el motorizado deba pagar en el lugar, si aplica).
-            </Text>
+            <View style={styles.intro}>
+              <Icono nombre="information-circle-outline" tamano={20} color={colores.primarioOscuro} />
+              <Text style={styles.introTexto}>
+                Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío
+                {' '}(y lo que el motorizado deba pagar en el lugar, si aplica).
+              </Text>
+            </View>
 
-            <Text style={styles.seccion}>¿Qué debemos recoger?</Text>
-            <TextInput
-              style={[styles.input, styles.multilinea]}
+            <Titulo estilo={styles.seccion}>¿Qué debemos recoger?</Titulo>
+            <Campo
+              etiqueta="Descripción"
               value={descripcion}
               onChangeText={setDescripcion}
               placeholder="Ej. una caja mediana con documentos"
               maxLength={255}
               multiline
+              estiloInput={styles.multilinea}
             />
 
-            <Text style={styles.seccion}>Lugar de recogida</Text>
+            <Titulo estilo={styles.seccion}>Lugar de recogida</Titulo>
             <SelectorDireccion
               direcciones={direcciones}
               valor={recogidaValor}
@@ -134,36 +207,27 @@ export default function NuevoEncargoScreen({ navigation }) {
               onNuevaDireccion={agregarDireccionGuardada}
             />
 
-            <View style={styles.grupoContacto}>
-              <Text style={styles.seccion}>¿Quién entrega ahí?</Text>
-              <Text style={styles.nota}>Déjalo vacío si tú mismo lo entregas.</Text>
-              <TextInput
-                style={styles.input}
-                value={recogidaContactoNombre}
-                onChangeText={setRecogidaContactoNombre}
-                placeholder="Nombre"
-                autoCapitalize="words"
-              />
-              <TextInput
-                style={styles.input}
-                value={recogidaContactoTelefono}
-                onChangeText={setRecogidaContactoTelefono}
-                placeholder="Teléfono (ej. 0991234567)"
-                keyboardType="phone-pad"
-              />
-            </View>
+            <GrupoContacto
+              icono="person-outline"
+              titulo="¿Quién entrega ahí?"
+              ayuda="Déjalo vacío si tú mismo lo entregas."
+              nombre={recogidaContactoNombre}
+              onNombre={setRecogidaContactoNombre}
+              telefono={recogidaContactoTelefono}
+              onTelefono={setRecogidaContactoTelefono}
+            />
 
-            <TouchableOpacity
-              style={[styles.boton, !puedePaso1 && styles.botonDeshabilitado]}
-              disabled={!puedePaso1}
+            <Boton
+              titulo="Continuar"
+              icono="arrow-forward"
               onPress={() => setPaso(2)}
-            >
-              <Text style={styles.botonTexto}>Continuar</Text>
-            </TouchableOpacity>
+              deshabilitado={!puedePaso1}
+              estilo={styles.continuar}
+            />
           </>
         ) : (
           <>
-            <Text style={styles.seccion}>Dirección de entrega</Text>
+            <Titulo estilo={styles.seccion}>Dirección de entrega</Titulo>
             <SelectorDireccion
               direcciones={direcciones}
               valor={entregaValor}
@@ -171,78 +235,84 @@ export default function NuevoEncargoScreen({ navigation }) {
               onNuevaDireccion={agregarDireccionGuardada}
             />
 
-            <View style={styles.grupoContacto}>
-              <Text style={styles.seccion}>¿Quién recibe ahí?</Text>
-              <Text style={styles.nota}>Déjalo vacío si tú mismo lo recibes.</Text>
-              <TextInput
-                style={styles.input}
-                value={entregaContactoNombre}
-                onChangeText={setEntregaContactoNombre}
-                placeholder="Nombre"
-                autoCapitalize="words"
-              />
-              <TextInput
-                style={styles.input}
-                value={entregaContactoTelefono}
-                onChangeText={setEntregaContactoTelefono}
-                placeholder="Teléfono (ej. 0991234567)"
-                keyboardType="phone-pad"
-              />
-            </View>
+            <GrupoContacto
+              icono="person-outline"
+              titulo="¿Quién recibe ahí?"
+              ayuda="Déjalo vacío si tú mismo lo recibes."
+              nombre={entregaContactoNombre}
+              onNombre={setEntregaContactoNombre}
+              telefono={entregaContactoTelefono}
+              onTelefono={setEntregaContactoTelefono}
+            />
 
             <View style={styles.filaSwitch}>
               <Text style={styles.switchTexto}>El motorizado debe pagar algo al recoger</Text>
-              <Switch value={pagar} onValueChange={setPagar} trackColor={{ true: COLOR }} />
+              <Switch
+                value={pagar}
+                onValueChange={setPagar}
+                trackColor={{ false: '#c4cbd0', true: colores.primario }}
+                thumbColor="#fff"
+                accessibilityLabel="El motorizado debe pagar algo al recoger"
+              />
             </View>
             {pagar ? (
-              <>
-                <TextInput
-                  style={styles.input}
-                  value={monto}
-                  onChangeText={setMonto}
-                  placeholder="Monto aproximado (ej. 12.50)"
-                  keyboardType="decimal-pad"
-                />
-                <Text style={styles.nota}>Al recibir le pagas lo que gastó más el envío.</Text>
-              </>
+              <Campo
+                etiqueta="Monto aproximado"
+                value={monto}
+                onChangeText={setMonto}
+                placeholder="Ej. 12.50"
+                keyboardType="decimal-pad"
+                ayuda="Al recibir le pagas lo que gastó más el envío."
+                izquierda={<Text style={styles.moneda}>$</Text>}
+              />
             ) : null}
 
-            <View style={styles.resumen}>
-              <Text style={styles.resumenTexto}>
-                Envío{envio ? ` (${parseFloat(envio.distancia_km).toFixed(1)} km)` : ''}
-              </Text>
-              <Text style={styles.resumenPrecio}>
-                {envio
-                  ? `$${parseFloat(envio.costo_envio).toFixed(2)}`
-                  : errorEnvio
-                    ? 'No disponible'
-                    : entregaValor ? 'Calculando…' : 'Elige la dirección de entrega'}
-              </Text>
+            <View style={styles.resumen} accessible accessibilityLabel={`Envío${envio ? `, ${parseFloat(envio.distancia_km).toFixed(1)} kilómetros` : ''}: ${textoEnvio}`} accessibilityLiveRegion="polite">
+              <View style={styles.resumenIzquierda}>
+                <Icono nombre="navigate-outline" tamano={22} color={colores.primarioOscuro} />
+                <Text style={styles.resumenTexto}>
+                  Envío{envio ? ` (${parseFloat(envio.distancia_km).toFixed(1)} km)` : ''}
+                </Text>
+              </View>
+              <Text style={[styles.resumenPrecio, !envio && styles.resumenPrecioTenue]}>{textoEnvio}</Text>
             </View>
 
             {perfilIncompleto ? (
-              <TouchableOpacity style={styles.avisoPerfil} onPress={() => navigation.navigate('MisDatos')}>
-                <Text style={styles.avisoPerfilTexto}>
-                  Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
-                </Text>
-                <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
-              </TouchableOpacity>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Para pedir necesitamos tu nombre y teléfono. Completar mis datos"
+                style={styles.avisoPerfil}
+                onPress={() => navigation.navigate('MisDatos')}
+              >
+                <Icono nombre="alert-circle" tamano={22} color={colores.naranja} />
+                <View style={styles.avisoCuerpo}>
+                  <Text style={styles.avisoPerfilTexto}>
+                    Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
+                  </Text>
+                  <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
+                </View>
+              </Pressable>
+            ) : null}
+
+            {error ? (
+              <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
+                <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
+                <Text style={styles.errorTexto}>{error}</Text>
+              </View>
             ) : null}
 
             <View style={styles.filaBotones}>
-              <TouchableOpacity style={styles.botonAtras} onPress={() => setPaso(1)}>
-                <Text style={styles.botonAtrasTexto}>Atrás</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.boton, styles.botonFlex, !puedeEnviar && styles.botonDeshabilitado]}
-                disabled={!puedeEnviar}
+              <Boton titulo="Atrás" icono="arrow-back" variante="secundario" onPress={() => setPaso(1)} estilo={styles.botonAtras} />
+              <Boton
+                titulo={enviando ? 'Enviando…' : 'Pedir encargo'}
+                etiqueta="Pedir encargo"
+                icono="paper-plane-outline"
                 onPress={enviar}
-              >
-                <Text style={styles.botonTexto}>{enviando ? 'Enviando...' : 'Pedir encargo'}</Text>
-              </TouchableOpacity>
+                deshabilitado={!puedeEnviar && !enviando}
+                cargando={enviando}
+                estilo={styles.botonPedir}
+              />
             </View>
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
           </>
         )}
       </ScrollView>
@@ -251,89 +321,109 @@ export default function NuevoEncargoScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f2f2f2' },
+  container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16 },
-  pasos: {
-    flexDirection: 'row',
+
+  pasos: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 18 },
+  pasoGrupo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pasoLinea: { width: 36, height: 3, backgroundColor: '#dfe5e9', marginHorizontal: 6, borderRadius: 2 },
+  pasoLineaHecha: { backgroundColor: colores.primario },
+  pasoCirculo: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e8edf0',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  pasoTexto: { fontSize: 13, color: '#999', fontWeight: 'bold' },
-  pasoActivo: { color: COLOR },
-  pasoSeparador: { color: '#ccc', marginHorizontal: 8 },
-  ayuda: { color: '#666', fontSize: 13, marginBottom: 16 },
-  seccion: { fontSize: 16, fontWeight: 'bold', marginTop: 8, marginBottom: 8 },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+  pasoCirculoActivo: { backgroundColor: colores.primario },
+  pasoNumero: { fontSize: 15, fontWeight: '800', color: colores.tenue },
+  pasoNumeroActivo: { color: '#fff' },
+  pasoTexto: { fontSize: 14, fontWeight: '700', color: colores.suave },
+  pasoTextoActivo: { color: colores.primarioOscuro },
+
+  intro: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.medio,
+    padding: 14,
+    marginBottom: 6,
   },
-  multilinea: { minHeight: 70, textAlignVertical: 'top' },
-  nota: { fontSize: 12, color: '#666', marginBottom: 10 },
-  grupoContacto: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+  introTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
+  seccion: { fontSize: 18, marginTop: 18, marginBottom: 10 },
+  multilinea: { minHeight: 76, textAlignVertical: 'top' },
+
+  grupoContacto: { ...estiloTarjeta, marginTop: 16 },
+  grupoCabecera: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  grupoIcono: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colores.acentoSuave,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  grupoTextos: { flex: 1 },
+  grupoTitulo: { fontSize: 16 },
+  grupoAyuda: { fontSize: 13, color: colores.tenue, marginTop: 2 },
+  ultimo: { marginBottom: 0 },
+
   filaSwitch: {
+    ...estiloTarjeta,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 10,
+    gap: 10,
+    paddingVertical: 12,
+    marginVertical: 16,
   },
-  switchTexto: { flex: 1, fontSize: 14, paddingRight: 8 },
+  switchTexto: { flex: 1, fontSize: 15, fontWeight: '600', color: colores.texto },
+  moneda: { fontSize: 18, fontWeight: '700', color: colores.tenue },
+
   resumen: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 8,
-  },
-  resumenTexto: { fontSize: 15, fontWeight: 'bold' },
-  resumenPrecio: { fontSize: 15, fontWeight: 'bold' },
-  avisoPerfil: {
-    backgroundColor: '#fff4e0',
-    borderColor: '#e08a1e',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-  },
-  avisoPerfilTexto: { fontSize: 13, color: '#7a4b00' },
-  avisoPerfilAccion: { fontSize: 13, fontWeight: 'bold', color: '#e08a1e', marginTop: 6 },
-  boton: {
-    backgroundColor: COLOR,
-    padding: 16,
-    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'space-between',
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.grande,
+    padding: 16,
+    marginTop: 4,
   },
-  botonFlex: { flex: 1, marginTop: 0 },
-  botonDeshabilitado: { backgroundColor: '#aaa' },
-  botonTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  filaBotones: {
+  resumenIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  resumenTexto: { fontSize: 16, fontWeight: '700', color: colores.texto },
+  resumenPrecio: { fontSize: 22, fontWeight: '800', color: colores.primarioOscuro },
+  resumenPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
+
+  avisoPerfil: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
-    alignItems: 'stretch',
-  },
-  botonAtras: {
-    borderColor: COLOR,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#fff4e0',
+    borderLeftWidth: 5,
+    borderLeftColor: colores.naranja,
+    borderRadius: radio.medio,
+    padding: 14,
+    marginTop: 14,
   },
-  botonAtrasTexto: { color: COLOR, fontSize: 16, fontWeight: 'bold' },
-  error: { color: 'red', marginTop: 10, textAlign: 'center' },
+  avisoCuerpo: { flex: 1 },
+  avisoPerfilTexto: { fontSize: 14, color: '#5c3300' },
+  avisoPerfilAccion: { fontSize: 14, fontWeight: '800', color: colores.naranja, marginTop: 6 },
+
+  errorCaja: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colores.peligroSuave,
+    borderRadius: radio.chico,
+    padding: 12,
+    marginTop: 14,
+  },
+  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
+
+  continuar: { marginTop: 20 },
+  filaBotones: { flexDirection: 'row', gap: 12, marginTop: 18 },
+  botonAtras: { paddingHorizontal: 18 },
+  botonPedir: { flex: 1 },
 });

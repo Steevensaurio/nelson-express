@@ -1,12 +1,18 @@
 import { useRef, useState } from 'react';
 import {
-  StyleSheet, View, Image, TextInput, TouchableOpacity, Text, ScrollView,
-  KeyboardAvoidingView, Platform,
+  StyleSheet, View, Image, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import api from '../services/api';
-import { colores, sombraTarjeta } from '../constants/tema';
+import { colores, radio, sombraTarjeta } from '../constants/tema';
+import { Boton, Campo, Icono, Titulo } from '../components/ui';
+
+const VENTAJAS = [
+  { icono: 'bicycle', texto: 'Tus entregas' },
+  { icono: 'wallet-outline', texto: 'Tus cuentas' },
+  { icono: 'navigate-outline', texto: 'Rutas' },
+];
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
@@ -46,79 +52,105 @@ export default function LoginScreen({ onLoginSuccess }) {
   return (
     // El ScrollView permite desplazarse cuando el teclado tapa los campos; el KeyboardAvoidingView
     // sube el contenido para que el campo que se escribe quede a la vista.
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <StatusBar style="light" />
       <ScrollView
         style={styles.flex}
-        contentContainerStyle={[
-          styles.contenido,
-          { paddingTop: 24 + insets.top, paddingBottom: 24 + insets.bottom },
-        ]}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.encabezado}>
-          <Image source={require('../assets/logo-circular.png')} style={styles.logo} />
-          <Text style={styles.subtitulo}>Acceso para motorizados</Text>
+        <View style={[styles.cabecera, { paddingTop: 28 + insets.top }]}>
+          <View style={styles.circuloGrande} pointerEvents="none" aria-hidden />
+          <View style={styles.circuloChico} pointerEvents="none" aria-hidden />
+
+          <View style={styles.logoMarco}>
+            <Image
+              source={require('../assets/logo-circular.png')}
+              style={styles.logo}
+              accessibilityLabel="Nelson Express"
+            />
+          </View>
+          <Text accessibilityRole="header" style={styles.bienvenida}>¡Hola, motorizado!</Text>
+          <View style={styles.etiquetaRol}>
+            <Icono nombre="bicycle" tamano={16} color="#fff" />
+            <Text style={styles.etiquetaRolTexto}>Acceso para motorizados</Text>
+          </View>
         </View>
 
-        <View style={styles.tarjeta}>
-          <Text style={styles.tarjetaTitulo}>Inicia sesión</Text>
+        <View style={styles.cuerpo}>
+          <View style={styles.tarjeta}>
+            <Titulo estilo={styles.tarjetaTitulo}>Inicia sesión</Titulo>
 
-          <View style={styles.campo}>
-            <Ionicons name="person-outline" size={20} color={colores.suave} />
-            <TextInput
-              style={styles.input}
+            <Campo
+              etiqueta="Usuario"
               value={username}
               onChangeText={setUsername}
-              placeholder="Usuario"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
               returnKeyType="next"
               onSubmitEditing={() => claveRef.current?.focus()}
               blurOnSubmit={false}
+              izquierda={<Icono nombre="person-outline" tamano={20} color={colores.suave} />}
             />
-          </View>
 
-          <View style={styles.campo}>
-            <Ionicons name="lock-closed-outline" size={20} color={colores.suave} />
-            <TextInput
+            <Campo
               ref={claveRef}
-              style={styles.input}
+              etiqueta="Contraseña"
               value={password}
               onChangeText={setPassword}
-              placeholder="Contraseña"
               secureTextEntry={!verClave}
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="current-password"
+              textContentType="password"
               returnKeyType="go"
               onSubmitEditing={puedeEntrar ? handleLogin : undefined}
+              izquierda={<Icono nombre="lock-closed-outline" tamano={20} color={colores.suave} />}
+              derecha={
+                <Pressable
+                  onPress={() => setVerClave((v) => !v)}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  style={styles.ojo}
+                >
+                  <Icono nombre={verClave ? 'eye-off-outline' : 'eye-outline'} tamano={22} color={colores.tenue} />
+                </Pressable>
+              }
             />
-            <TouchableOpacity
-              onPress={() => setVerClave((v) => !v)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-            >
-              <Ionicons name={verClave ? 'eye-off-outline' : 'eye-outline'} size={20} color={colores.suave} />
-            </TouchableOpacity>
+
+            {error ? (
+              <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
+                <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
+                <Text style={styles.errorTexto}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Boton
+              titulo={entrando ? 'Ingresando…' : 'Ingresar'}
+              etiqueta="Ingresar"
+              icono={entrando ? undefined : 'log-in-outline'}
+              onPress={handleLogin}
+              deshabilitado={!puedeEntrar && !entrando}
+              cargando={entrando}
+              estilo={styles.boton}
+            />
           </View>
 
-          {error ? (
-            <View style={styles.errorCaja}>
-              <Ionicons name="alert-circle-outline" size={18} color={colores.peligro} />
-              <Text style={styles.errorTexto}>{error}</Text>
-            </View>
-          ) : null}
-
-          <TouchableOpacity
-            style={[styles.boton, !puedeEntrar && styles.botonDeshabilitado]}
-            disabled={!puedeEntrar}
-            onPress={handleLogin}
-          >
-            <Text style={styles.botonTexto}>{entrando ? 'Ingresando...' : 'Ingresar'}</Text>
-          </TouchableOpacity>
+          <View style={styles.ventajas}>
+            {VENTAJAS.map((v) => (
+              <View key={v.texto} style={styles.ventaja}>
+                <View style={styles.ventajaIcono}>
+                  <Icono nombre={v.icono} tamano={20} color={colores.primarioOscuro} />
+                </View>
+                <Text style={styles.ventajaTexto}>{v.texto}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -126,84 +158,105 @@ export default function LoginScreen({ onLoginSuccess }) {
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-  },
-  contenido: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  encabezado: {
+  flex: { flex: 1, backgroundColor: colores.fondo },
+  cabecera: {
+    backgroundColor: colores.primario,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 72,
+    overflow: 'hidden',
   },
-  logo: {
-    width: 170,
-    height: 170,
-    resizeMode: 'contain',
-    marginBottom: 8,
+  circuloGrande: {
+    position: 'absolute',
+    top: -90,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: colores.primarioOscuro,
+    opacity: 0.55,
   },
-  subtitulo: {
-    fontSize: 14,
-    color: '#666',
+  circuloChico: {
+    position: 'absolute',
+    bottom: -40,
+    left: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: colores.primarioOscuro,
+    opacity: 0.4,
   },
+  logoMarco: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  logo: { width: 118, height: 118, resizeMode: 'contain' },
+  bienvenida: { marginTop: 18, fontSize: 28, fontWeight: '800', color: '#fff' },
+  etiquetaRol: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: radio.pastilla,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  etiquetaRolTexto: { fontSize: 14, fontWeight: '700', color: '#fff' },
+
+  cuerpo: { marginTop: -48, paddingHorizontal: 20 },
   tarjeta: {
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
     backgroundColor: colores.tarjeta,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: radio.grande + 4,
+    padding: 22,
     ...sombraTarjeta,
+    shadowOpacity: 0.14,
+    elevation: 6,
   },
-  tarjetaTitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: colores.texto,
-  },
-  campo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#f7f7f7',
-    borderColor: colores.borde,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
+  tarjetaTitulo: { fontSize: 22, marginBottom: 18 },
+  ojo: { padding: 4 },
   errorCaja: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 8,
+    backgroundColor: colores.peligroSuave,
+    borderRadius: radio.chico,
+    padding: 12,
+    marginBottom: 14,
   },
-  errorTexto: {
-    flex: 1,
-    color: colores.peligro,
-    fontSize: 13,
+  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
+  boton: { marginTop: 4 },
+
+  ventajas: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 26,
   },
-  boton: {
-    backgroundColor: colores.primario,
-    borderRadius: 12,
-    padding: 16,
+  ventaja: { alignItems: 'center', gap: 6, flex: 1 },
+  ventajaIcono: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colores.acentoSuave,
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'center',
   },
-  botonDeshabilitado: {
-    backgroundColor: '#aaa',
-  },
-  botonTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  ventajaTexto: { fontSize: 13, fontWeight: '700', color: colores.tenue },
 });

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
-import { colores } from '../constants/tema';
+import { colores, radio } from '../constants/tema';
+import { Boton, Campo, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 export default function EditarPerfilScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -17,6 +18,7 @@ export default function EditarPerfilScreen({ navigation }) {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const [errores, setErrores] = useState({});
 
   const cambiar = (campo) => (texto) => setDatos((prev) => ({ ...prev, [campo]: texto }));
 
@@ -39,6 +41,7 @@ export default function EditarPerfilScreen({ navigation }) {
   const guardar = async () => {
     setGuardando(true);
     setError('');
+    setErrores({});
     try {
       await api.patch('/perfil/', {
         first_name: datos.first_name.trim(),
@@ -51,92 +54,122 @@ export default function EditarPerfilScreen({ navigation }) {
       navigation.goBack();
     } catch (err) {
       const data = err.response?.data;
-      setError(
-        data?.telefono?.[0] ??
-          data?.vehiculo_placa?.[0] ??
-          data?.first_name?.[0] ??
-          'No se pudieron guardar tus datos'
-      );
+      // Cada error va junto a su campo; solo lo inesperado sale arriba del botón.
+      const porCampo = {
+        telefono: data?.telefono?.[0],
+        vehiculo_placa: data?.vehiculo_placa?.[0],
+        first_name: data?.first_name?.[0],
+      };
+      if (Object.values(porCampo).some(Boolean)) setErrores(porCampo);
+      else setError('No se pudieron guardar tus datos');
       setGuardando(false);
     }
   };
 
-  const puedeGuardar = datos.first_name.trim() && datos.telefono.trim() && !guardando && !cargando;
+  const puedeGuardar = Boolean(datos.first_name.trim() && datos.telefono.trim() && !guardando && !cargando);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.seccion}>Datos personales</Text>
-        <TextInput style={styles.input} value={datos.first_name} onChangeText={cambiar('first_name')} placeholder="Nombre" autoCapitalize="words" />
-        <TextInput style={styles.input} value={datos.last_name} onChangeText={cambiar('last_name')} placeholder="Apellido" autoCapitalize="words" />
-        <TextInput style={styles.input} value={datos.telefono} onChangeText={cambiar('telefono')} placeholder="Teléfono (ej. 0991234567)" keyboardType="phone-pad" />
+        <View style={styles.tarjeta}>
+          <Titulo estilo={styles.seccion}>Datos personales</Titulo>
+          <Campo
+            etiqueta="Nombre"
+            value={datos.first_name}
+            onChangeText={cambiar('first_name')}
+            placeholder="Ej. Carlos"
+            autoCapitalize="words"
+            autoComplete="given-name"
+            textContentType="givenName"
+            error={errores.first_name}
+          />
+          <Campo
+            etiqueta="Apellido"
+            value={datos.last_name}
+            onChangeText={cambiar('last_name')}
+            placeholder="Ej. Mendoza"
+            autoCapitalize="words"
+            autoComplete="family-name"
+            textContentType="familyName"
+          />
+          <Campo
+            etiqueta="Teléfono"
+            value={datos.telefono}
+            onChangeText={cambiar('telefono')}
+            placeholder="Ej. 0991234567"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            error={errores.telefono}
+            estilo={styles.ultimo}
+          />
+        </View>
 
-        <Text style={styles.seccion}>Vehículo</Text>
-        <TextInput style={styles.input} value={datos.vehiculo_modelo} onChangeText={cambiar('vehiculo_modelo')} placeholder="Marca y modelo (ej. Honda XR 150)" autoCapitalize="words" />
-        <TextInput style={styles.input} value={datos.vehiculo_color} onChangeText={cambiar('vehiculo_color')} placeholder="Color" autoCapitalize="words" />
-        <TextInput style={styles.input} value={datos.vehiculo_placa} onChangeText={cambiar('vehiculo_placa')} placeholder="Placa (ej. ABC-1234)" autoCapitalize="characters" autoCorrect={false} maxLength={10} />
+        <View style={styles.tarjeta}>
+          <Titulo estilo={styles.seccion}>Vehículo</Titulo>
+          <Campo
+            etiqueta="Marca y modelo"
+            value={datos.vehiculo_modelo}
+            onChangeText={cambiar('vehiculo_modelo')}
+            placeholder="Ej. Honda XR 150"
+            autoCapitalize="words"
+          />
+          <Campo
+            etiqueta="Color"
+            value={datos.vehiculo_color}
+            onChangeText={cambiar('vehiculo_color')}
+            placeholder="Ej. Rojo"
+            autoCapitalize="words"
+          />
+          <Campo
+            etiqueta="Placa"
+            value={datos.vehiculo_placa}
+            onChangeText={cambiar('vehiculo_placa')}
+            placeholder="Ej. ABC-1234"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={10}
+            error={errores.vehiculo_placa}
+            estilo={styles.ultimo}
+          />
+        </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
+            <Text style={styles.errorTexto}>{error}</Text>
+          </View>
+        ) : null}
 
-        <TouchableOpacity
-          style={[styles.boton, !puedeGuardar && styles.botonDeshabilitado]}
-          disabled={!puedeGuardar}
+        <Boton
+          titulo={guardando ? 'Guardando…' : 'Guardar'}
+          etiqueta="Guardar mi perfil"
+          icono="checkmark"
           onPress={guardar}
-        >
-          <Text style={styles.botonTexto}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
-        </TouchableOpacity>
+          deshabilitado={!puedeGuardar && !guardando}
+          cargando={guardando}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colores.fondo,
-  },
-  contenido: {
-    padding: 16,
-  },
-  seccion: {
-    fontSize: 12,
-    color: colores.suave,
-    textTransform: 'uppercase',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  boton: {
-    backgroundColor: colores.primario,
-    padding: 16,
-    borderRadius: 12,
+  container: { flex: 1, backgroundColor: colores.fondo },
+  contenido: { padding: 16, gap: 14 },
+  tarjeta: { ...estiloTarjeta },
+  seccion: { fontSize: 14, color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 12 },
+  ultimo: { marginBottom: 0 },
+  errorCaja: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 8,
+    backgroundColor: colores.peligroSuave,
+    borderRadius: radio.chico,
+    padding: 12,
   },
-  botonDeshabilitado: {
-    backgroundColor: '#aaa',
-  },
-  botonTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
+  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
 });

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
+import { colores, radio } from '../constants/tema';
+import { Boton, Campo, Icono } from '../components/ui';
 
 export default function MisDatosScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
@@ -9,6 +11,7 @@ export default function MisDatosScreen({ navigation }) {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const [errorTelefono, setErrorTelefono] = useState('');
 
   useEffect(() => {
     api.get('/perfil/')
@@ -24,6 +27,7 @@ export default function MisDatosScreen({ navigation }) {
   const guardar = async () => {
     setGuardando(true);
     setError('');
+    setErrorTelefono('');
     try {
       await api.patch('/perfil/', {
         first_name: nombre.trim(),
@@ -33,98 +37,107 @@ export default function MisDatosScreen({ navigation }) {
       navigation.goBack();
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.telefono?.[0] ?? data?.first_name?.[0] ?? 'No se pudieron guardar tus datos');
+      // El error del teléfono va junto a su campo; el resto, arriba del botón.
+      if (data?.telefono?.[0]) setErrorTelefono(data.telefono[0]);
+      else setError(data?.first_name?.[0] ?? 'No se pudieron guardar tus datos');
       setGuardando(false);
     }
   };
 
-  const puedeGuardar = nombre.trim() && telefono.trim() && !guardando && !cargando;
+  const puedeGuardar = Boolean(nombre.trim() && telefono.trim() && !guardando && !cargando);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.contenido} keyboardShouldPersistTaps="handled">
-        <Text style={styles.ayuda}>
-          El motorizado verá tu nombre y teléfono para poder contactarte al entregar tu pedido.
-        </Text>
+        <View style={styles.nota}>
+          <Icono nombre="information-circle-outline" tamano={20} color={colores.primarioOscuro} />
+          <Text style={styles.notaTexto}>
+            El motorizado verá tu nombre y teléfono para poder contactarte al entregar tu pedido.
+          </Text>
+        </View>
 
-        <TextInput
-          style={styles.input}
-          value={nombre}
-          onChangeText={setNombre}
-          placeholder="Nombre"
-          autoCapitalize="words"
-        />
-        <TextInput
-          style={styles.input}
-          value={apellido}
-          onChangeText={setApellido}
-          placeholder="Apellido"
-          autoCapitalize="words"
-        />
-        <TextInput
-          style={styles.input}
-          value={telefono}
-          onChangeText={setTelefono}
-          placeholder="Teléfono (ej. 0991234567)"
-          keyboardType="phone-pad"
-        />
+        <View style={styles.tarjeta}>
+          <Campo
+            etiqueta="Nombre"
+            value={nombre}
+            onChangeText={setNombre}
+            placeholder="Ej. María"
+            autoCapitalize="words"
+            autoComplete="given-name"
+            textContentType="givenName"
+          />
+          <Campo
+            etiqueta="Apellido"
+            value={apellido}
+            onChangeText={setApellido}
+            placeholder="Ej. Pérez"
+            autoCapitalize="words"
+            autoComplete="family-name"
+            textContentType="familyName"
+          />
+          <Campo
+            etiqueta="Teléfono"
+            value={telefono}
+            onChangeText={setTelefono}
+            placeholder="Ej. 0991234567"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            error={errorTelefono}
+            estilo={styles.ultimo}
+          />
+        </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
+            <Text style={styles.errorTexto}>{error}</Text>
+          </View>
+        ) : null}
 
-        <TouchableOpacity
-          style={[styles.boton, !puedeGuardar && styles.botonDeshabilitado]}
-          disabled={!puedeGuardar}
+        <Boton
+          titulo={guardando ? 'Guardando…' : 'Guardar'}
+          etiqueta="Guardar mis datos"
+          icono="checkmark"
           onPress={guardar}
-        >
-          <Text style={styles.botonTexto}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
-        </TouchableOpacity>
+          deshabilitado={!puedeGuardar && !guardando}
+          cargando={guardando}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
+  container: { flex: 1, backgroundColor: colores.fondo },
+  contenido: { padding: 16, gap: 14 },
+  nota: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.medio,
+    padding: 14,
   },
-  contenido: {
+  notaTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
+  tarjeta: {
+    backgroundColor: colores.tarjeta,
+    borderRadius: radio.grande,
     padding: 16,
+    elevation: 2,
+    shadowColor: '#0b2530',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-  ayuda: {
-    color: '#666',
-    fontSize: 13,
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  boton: {
-    backgroundColor: '#007cab',
-    padding: 16,
-    borderRadius: 12,
+  ultimo: { marginBottom: 0 },
+  errorCaja: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 8,
+    backgroundColor: colores.peligroSuave,
+    borderRadius: radio.chico,
+    padding: 12,
   },
-  botonDeshabilitado: {
-    backgroundColor: '#aaa',
-  },
-  botonTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
+  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
 });

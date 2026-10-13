@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
+import { colores, radio } from '../constants/tema';
+import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 export default function ConfirmarPedidoScreen({ route, navigation }) {
   const { negocioId, negocioNombre, carrito } = route.params;
+  const insets = useSafeAreaInsets();
 
   const [direcciones, setDirecciones] = useState([]);
   const [destinoValor, setDestinoValor] = useState(null); // { direccion, referencia, lat, lng }
@@ -82,18 +86,29 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
     }
   };
 
+  const textoEnvio = opcionActiva
+    ? `$${parseFloat(opcionActiva.costo_envio).toFixed(2)}`
+    : errorEnvio
+      ? 'No disponible'
+      : destinoValor ? 'Calculando…' : 'Elige una dirección';
+  const puedeConfirmar = Boolean(opcionActiva && !perfilIncompleto);
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Text style={styles.titulo}>{negocioNombre}</Text>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView
+        contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Titulo estilo={styles.titulo}>{negocioNombre}</Titulo>
 
         <View style={styles.carrito}>
           {carrito.map((item) => (
             <View key={item.producto} style={styles.itemFila}>
-              <Text style={styles.itemNombre}>{item.nombre} x{item.cantidad}</Text>
+              <View style={styles.cantidad}>
+                <Text style={styles.cantidadTexto}>{item.cantidad}</Text>
+              </View>
+              <Text style={styles.itemNombre}>{item.nombre}</Text>
               {MOSTRAR_PRECIOS ? (
                 <Text style={styles.itemPrecio}>${(item.precio * item.cantidad).toFixed(2)}</Text>
               ) : null}
@@ -105,17 +120,19 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
               <Text style={styles.itemPrecio}>${subtotal.toFixed(2)}</Text>
             </View>
           ) : null}
-          <View style={styles.itemFila}>
-            <Text style={styles.itemNombre}>
-              Envío{opcionActiva ? ` (${parseFloat(opcionActiva.distancia_km).toFixed(1)} km)` : ''}
-            </Text>
-            <Text style={styles.itemPrecio}>
-              {opcionActiva
-                ? `$${parseFloat(opcionActiva.costo_envio).toFixed(2)}`
-                : errorEnvio
-                  ? 'No disponible'
-                  : destinoValor ? 'Calculando…' : 'Elige una dirección'}
-            </Text>
+          <View
+            style={styles.envioFila}
+            accessible
+            accessibilityLabel={`Envío${opcionActiva ? `, ${parseFloat(opcionActiva.distancia_km).toFixed(1)} kilómetros` : ''}: ${textoEnvio}`}
+            accessibilityLiveRegion="polite"
+          >
+            <View style={styles.envioIzquierda}>
+              <Icono nombre="navigate-outline" tamano={20} color={colores.primarioOscuro} />
+              <Text style={styles.envioTexto}>
+                Envío{opcionActiva ? ` (${parseFloat(opcionActiva.distancia_km).toFixed(1)} km)` : ''}
+              </Text>
+            </View>
+            <Text style={[styles.envioPrecio, !opcionActiva && styles.envioPrecioTenue]}>{textoEnvio}</Text>
           </View>
           {MOSTRAR_PRECIOS ? (
             <View style={styles.totalFila}>
@@ -123,11 +140,14 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
               <Text style={styles.totalTexto}>{opcionActiva ? `$${total.toFixed(2)}` : '—'}</Text>
             </View>
           ) : (
-            <Text style={styles.notaPrecios}>{NOTA_PRECIOS}</Text>
+            <View style={styles.nota}>
+              <Icono nombre="information-circle-outline" tamano={18} color={colores.primarioOscuro} />
+              <Text style={styles.notaPrecios}>{NOTA_PRECIOS}</Text>
+            </View>
           )}
         </View>
 
-        <Text style={styles.subtitulo}>Dirección de entrega</Text>
+        <Titulo estilo={styles.subtitulo}>Dirección de entrega</Titulo>
 
         <SelectorDireccion
           direcciones={direcciones}
@@ -136,207 +156,188 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
           onNuevaDireccion={agregarDireccionGuardada}
         />
 
-        {errorEnvio && errorEnvio !== 'No disponible' ? <Text style={styles.error}>{errorEnvio}</Text> : null}
+        {errorEnvio && errorEnvio !== 'No disponible' ? (
+          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{errorEnvio}</Text>
+        ) : null}
 
         {opciones.length > 0 ? (
           <View style={styles.seccionSucursal}>
-            <Text style={styles.subtitulo}>Sucursal de recogida</Text>
+            <Titulo estilo={styles.subtitulo}>Sucursal de recogida</Titulo>
             {opciones.length === 1 ? (
-              <Text style={styles.direccionTexto}>
-                {opciones[0].sucursal.nombre} · {opciones[0].sucursal.direccion}
-              </Text>
+              <View style={styles.unica}>
+                <Icono nombre="storefront-outline" tamano={22} color={colores.primarioOscuro} />
+                <Text style={styles.unicaTexto}>
+                  {opciones[0].sucursal.nombre} · {opciones[0].sucursal.direccion}
+                </Text>
+              </View>
             ) : (
               <>
                 <Text style={styles.ayuda}>
                   Elegimos la más cercana a tu dirección. Toca otra si prefieres ese local.
                 </Text>
-                {opciones.map(o => (
-                  <TouchableOpacity
-                    key={o.sucursal.id}
-                    style={[
-                      styles.direccionCard,
-                      o.sucursal.id === opcionActiva?.sucursal.id && styles.direccionCardSeleccionada,
-                    ]}
-                    // Tocar la sugerida vuelve al modo automático (no se envía sucursal).
-                    onPress={() => setSucursalElegida(o.sucursal.id === envio.sugerida ? null : o.sucursal.id)}
-                  >
-                    <View style={styles.sucursalFila}>
-                      <Text style={styles.direccionEtiqueta}>{o.sucursal.nombre}</Text>
-                      {o.sucursal.id === envio.sugerida ? (
-                        <Text style={styles.insigniaCercana}>Más cercana</Text>
-                      ) : null}
-                    </View>
-                    <Text style={styles.direccionTexto}>{o.sucursal.direccion}</Text>
-                    <Text style={styles.direccionReferencia}>
-                      {parseFloat(o.distancia_km).toFixed(1)} km · envío ${parseFloat(o.costo_envio).toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <View accessibilityRole="radiogroup" style={styles.sucursales}>
+                  {opciones.map(o => {
+                    const seleccionada = o.sucursal.id === opcionActiva?.sucursal.id;
+                    const cercana = o.sucursal.id === envio.sugerida;
+                    return (
+                      <Pressable
+                        key={o.sucursal.id}
+                        accessibilityRole="radio"
+                        aria-checked={seleccionada}
+                        accessibilityLabel={`${o.sucursal.nombre}${cercana ? ', la más cercana' : ''}. ${o.sucursal.direccion}. ${parseFloat(o.distancia_km).toFixed(1)} kilómetros, envío ${parseFloat(o.costo_envio).toFixed(2)} dólares`}
+                        style={({ pressed }) => [styles.sucursal, seleccionada && styles.sucursalSeleccionada, pressed && styles.presionada]}
+                        // Tocar la sugerida vuelve al modo automático (no se envía sucursal).
+                        onPress={() => setSucursalElegida(cercana ? null : o.sucursal.id)}
+                      >
+                        <Icono
+                          nombre={seleccionada ? 'radio-button-on' : 'radio-button-off'}
+                          tamano={24}
+                          color={seleccionada ? colores.primario : colores.bordeCampo}
+                        />
+                        <View style={styles.sucursalCuerpo}>
+                          <View style={styles.sucursalFila}>
+                            <Text style={styles.sucursalNombre}>{o.sucursal.nombre}</Text>
+                            {cercana ? (
+                              <View style={styles.cercana}>
+                                <Icono nombre="flash" tamano={12} color={colores.primarioOscuro} />
+                                <Text style={styles.cercanaTexto}>Más cercana</Text>
+                              </View>
+                            ) : null}
+                          </View>
+                          <Text style={styles.sucursalDireccion}>{o.sucursal.direccion}</Text>
+                          <Text style={styles.sucursalDetalle}>
+                            {parseFloat(o.distancia_km).toFixed(1)} km · envío ${parseFloat(o.costo_envio).toFixed(2)}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </>
             )}
           </View>
         ) : null}
 
         {perfilIncompleto ? (
-          <TouchableOpacity style={styles.avisoPerfil} onPress={() => navigation.navigate('MisDatos')}>
-            <Text style={styles.avisoPerfilTexto}>
-              Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
-            </Text>
-            <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
-          </TouchableOpacity>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Para pedir necesitamos tu nombre y teléfono. Completar mis datos"
+            style={styles.avisoPerfil}
+            onPress={() => navigation.navigate('MisDatos')}
+          >
+            <Icono nombre="alert-circle" tamano={22} color={colores.naranja} />
+            <View style={styles.avisoCuerpo}>
+              <Text style={styles.avisoPerfilTexto}>
+                Para pedir necesitamos tu nombre y teléfono, así el motorizado puede contactarte.
+              </Text>
+              <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
+            </View>
+          </Pressable>
         ) : null}
 
-        <TouchableOpacity
-          style={[styles.confirmarBoton, (!opcionActiva || perfilIncompleto) && styles.confirmarBotonDeshabilitado]}
+        <Boton
+          titulo="Confirmar pedido"
+          icono="bag-check-outline"
           onPress={confirmar}
-          disabled={!opcionActiva || perfilIncompleto}
-        >
-          <Text style={styles.confirmarTexto}>Confirmar pedido</Text>
-        </TouchableOpacity>
+          deshabilitado={!puedeConfirmar}
+          estilo={styles.confirmar}
+        />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 16,
+  container: { flex: 1, backgroundColor: colores.fondo },
+  contenido: { padding: 16 },
+  titulo: { fontSize: 22, marginBottom: 14 },
+  subtitulo: { fontSize: 18, marginTop: 20, marginBottom: 10 },
+  carrito: { ...estiloTarjeta, padding: 6 },
+  itemFila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  cantidad: {
+    minWidth: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colores.acentoSuave,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  titulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  notaPrecios: {
-    fontSize: 12,
-    color: '#666',
-    padding: 14,
-  },
-  seccionSucursal: {
-    marginTop: 8,
-  },
-  ayuda: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
-  sucursalFila: {
+  cantidadTexto: { fontSize: 14, fontWeight: '800', color: colores.primarioOscuro },
+  itemNombre: { flex: 1, fontSize: 16, color: colores.texto },
+  itemPrecio: { fontSize: 15, color: colores.tenue },
+  envioFila: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  insigniaCercana: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#007cab',
-    backgroundColor: '#e0f5fd',
-    borderRadius: 10,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-  },
-  subtitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  carrito: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  itemFila: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.medio,
     padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    margin: 6,
   },
-  itemNombre: {
-    fontSize: 15,
-  },
-  itemPrecio: {
-    fontSize: 15,
-    color: '#666',
-  },
+  envioIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  envioTexto: { fontSize: 16, fontWeight: '700', color: colores.texto },
+  envioPrecio: { fontSize: 20, fontWeight: '800', color: colores.primarioOscuro },
+  envioPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
   totalFila: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
-  totalTexto: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  direccionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+  totalTexto: { fontSize: 17, fontWeight: '800' },
+  nota: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
+  notaPrecios: { flex: 1, fontSize: 13, color: colores.tenue, lineHeight: 18 },
+
+  seccionSucursal: { marginTop: 4 },
+  ayuda: { fontSize: 14, color: colores.tenue, marginBottom: 10 },
+  unica: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  unicaTexto: { flex: 1, fontSize: 15, color: colores.texto },
+  sucursales: { gap: 10 },
+  sucursal: {
+    ...estiloTarjeta,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     padding: 14,
-    marginBottom: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  direccionCardSeleccionada: {
-    borderColor: '#007cab',
-  },
-  direccionEtiqueta: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  direccionTexto: {
-    fontSize: 13,
-    color: '#666',
-  },
-  direccionReferencia: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  avisoPerfil: {
-    backgroundColor: '#fff4e0',
-    borderColor: '#e08a1e',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-  },
-  avisoPerfilTexto: {
-    fontSize: 13,
-    color: '#7a4b00',
-  },
-  avisoPerfilAccion: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#e08a1e',
-    marginTop: 6,
-  },
-  confirmarBoton: {
-    backgroundColor: '#007cab',
-    padding: 16,
-    borderRadius: 12,
+  sucursalSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
+  presionada: { opacity: 0.9 },
+  sucursalCuerpo: { flex: 1 },
+  sucursalFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  sucursalNombre: { fontSize: 16, fontWeight: '800', color: colores.texto },
+  cercana: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
+    backgroundColor: colores.acentoSuave,
+    borderRadius: radio.pastilla,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  cercanaTexto: { fontSize: 12, fontWeight: '800', color: colores.primarioOscuro },
+  sucursalDireccion: { fontSize: 14, color: colores.tenue, marginTop: 2 },
+  sucursalDetalle: { fontSize: 13, fontWeight: '600', color: colores.texto, marginTop: 4 },
+
+  avisoPerfil: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    backgroundColor: '#fff4e0',
+    borderLeftWidth: 5,
+    borderLeftColor: colores.naranja,
+    borderRadius: radio.medio,
+    padding: 14,
     marginTop: 16,
   },
-  confirmarBotonDeshabilitado: {
-    backgroundColor: '#aaa',
-  },
-  confirmarTexto: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  error: {
-    color: 'red',
-    marginTop: 10,
-    textAlign: 'center',
-  },
+  avisoCuerpo: { flex: 1 },
+  avisoPerfilTexto: { fontSize: 14, color: '#5c3300' },
+  avisoPerfilAccion: { fontSize: 14, fontWeight: '800', color: colores.naranja, marginTop: 6 },
+  confirmar: { marginTop: 20 },
+  error: { color: colores.peligro, fontWeight: '600', fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

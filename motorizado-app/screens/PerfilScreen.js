@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, sombraTarjeta } from '../constants/tema';
+import { colores, radio } from '../constants/tema';
+import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
   `${perfil.first_name} ${perfil.last_name}`.trim() || perfil.username;
@@ -51,12 +51,8 @@ export default function PerfilScreen({ navigation }) {
   if (!perfil) {
     return (
       <View style={styles.centro}>
-        <Text style={styles.tenue}>{error || 'Cargando…'}</Text>
-        {error ? (
-          <TouchableOpacity onPress={cargar}>
-            <Text style={styles.enlace}>Reintentar</Text>
-          </TouchableOpacity>
-        ) : null}
+        <Text style={styles.tenue} accessibilityLiveRegion="polite">{error || 'Cargando…'}</Text>
+        {error ? <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={cargar} estilo={styles.reintentar} /> : null}
       </View>
     );
   }
@@ -67,52 +63,58 @@ export default function PerfilScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contenido}>
       <View style={styles.cabecera}>
-        <View style={styles.avatar}>
+        <View style={styles.cabeceraBurbuja} pointerEvents="none" aria-hidden />
+        <View style={styles.avatar} aria-hidden>
           <Text style={styles.avatarTexto}>{iniciales(perfil)}</Text>
         </View>
-        <Text style={styles.nombre}>{nombreCompleto(perfil)}</Text>
-        <View style={styles.chip}>
-          <Ionicons name="bicycle" size={14} color={colores.primario} />
-          <Text style={styles.chipTexto}>Motorizado</Text>
+        <View style={styles.cabeceraCuerpo}>
+          <Text accessibilityRole="header" style={styles.nombre} numberOfLines={2}>{nombreCompleto(perfil)}</Text>
+          <View style={styles.chip}>
+            <Icono nombre="bicycle" tamano={16} color="#fff" />
+            <Text style={styles.chipTexto}>Motorizado</Text>
+          </View>
+          <Text style={styles.desde}>Con Nelson Express desde {desdeCuando(perfil.date_joined)}</Text>
         </View>
-        <Text style={styles.tenue}>Con Nelson Express desde {desdeCuando(perfil.date_joined)}</Text>
       </View>
 
       <View style={styles.estadisticas}>
-        <View style={styles.estadistica}>
+        <View style={styles.estadistica} accessible accessibilityLabel={`Entregas hoy: ${perfil.entregas_hoy}`}>
+          <Icono nombre="today-outline" tamano={24} color={colores.primarioOscuro} />
           <Text style={styles.estadisticaNumero}>{perfil.entregas_hoy}</Text>
           <Text style={styles.estadisticaTexto}>Entregas hoy</Text>
         </View>
-        <View style={styles.estadistica}>
+        <View style={styles.estadistica} accessible accessibilityLabel={`Entregas totales: ${perfil.entregas_completadas}`}>
+          <Icono nombre="trophy-outline" tamano={24} color={colores.primarioOscuro} />
           <Text style={styles.estadisticaNumero}>{perfil.entregas_completadas}</Text>
           <Text style={styles.estadisticaTexto}>Entregas totales</Text>
         </View>
       </View>
 
       {faltaContacto || !tieneVehiculo ? (
-        <TouchableOpacity style={styles.aviso} onPress={() => navigation.navigate('EditarPerfil')}>
-          <Ionicons name="alert-circle-outline" size={20} color="#7a4b00" />
-          <Text style={styles.avisoTexto}>
-            Completa tu perfil: {faltaContacto ? 'nombre y teléfono' : 'los datos de tu vehículo'} para que el despachador
-            y los clientes puedan identificarte.
-          </Text>
-        </TouchableOpacity>
+        <Boton
+          titulo={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}`}
+          etiqueta={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}, para que el despachador y los clientes puedan identificarte`}
+          icono="alert-circle"
+          variante="secundario"
+          onPress={() => navigation.navigate('EditarPerfil')}
+          estilo={styles.aviso}
+        />
       ) : null}
 
       <View style={styles.tarjeta}>
-        <Text style={styles.seccion}>Contacto</Text>
+        <Titulo estilo={styles.seccion}>Contacto</Titulo>
         <View style={styles.fila}>
-          <Ionicons name="call-outline" size={18} color={colores.tenue} />
+          <Icono nombre="call-outline" tamano={20} color={colores.primarioOscuro} />
           <Text style={styles.filaTexto}>{perfil.telefono || 'Sin teléfono registrado'}</Text>
         </View>
         <View style={styles.fila}>
-          <Ionicons name="at-outline" size={18} color={colores.tenue} />
+          <Icono nombre="at-outline" tamano={20} color={colores.primarioOscuro} />
           <Text style={styles.filaTexto}>{perfil.username}</Text>
         </View>
       </View>
 
       <View style={styles.tarjeta}>
-        <Text style={styles.seccion}>Vehículo</Text>
+        <Titulo estilo={styles.seccion}>Vehículo</Titulo>
         {tieneVehiculo ? (
           <View style={styles.vehiculo}>
             <View style={styles.vehiculoDatos}>
@@ -120,7 +122,7 @@ export default function PerfilScreen({ navigation }) {
               {perfil.vehiculo_color ? <Text style={styles.tenue}>{perfil.vehiculo_color}</Text> : null}
             </View>
             {perfil.vehiculo_placa ? (
-              <View style={styles.placa}>
+              <View style={styles.placa} accessible accessibilityLabel={`Placa ${perfil.vehiculo_placa}`}>
                 <Text style={styles.placaTexto}>{perfil.vehiculo_placa}</Text>
               </View>
             ) : null}
@@ -130,195 +132,88 @@ export default function PerfilScreen({ navigation }) {
         )}
       </View>
 
-      <TouchableOpacity style={styles.botonPrimario} onPress={() => navigation.navigate('EditarPerfil')}>
-        <Ionicons name="create-outline" size={18} color="#fff" />
-        <Text style={styles.botonPrimarioTexto}>Editar perfil</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.botonSalir} onPress={logout}>
-        <Text style={styles.botonSalirTexto}>Cerrar sesión</Text>
-      </TouchableOpacity>
+      <Boton titulo="Editar perfil" icono="create-outline" onPress={() => navigation.navigate('EditarPerfil')} estilo={styles.espacio} />
+      <Boton titulo="Cerrar sesión" variante="peligroSuave" icono="log-out-outline" onPress={logout} estilo={styles.espacio} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colores.fondo,
-  },
-  contenido: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  centro: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colores.fondo,
-  },
+  container: { flex: 1, backgroundColor: colores.fondo },
+  contenido: { padding: 16, paddingBottom: 32, gap: 14 },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: 24 },
+  reintentar: { marginTop: 12 },
+  tenue: { color: colores.tenue, fontSize: 14 },
+
   cabecera: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 12,
+    gap: 16,
+    backgroundColor: colores.primario,
+    borderRadius: radio.grande + 4,
+    padding: 20,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: colores.primario,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  cabeceraBurbuja: {
+    position: 'absolute',
+    right: -50,
+    top: -60,
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: colores.primarioOscuro,
+    opacity: 0.55,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colores.primario,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  avatarTexto: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  nombre: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colores.texto,
-  },
+  avatarTexto: { fontSize: 26, fontWeight: '800', color: colores.primarioOscuro },
+  cabeceraCuerpo: { flex: 1, gap: 6, alignItems: 'flex-start' },
+  nombre: { fontSize: 21, fontWeight: '800', color: '#fff' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: colores.acentoSuave,
-    borderRadius: 20,
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: radio.pastilla,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    marginVertical: 8,
+    paddingHorizontal: 12,
   },
-  chipTexto: {
-    color: colores.primario,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  tenue: {
-    color: colores.tenue,
-    fontSize: 13,
-  },
-  enlace: {
-    color: '#1e6fe0',
-    marginTop: 8,
-    fontWeight: '600',
-  },
-  estadisticas: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  estadistica: {
-    flex: 1,
-    backgroundColor: colores.tarjeta,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    ...sombraTarjeta,
-  },
-  estadisticaNumero: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colores.texto,
-  },
-  estadisticaTexto: {
-    fontSize: 12,
-    color: colores.tenue,
-    marginTop: 2,
-  },
-  aviso: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff4e0',
-    borderColor: '#e08a1e',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  avisoTexto: {
-    flex: 1,
-    color: '#7a4b00',
-    fontSize: 13,
-  },
-  tarjeta: {
-    backgroundColor: colores.tarjeta,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    ...sombraTarjeta,
-  },
-  seccion: {
-    fontSize: 12,
-    color: colores.suave,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  fila: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 4,
-  },
-  filaTexto: {
-    fontSize: 15,
-    color: colores.texto,
-  },
-  vehiculo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  vehiculoDatos: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  vehiculoModelo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colores.texto,
-  },
+  chipTexto: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  desde: { color: '#fff', fontSize: 13 },
+
+  estadisticas: { flexDirection: 'row', gap: 12 },
+  estadistica: { ...estiloTarjeta, flex: 1, alignItems: 'center', gap: 4 },
+  estadisticaNumero: { fontSize: 30, fontWeight: '800', color: colores.texto },
+  estadisticaTexto: { fontSize: 13, fontWeight: '600', color: colores.tenue },
+
+  aviso: { backgroundColor: '#fff4e0', borderColor: colores.naranja },
+
+  tarjeta: { ...estiloTarjeta },
+  seccion: { fontSize: 14, color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 10 },
+  fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  filaTexto: { fontSize: 16, color: colores.texto },
+  vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  vehiculoDatos: { flex: 1, paddingRight: 12 },
+  vehiculoModelo: { fontSize: 17, fontWeight: '700', color: colores.texto },
   placa: {
     borderWidth: 2,
     borderColor: colores.texto,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#fff',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
   },
-  placaTexto: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    color: colores.texto,
-  },
-  botonPrimario: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colores.primario,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-  },
-  botonPrimarioTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  botonSalir: {
-    borderColor: colores.peligro,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  botonSalirTexto: {
-    color: colores.peligro,
-    fontWeight: 'bold',
-  },
+  placaTexto: { fontSize: 19, fontWeight: '800', letterSpacing: 2, color: colores.texto },
+  espacio: { marginTop: 2 },
 });

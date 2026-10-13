@@ -1,9 +1,35 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Switch, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, Switch, StyleSheet, Modal } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from './SelectorMapa';
+import { colores } from '../constants/tema';
+import { Boton, Campo, Icono, estiloTarjeta } from './ui';
 
-const COLOR = '#007cab';
+// Una dirección elegible. Es una opción de un grupo (radio): lo seleccionado se ve por el ícono y el
+// borde, y se anuncia como "seleccionado" a los lectores de pantalla.
+function Opcion({ etiqueta, direccion, referencia, seleccionada, onPress }) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      aria-checked={seleccionada}
+      accessibilityLabel={`${etiqueta}. ${direccion || 'Sin dirección'}${referencia ? `. ${referencia}` : ''}`}
+      onPress={onPress}
+      android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+      style={({ pressed }) => [styles.card, seleccionada && styles.cardSeleccionada, pressed && styles.cardPresionada]}
+    >
+      <Icono
+        nombre={seleccionada ? 'radio-button-on' : 'radio-button-off'}
+        tamano={24}
+        color={seleccionada ? colores.primario : colores.bordeCampo}
+      />
+      <View style={styles.cardCuerpo}>
+        <Text style={styles.etiqueta}>{etiqueta}</Text>
+        <Text style={styles.texto}>{direccion || 'Sin dirección'}</Text>
+        {referencia ? <Text style={styles.referencia}>{referencia}</Text> : null}
+      </View>
+    </Pressable>
+  );
+}
 
 // Elige una dirección guardada o marca un punto nuevo en el mapa (con la opción de guardarlo para la
 // próxima vez). Se usa igual para el origen y el destino de un encargo, y para el destino de un pedido
@@ -78,74 +104,90 @@ export default function SelectorDireccion({ direcciones, valor, onCambiar, onNue
     }
   };
 
+  const listoParaUsar = Boolean(lat && lng && direccion.trim());
+
   return (
     <View>
-      {direcciones.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={[styles.card, coincide(item) && styles.cardSeleccionada]}
-          onPress={() => elegirGuardada(item)}
-        >
-          <Text style={styles.etiqueta}>{item.etiqueta}</Text>
-          <Text style={styles.texto}>{item.direccion}</Text>
-          {item.referencia ? <Text style={styles.referencia}>{item.referencia}</Text> : null}
-        </TouchableOpacity>
-      ))}
+      <View accessibilityRole="radiogroup" style={styles.grupo}>
+        {direcciones.map((item) => (
+          <Opcion
+            key={item.id}
+            etiqueta={item.etiqueta}
+            direccion={item.direccion}
+            referencia={item.referencia}
+            seleccionada={Boolean(coincide(item))}
+            onPress={() => elegirGuardada(item)}
+          />
+        ))}
 
-      {valorPersonalizado ? (
-        <TouchableOpacity style={[styles.card, styles.cardSeleccionada]} onPress={abrirNueva}>
-          <Text style={styles.etiqueta}>Otra ubicación</Text>
-          <Text style={styles.texto}>{valor.direccion || 'Sin dirección'}</Text>
-          {valor.referencia ? <Text style={styles.referencia}>{valor.referencia}</Text> : null}
-        </TouchableOpacity>
-      ) : null}
+        {valorPersonalizado ? (
+          <Opcion
+            etiqueta="Otra ubicación"
+            direccion={valor.direccion}
+            referencia={valor.referencia}
+            seleccionada
+            onPress={abrirNueva}
+          />
+        ) : null}
+      </View>
 
       {abierto ? (
         <View style={styles.formulario}>
-          <TouchableOpacity style={styles.mapaBoton} onPress={() => setMostrarMapa(true)}>
-            <Text style={styles.mapaBotonTexto}>
-              {lat && lng
-                ? `📍 Ubicación elegida (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})`
-                : '📍 Elegir ubicación en el mapa'}
-            </Text>
-          </TouchableOpacity>
-          <TextInput
-            style={[styles.input, direccionBloqueada && styles.inputBloqueado]}
+          <Boton
+            titulo={lat && lng ? `Ubicación elegida (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})` : 'Elegir ubicación en el mapa'}
+            variante="secundario"
+            icono={lat && lng ? 'location' : 'map-outline'}
+            onPress={() => setMostrarMapa(true)}
+            estilo={styles.botonMapa}
+          />
+          <Campo
+            etiqueta="Dirección"
             value={direccion}
             onChangeText={setDireccion}
-            editable={!direccionBloqueada}
-            placeholder="Dirección (se completa al elegir en el mapa)"
+            bloqueado={direccionBloqueada}
+            placeholder="Se completa al elegir en el mapa"
+            ayuda={direccionBloqueada ? 'Tomada del mapa. Vuelve a elegir el punto para cambiarla.' : undefined}
           />
-          <TextInput
-            style={styles.input}
+          <Campo
+            etiqueta="Referencia"
             value={referencia}
             onChangeText={setReferencia}
             maxLength={255}
-            placeholder="Referencia (ej. casa de dos pisos, al lado de la tienda azul)"
+            placeholder="Ej. casa de dos pisos, portón verde"
           />
           <View style={styles.filaSwitch}>
             <Text style={styles.switchTexto}>Guardar esta dirección para la próxima vez</Text>
-            <Switch value={guardarNueva} onValueChange={setGuardarNueva} trackColor={{ true: COLOR }} />
+            <Switch
+              value={guardarNueva}
+              onValueChange={setGuardarNueva}
+              trackColor={{ false: '#c4cbd0', true: colores.primario }}
+              thumbColor="#fff"
+              accessibilityLabel="Guardar esta dirección para la próxima vez"
+            />
           </View>
           {guardarNueva ? (
-            <TextInput style={styles.input} value={etiqueta} onChangeText={setEtiqueta} placeholder="Etiqueta (ej. Casa, Trabajo)" />
+            <Campo etiqueta="Etiqueta" value={etiqueta} onChangeText={setEtiqueta} placeholder="Ej. Casa, Trabajo" />
           ) : null}
-          <TouchableOpacity
-            style={[styles.confirmarBoton, !(lat && lng && direccion.trim()) && styles.botonDeshabilitado]}
-            disabled={!(lat && lng && direccion.trim()) || guardando}
+          {error ? (
+            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
+          ) : null}
+          <Boton
+            titulo={guardando ? 'Guardando…' : 'Usar esta ubicación'}
+            icono="checkmark"
             onPress={confirmarNueva}
-          >
-            <Text style={styles.confirmarTexto}>{guardando ? 'Guardando...' : 'Usar esta ubicación'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setAbierto(false)}>
-            <Text style={styles.cancelarTexto}>Cancelar</Text>
-          </TouchableOpacity>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+            deshabilitado={!listoParaUsar && !guardando}
+            cargando={guardando}
+          />
+          <Boton titulo="Cancelar" variante="fantasma" onPress={() => setAbierto(false)} estilo={styles.cancelar} />
         </View>
       ) : (
-        <TouchableOpacity onPress={abrirNueva}>
-          <Text style={styles.agregarTexto}>+ Otra ubicación</Text>
-        </TouchableOpacity>
+        <Boton
+          titulo="Otra ubicación"
+          icono="add-circle-outline"
+          variante="secundario"
+          onPress={abrirNueva}
+          estilo={styles.otra}
+        />
       )}
 
       <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
@@ -160,56 +202,34 @@ export default function SelectorDireccion({ direcciones, valor, onCambiar, onNue
 }
 
 const styles = StyleSheet.create({
+  grupo: { gap: 10 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    ...estiloTarjeta,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     padding: 14,
-    marginBottom: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  cardSeleccionada: { borderColor: COLOR },
-  etiqueta: { fontSize: 15, fontWeight: 'bold' },
-  texto: { fontSize: 13, color: '#666' },
-  referencia: { fontSize: 12, color: '#999', fontStyle: 'italic', marginTop: 2 },
-  agregarTexto: { color: COLOR, fontWeight: 'bold', marginVertical: 10 },
-  formulario: { marginTop: 4, marginBottom: 10 },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  inputBloqueado: { backgroundColor: '#eee', color: '#666' },
-  mapaBoton: {
-    backgroundColor: '#fff',
-    borderColor: COLOR,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  mapaBotonTexto: { color: COLOR, fontWeight: 'bold', textAlign: 'center' },
+  cardSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
+  cardPresionada: { opacity: 0.9 },
+  cardCuerpo: { flex: 1 },
+  etiqueta: { fontSize: 16, fontWeight: '800', color: colores.texto },
+  texto: { fontSize: 14, color: colores.tenue, marginTop: 2 },
+  referencia: { fontSize: 13, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
+  otra: { marginTop: 10 },
+  formulario: { ...estiloTarjeta, marginTop: 12 },
+  botonMapa: { marginBottom: 14 },
   filaSwitch: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+    gap: 10,
+    minHeight: 52,
+    marginBottom: 12,
   },
-  switchTexto: { flex: 1, fontSize: 14, paddingRight: 8 },
-  confirmarBoton: {
-    backgroundColor: COLOR,
-    padding: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  botonDeshabilitado: { backgroundColor: '#aaa' },
-  confirmarTexto: { color: '#fff', fontWeight: 'bold' },
-  cancelarTexto: { textAlign: 'center', color: '#999', marginTop: 10 },
-  error: { color: 'red', textAlign: 'center', marginTop: 10 },
+  switchTexto: { flex: 1, fontSize: 15, color: colores.texto },
+  cancelar: { marginTop: 8 },
+  error: { color: colores.peligro, fontWeight: '600', fontSize: 14, marginBottom: 10, textAlign: 'center' },
 });
