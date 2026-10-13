@@ -1,10 +1,19 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
-  AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, TextInput, View,
+  AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text as RNText, TextInput, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, familiaPorPeso, fuente, radio } from '../constants/tema';
 import { colorEstado, etiquetaEstado, iconoEstado } from '../constants/estados';
+
+// Text de la app: con familias de Nunito cada peso es su propia fuente, así que traduce `fontWeight` a la
+// familia que toca (y lo quita, para que Android no lo combine). Todas las pantallas importan Text de aquí.
+export function Text({ style, ...props }) {
+  const plano = StyleSheet.flatten(style) ?? {};
+  if (plano.fontFamily) return <RNText {...props} style={plano} />;
+  const { fontWeight, ...resto } = plano;
+  return <RNText {...props} style={{ ...resto, fontFamily: familiaPorPeso(fontWeight) }} />;
+}
 
 // Los íconos van junto a texto visible, así que se ocultan al lector de pantalla.
 export function Icono({ nombre, tamano = 20, color = colores.texto, estilo }) {
@@ -102,29 +111,30 @@ export const Campo = forwardRef(function Campo(
   );
 });
 
-// Chip de estado inclinado (velocidad): ícono + palabra + color, para que el color nunca sea el único indicador.
+// Etiqueta de estado: color sólido + ícono + palabra, para que el color nunca sea el único indicador.
 export function Insignia({ estado, estilo }) {
   const etiqueta = etiquetaEstado[estado] ?? estado;
+  const color = colorEstado[estado] ?? colores.tenue;
   return (
     <View
       accessible
       accessibilityLabel={`Estado: ${etiqueta}`}
-      style={[s.insignia, { backgroundColor: colorEstado[estado] ?? colores.tenue }, estilo]}
+      style={[s.insignia, { backgroundColor: color }, estilo]}
     >
-      <View style={s.insigniaInterior}>
-        <Icono nombre={iconoEstado[estado] ?? 'ellipse-outline'} tamano={15} color="#fff" />
-        <Text style={s.insigniaTexto}>{etiqueta}</Text>
+      <View style={s.insigniaIcono}>
+        <Icono nombre={iconoEstado[estado] ?? 'ellipse-outline'} tamano={12} color={color} />
       </View>
+      <Text style={s.insigniaTexto}>{etiqueta}</Text>
     </View>
   );
 }
 
-// El número de pedido como placa de moto: el negro del logo, en pequeño y con el celeste encima (7.4:1).
-export function Placa({ numero, estilo }) {
+// El número de pedido es texto normal en negrita: sin placa ni caja.
+export function NumeroPedido({ numero, estilo }) {
   return (
-    <View accessible accessibilityLabel={`Pedido número ${numero}`} style={[s.placa, estilo]}>
-      <Text style={s.placaTexto}>#{numero}</Text>
-    </View>
+    <Text accessibilityLabel={`Pedido número ${numero}`} style={[s.numeroPedido, estilo]}>
+      Pedido #{numero}
+    </Text>
   );
 }
 
@@ -192,9 +202,36 @@ export function Rayas({ color = '#fff', opacidad = 0.16, estilo }) {
   );
 }
 
+// Cabecera celeste con esquinas inferiores redondeadas. Quien la usa le suma el safe area de arriba.
+export function Cabecera({ children, estilo }) {
+  return <View style={[s.cabecera, estilo]}>{children}</View>;
+}
+
+// Botón grande de la pantalla de negocios: celeste, con franjas inclinadas y la flecha en un recuadro blanco.
+export function BotonEncargo({ titulo, subtitulo, onPress, estilo }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${titulo}. ${subtitulo}`}
+      onPress={onPress}
+      android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
+      style={({ pressed }) => [s.encargo, pressed && s.encargoPresionado, estilo]}
+    >
+      <Rayas estilo={s.encargoRayas} opacidad={0.14} />
+      <View style={s.encargoTextos}>
+        <Text style={s.encargoTitulo}>{titulo}</Text>
+        <Text style={s.encargoSubtitulo}>{subtitulo}</Text>
+      </View>
+      <View style={s.encargoFlecha}>
+        <Icono nombre="arrow-forward" tamano={20} color={colores.primario} />
+      </View>
+    </Pressable>
+  );
+}
+
 const DASHES = Array.from({ length: 56 });
 
-// La boleta de pedido: tarjeta con perforación y muescas laterales. `pie` va debajo de la línea punteada.
+// La boleta de pedido (cupón): tarjeta con línea punteada y muescas laterales sobre el borde, sin filo propio. `pie` va debajo de la línea punteada.
 // `fondo` es el color de la pantalla (las muescas se pintan de ese color para parecer recortes).
 export function Boleta({ children, pie, estilo, fondo = colores.fondo }) {
   return (
@@ -270,10 +307,10 @@ const s = StyleSheet.create({
     shadowRadius: 10,
   },
   botonOff: { backgroundColor: '#dfe3e6', borderColor: '#dfe3e6' },
-  botonTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.8, textTransform: 'uppercase' },
+  botonTexto: { fontFamily: fuente.extra, fontSize: 16 },
 
   campo: { marginBottom: 14 },
-  etiqueta: { fontSize: 14, fontWeight: '600', color: colores.texto, marginBottom: 6 },
+  etiqueta: { fontFamily: fuente.negrita, fontSize: 14, color: colores.texto, marginBottom: 6 },
   caja: {
     minHeight: 52,
     flexDirection: 'row',
@@ -288,31 +325,26 @@ const s = StyleSheet.create({
   cajaFoco: { borderColor: colores.primario },
   cajaError: { borderColor: colores.peligro },
   cajaBloqueada: { backgroundColor: '#eceff1' },
-  input: { flex: 1, fontSize: 16, color: colores.texto, paddingVertical: 12, ...web },
-  ayuda: { fontSize: 13, color: colores.tenue, marginTop: 6 },
-  error: { fontSize: 13, fontWeight: '600', color: colores.peligro, marginTop: 6 },
+  input: { flex: 1, fontFamily: fuente.media, fontSize: 16, color: colores.texto, paddingVertical: 12, ...web },
+  ayuda: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 6 },
+  error: { fontFamily: fuente.negrita, fontSize: 13, color: colores.peligro, marginTop: 6 },
 
   insignia: {
     alignSelf: 'flex-start',
-    borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
     paddingVertical: 4,
-    paddingHorizontal: 12,
-    transform: [{ skewX: '-10deg' }],
+    paddingLeft: 6,
+    paddingRight: 10,
   },
-  insigniaInterior: { flexDirection: 'row', alignItems: 'center', gap: 5, transform: [{ skewX: '10deg' }] },
-  insigniaTexto: { color: '#fff', fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.6, textTransform: 'uppercase' },
+  insigniaIcono: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  insigniaTexto: { color: '#fff', fontFamily: fuente.negrita, fontSize: 13 },
 
-  placa: {
-    backgroundColor: colores.negro,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: colores.acento,
-    paddingHorizontal: 9,
-    paddingVertical: 1,
-  },
-  placaTexto: { color: colores.acento, fontFamily: fuente.display, fontSize: 19, letterSpacing: 1 },
+  numeroPedido: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
 
-  titulo: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.4, textTransform: 'uppercase', color: colores.texto },
+  titulo: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto },
 
   fila: { flexDirection: 'row', gap: 12, paddingVertical: 8 },
   filaIcono: {
@@ -324,11 +356,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   filaCuerpo: { flex: 1 },
-  filaTitulo: { fontSize: 13, fontWeight: '700', color: colores.suave },
+  filaTitulo: { fontFamily: fuente.negrita, fontSize: 13, color: colores.suave },
 
   aviso: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderWidth: 1, borderRadius: radio.medio, padding: 12 },
   avisoCuerpo: { flex: 1 },
-  avisoTexto: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  avisoTexto: { fontFamily: fuente.media, fontSize: 14, lineHeight: 20 },
 
   rayas: {
     position: 'absolute',
@@ -339,14 +371,42 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
 
+  cabecera: {
+    backgroundColor: colores.primario,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+    paddingHorizontal: 18,
+    paddingBottom: 20,
+  },
+
+  encargo: {
+    minHeight: 66,
+    borderRadius: 20,
+    backgroundColor: colores.primario,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    overflow: 'hidden',
+  },
+  encargoPresionado: { backgroundColor: colores.primarioOscuro },
+  encargoRayas: { right: 56 },
+  encargoTextos: { flex: 1 },
+  encargoTitulo: { fontFamily: fuente.extra, fontSize: 16, color: '#fff' },
+  encargoSubtitulo: { fontFamily: fuente.media, fontSize: 12.5, color: '#fff' },
+  encargoFlecha: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+
+  // Sin borde ni overflow:hidden: las muescas sobresalen a medias del borde de la tarjeta.
   boleta: {
     backgroundColor: colores.tarjeta,
     borderRadius: radio.grande,
     elevation: 1,
     shadowColor: '#0b2530',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   boletaCuerpo: { padding: 16, paddingBottom: 14 },
   boletaPie: { padding: 16, paddingTop: 12 },
