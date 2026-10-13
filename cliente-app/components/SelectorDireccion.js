@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Switch, StyleSheet, Modal } from 'react-native';
+import { View, Pressable, Switch, StyleSheet, Modal } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from './SelectorMapa';
 import { colores, fuente } from '../constants/tema';
-import { Boton, Campo, Icono, estiloTarjeta } from './ui';
+import { Aviso, Boton, Campo, Icono, Text, estiloTarjeta } from './ui';
 
 // Una dirección elegible. Es una opción de un grupo (radio): lo seleccionado se ve por el ícono y el
 // borde, y se anuncia como "seleccionado" a los lectores de pantalla.
@@ -169,7 +169,7 @@ export default function SelectorDireccion({ direcciones, valor, onCambiar, onNue
             <Campo etiqueta="Etiqueta" value={etiqueta} onChangeText={setEtiqueta} placeholder="Ej. Casa, Trabajo" />
           ) : null}
           {error ? (
-            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
+            <Aviso tipo="error" estilo={styles.error}>{error}</Aviso>
           ) : null}
           <Boton
             titulo={guardando ? 'Guardando…' : 'Usar esta ubicación'}
@@ -210,14 +210,14 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: colores.borde,
   },
   cardSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
   cardPresionada: { opacity: 0.9 },
   cardCuerpo: { flex: 1 },
-  etiqueta: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
-  texto: { fontSize: 14, color: colores.tenue, marginTop: 2 },
-  referencia: { fontSize: 13, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
+  etiqueta: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  texto: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
+  referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
   otra: { marginTop: 10 },
   formulario: { ...estiloTarjeta, marginTop: 12 },
   botonMapa: { marginBottom: 14 },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     marginBottom: 12,
   },
-  switchTexto: { flex: 1, fontSize: 15, color: colores.texto },
+  switchTexto: { flex: 1, fontFamily: fuente.negrita, fontSize: 15, color: colores.texto },
   cancelar: { marginTop: 8 },
-  error: { color: colores.peligro, fontWeight: '600', fontSize: 14, marginBottom: 10, textAlign: 'center' },
+  error: { marginBottom: 10 },
 });

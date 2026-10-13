@@ -90,7 +90,7 @@ export default function MisPedidosScreen({ navigation }) {
           const titulo = esEncargo ? 'Encargo' : item.negocio.nombre;
           const textoPie = MOSTRAR_PRECIOS
             ? `Total $${total.toFixed(2)}`
-            : item.costo_envio == null ? 'Envío por confirmar' : `Envío $${parseFloat(item.costo_envio).toFixed(2)}`;
+            : item.costo_envio == null ? 'Envío por definir' : `Envío $${parseFloat(item.costo_envio).toFixed(2)}`;
           return (
             <Entrada indice={index} estilo={styles.celda}>
               <Pressable

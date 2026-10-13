@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Text, FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react-native';
+import { FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
-import { Boton, Icono, estiloTarjeta } from '../components/ui';
+import { Boton, Icono, Text, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
 function FotoProducto({ producto, style }) {
@@ -119,6 +119,7 @@ export default function MenuScreen({ route, navigation }) {
         transparent
         animationType="slide"
         onRequestClose={cerrarProducto}
+        aria-label={seleccionado?.nombre ?? 'Producto'} // react-native-web le pone role="dialog" y axe exige un nombre
       >
         <Pressable style={styles.fondoModal} onPress={cerrarProducto} accessible={false}>
           {seleccionado ? (
@@ -127,7 +128,6 @@ export default function MenuScreen({ route, navigation }) {
               style={[styles.hoja, { paddingBottom: 16 + insets.bottom }]}
               onPress={() => {}}
               accessible={false}
-              aria-modal
             >
               <FotoProducto producto={seleccionado} style={styles.fotoGrande} />
               <Pressable
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
   foto: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colores.acentoSuave },
   fotoVacia: { alignItems: 'center', justifyContent: 'center' },
   info: { padding: 12 },
-  nombre: { fontFamily: fuente.display, fontSize: 21, lineHeight: 22, letterSpacing: 0.2, textTransform: 'uppercase', minHeight: 44, color: colores.texto },
-  precio: { fontFamily: fuente.display, fontSize: 26, color: '#000', marginTop: 2 },
+  nombre: { fontFamily: fuente.extra, fontSize: 16, lineHeight: 21, minHeight: 42, color: colores.texto },
+  precio: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto, marginTop: 2 },
   insignia: {
     position: 'absolute',
     top: 8,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   insigniaMas: { backgroundColor: '#fff' },
-  insigniaTexto: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  insigniaTexto: { color: '#fff', fontFamily: fuente.extra, fontSize: 14 },
   barraConfirmar: {
     backgroundColor: colores.tarjeta,
     paddingHorizontal: 14,
@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   hojaCuerpo: { padding: 18 },
-  hojaNombre: { fontFamily: fuente.display, fontSize: 36, lineHeight: 36, textTransform: 'uppercase', color: colores.texto },
-  hojaPrecio: { fontFamily: fuente.display, fontSize: 30, color: '#000', marginTop: 4 },
+  hojaNombre: { fontFamily: fuente.extra, fontSize: 22, lineHeight: 28, color: colores.texto },
+  hojaPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.texto, marginTop: 4 },
   hojaDescripcion: { fontSize: 15, color: colores.tenue, marginTop: 8, lineHeight: 21 },
   selector: {
     flexDirection: 'row',
@@ -289,6 +289,6 @@ const styles = StyleSheet.create({
   },
   selectorPresionado: { backgroundColor: colores.acentoSuave },
   selectorDeshabilitado: { opacity: 0.45 },
-  selectorCantidad: { fontFamily: fuente.display, fontSize: 38, minWidth: 44, textAlign: 'center' },
+  selectorCantidad: { fontFamily: fuente.extra, fontSize: 28, minWidth: 44, textAlign: 'center', color: colores.texto },
   quitar: { marginTop: 10 },
 });

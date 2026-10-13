@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
-import { colores, radio } from '../constants/tema';
-import { Boton, Campo, Icono } from '../components/ui';
+import { colores } from '../constants/tema';
+import { Aviso, Boton, Campo, estiloTarjeta } from '../components/ui';
 
 export default function MisDatosScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
@@ -49,12 +49,7 @@ export default function MisDatosScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.contenido} keyboardShouldPersistTaps="handled">
-        <View style={styles.nota}>
-          <Icono nombre="information-circle-outline" tamano={20} color={colores.primarioOscuro} />
-          <Text style={styles.notaTexto}>
-            El motorizado verá tu nombre y teléfono para poder contactarte al entregar tu pedido.
-          </Text>
-        </View>
+        <Aviso>El motorizado verá tu nombre y teléfono para poder contactarte al entregar tu pedido.</Aviso>
 
         <View style={styles.tarjeta}>
           <Campo
@@ -89,10 +84,7 @@ export default function MisDatosScreen({ navigation }) {
         </View>
 
         {error ? (
-          <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
-            <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
-            <Text style={styles.errorTexto}>{error}</Text>
-          </View>
+          <Aviso tipo="error">{error}</Aviso>
         ) : null}
 
         <Boton
@@ -111,33 +103,6 @@ export default function MisDatosScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16, gap: 14 },
-  nota: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: colores.acentoSuave,
-    borderRadius: radio.medio,
-    padding: 14,
-  },
-  notaTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
-  tarjeta: {
-    backgroundColor: colores.tarjeta,
-    borderRadius: radio.grande,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#0b2530',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
+  tarjeta: { ...estiloTarjeta },
   ultimo: { marginBottom: 0 },
-  errorCaja: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.chico,
-    padding: 12,
-  },
-  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
 });

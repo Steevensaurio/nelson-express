@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Icono, Rayas, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Icono, Rayas, Text, estiloTarjeta } from '../components/ui';
 
 const iniciales = (perfil) =>
   ((perfil.first_name?.[0] ?? '') + (perfil.last_name?.[0] ?? '') || perfil.username?.[0] || '?').toUpperCase();
@@ -94,10 +94,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { fontFamily: fuente.display, fontSize: 30, color: colores.primarioOscuro },
+  avatarTexto: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1 },
-  nombre: { fontFamily: fuente.display, fontSize: 32, lineHeight: 32, letterSpacing: 0.2, textTransform: 'uppercase', color: '#fff' },
-  telefono: { fontSize: 15, color: '#fff', marginTop: 3 },
+  nombre: { fontFamily: fuente.extra, fontSize: 22, lineHeight: 28, color: '#fff' },
+  telefono: { fontFamily: fuente.media, fontSize: 15, color: '#fff', marginTop: 3 },
   grupo: { ...estiloTarjeta, padding: 4 },
   opcion: {
     minHeight: 64,
@@ -117,8 +117,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   opcionCuerpo: { flex: 1 },
-  opcionTexto: { fontFamily: fuente.display, fontSize: 24, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
-  opcionDetalle: { fontSize: 13, color: colores.tenue, marginTop: 2 },
+  opcionTexto: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
+  opcionDetalle: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 2 },
   separador: { height: 1, backgroundColor: colores.borde, marginHorizontal: 12 },
   salir: { marginTop: 6 },
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Image, FlatList, Pressable, TextInput, StyleSheet, Platform } from 'react-native';
-import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
+import { useScrollToTop, useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { colores, fuente } from '../constants/tema';
@@ -35,6 +36,8 @@ export default function NegociosScreen({ navigation }) {
   const [busqueda, setBusqueda] = useState('');
   const [foco, setFoco] = useState(false);
   const lista = useRef(null);
+  const buscador = useRef(null);
+  const enfocada = useIsFocused(); // la barra de estado es clara solo mientras se ve esta cabecera celeste
   useScrollToTop(lista); // tocar de nuevo la pestaña activa vuelve al inicio de la lista
 
   // La cabecera celeste hace de encabezado de la pantalla.
@@ -61,23 +64,30 @@ export default function NegociosScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {enfocada ? <StatusBar style="light" /> : null}
       <Cabecera estilo={{ paddingTop: insets.top + 14 }}>
         <Titulo estilo={styles.saludo}>{nombre ? `Hola, ${nombre}` : 'Hola'}{'\n'}¿qué pedimos hoy?</Titulo>
-        <View style={[styles.busca, foco && styles.buscaFoco]}>
+        <Pressable
+          accessible={false}
+          tabIndex={-1}
+          onPress={() => buscador.current?.focus()}
+          style={[styles.busca, foco && styles.buscaFoco]}
+        >
           <Icono nombre="search" tamano={20} color={colores.suave} />
           <TextInput
+            ref={buscador}
             style={styles.buscaInput}
             value={busqueda}
             onChangeText={setBusqueda}
             onFocus={() => setFoco(true)}
             onBlur={() => setFoco(false)}
-            placeholder="Buscar restaurante o comida"
+            placeholder="Buscar restaurante"
             placeholderTextColor={colores.placeholder}
             accessibilityLabel="Buscar restaurante"
             returnKeyType="search"
             autoCorrect={false}
           />
-        </View>
+        </Pressable>
       </Cabecera>
       <FlatList
         ref={lista}

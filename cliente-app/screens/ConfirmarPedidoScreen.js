@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
-import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 export default function ConfirmarPedidoScreen({ route, navigation }) {
   const { negocioId, negocioNombre, carrito } = route.params;
@@ -157,7 +157,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
         />
 
         {errorEnvio && errorEnvio !== 'No disponible' ? (
-          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{errorEnvio}</Text>
+          <Aviso tipo="error" estilo={styles.error}>{errorEnvio}</Aviso>
         ) : null}
 
         {opciones.length > 0 ? (
@@ -244,7 +244,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
         />
 
         {error ? (
-          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
+          <Aviso tipo="error" estilo={styles.error}>{error}</Aviso>
         ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -254,8 +254,8 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16 },
-  titulo: { fontSize: 32, marginBottom: 14 },
-  subtitulo: { fontSize: 26, marginTop: 20, marginBottom: 10 },
+  titulo: { fontSize: 22, marginBottom: 14 },
+  subtitulo: { fontSize: 20, marginTop: 20, marginBottom: 10 },
   carrito: { ...estiloTarjeta, padding: 6 },
   itemFila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },
   cantidad: {
@@ -266,9 +266,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cantidadTexto: { fontSize: 14, fontWeight: '800', color: colores.primarioOscuro },
-  itemNombre: { flex: 1, fontSize: 16, color: colores.texto },
-  itemPrecio: { fontSize: 15, color: colores.tenue },
+  cantidadTexto: { fontFamily: fuente.extra, fontSize: 14, color: colores.primarioOscuro },
+  itemNombre: { flex: 1, fontFamily: fuente.media, fontSize: 16, color: colores.texto },
+  itemPrecio: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
   envioFila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -279,23 +279,23 @@ const styles = StyleSheet.create({
     margin: 6,
   },
   envioIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  envioTexto: { fontFamily: fuente.displayMedio, fontSize: 20, textTransform: 'uppercase', color: colores.texto },
-  envioPrecio: { fontFamily: fuente.display, fontSize: 32, color: colores.primarioOscuro },
-  envioPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
+  envioTexto: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
+  envioPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
+  envioPrecioTenue: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
   totalFila: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
-  totalTexto: { fontFamily: fuente.display, fontSize: 28 },
+  totalTexto: { fontFamily: fuente.extra, fontSize: 22, color: colores.texto },
   nota: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
-  notaPrecios: { flex: 1, fontSize: 13, color: colores.tenue, lineHeight: 18 },
+  notaPrecios: { flex: 1, fontFamily: fuente.media, fontSize: 13, color: colores.tenue, lineHeight: 18 },
 
   seccionSucursal: { marginTop: 4 },
-  ayuda: { fontSize: 14, color: colores.tenue, marginBottom: 10 },
+  ayuda: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginBottom: 10 },
   unica: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  unicaTexto: { flex: 1, fontSize: 15, color: colores.texto },
+  unicaTexto: { flex: 1, fontFamily: fuente.media, fontSize: 15, color: colores.texto },
   sucursales: { gap: 10 },
   sucursal: {
     ...estiloTarjeta,
@@ -304,13 +304,13 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: colores.borde,
   },
   sucursalSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
   presionada: { opacity: 0.9 },
   sucursalCuerpo: { flex: 1 },
   sucursalFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  sucursalNombre: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
+  sucursalNombre: { flexShrink: 1, fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
   cercana: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,9 +320,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
-  cercanaTexto: { fontSize: 12, fontWeight: '800', color: colores.primarioOscuro },
-  sucursalDireccion: { fontSize: 14, color: colores.tenue, marginTop: 2 },
-  sucursalDetalle: { fontSize: 13, fontWeight: '600', color: colores.texto, marginTop: 4 },
+  cercanaTexto: { fontFamily: fuente.extra, fontSize: 12, color: colores.primarioOscuro },
+  sucursalDireccion: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
+  sucursalDetalle: { fontFamily: fuente.media, fontSize: 13, color: colores.texto, marginTop: 4 },
 
   avisoPerfil: {
     flexDirection: 'row',
@@ -336,8 +336,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   avisoCuerpo: { flex: 1 },
-  avisoPerfilTexto: { fontSize: 14, color: '#5c3300' },
-  avisoPerfilAccion: { fontSize: 14, fontWeight: '800', color: colores.naranja, marginTop: 6 },
+  avisoPerfilTexto: { fontFamily: fuente.media, fontSize: 14, color: '#5c3300' },
+  avisoPerfilAccion: { fontFamily: fuente.extra, fontSize: 14, color: colores.naranja, marginTop: 6 },
   confirmar: { marginTop: 20 },
-  error: { color: colores.peligro, fontWeight: '600', fontSize: 14, marginTop: 12, textAlign: 'center' },
+  error: { marginTop: 12 },
 });

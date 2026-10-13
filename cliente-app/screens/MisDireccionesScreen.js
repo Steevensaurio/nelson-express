@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, FlatList, Pressable, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from '../components/SelectorMapa';
-import { colores, radio } from '../constants/tema';
-import { Boton, Campo, Icono, estiloTarjeta } from '../components/ui';
+import { colores, fuente } from '../constants/tema';
+import { Aviso, Boton, Campo, Icono, Text, estiloTarjeta } from '../components/ui';
 
 export default function MisDireccionesScreen() {
   const [direcciones, setDirecciones] = useState([]);
@@ -117,10 +117,7 @@ export default function MisDireccionesScreen() {
       />
 
       {error ? (
-        <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
-          <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
-          <Text style={styles.errorTexto}>{error}</Text>
-        </View>
+        <Aviso tipo="error" estilo={styles.errorCaja}>{error}</Aviso>
       ) : null}
 
       <Boton
@@ -205,25 +202,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardCuerpo: { flex: 1 },
-  etiqueta: { fontSize: 16, fontWeight: '800', color: colores.texto },
-  direccion: { fontSize: 14, color: colores.tenue, marginTop: 2 },
-  referencia: { fontSize: 13, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
+  etiqueta: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  direccion: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
+  referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
   vacio: { alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 16 },
-  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  vacioTexto: { textAlign: 'center', fontFamily: fuente.media, color: colores.tenue, fontSize: 15 },
   formulario: { ...estiloTarjeta, marginTop: 4 },
-  formularioTitulo: { fontSize: 18, fontWeight: '800', color: colores.texto, marginBottom: 14 },
-  etiquetaMapa: { fontSize: 14, fontWeight: '600', color: colores.texto, marginBottom: 6 },
+  formularioTitulo: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto, marginBottom: 14 },
+  etiquetaMapa: { fontFamily: fuente.negrita, fontSize: 14, color: colores.texto, marginBottom: 6 },
   botonMapa: { marginBottom: 14 },
   espacio: { marginTop: 10 },
   agregar: { marginTop: 4 },
-  errorCaja: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.chico,
-    padding: 12,
-    marginBottom: 14,
-  },
-  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
+  errorCaja: { marginBottom: 14 },
 });

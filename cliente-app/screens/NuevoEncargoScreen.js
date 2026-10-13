@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, Pressable, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
+  View, Pressable, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { colores, fuente, radio } from '../constants/tema';
-import { Boton, Campo, Icono, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Campo, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const PASOS = ['Recogida', 'Entrega'];
 
@@ -180,13 +180,9 @@ export default function NuevoEncargoScreen({ navigation }) {
 
         {paso === 1 ? (
           <>
-            <View style={styles.intro}>
-              <Icono nombre="information-circle-outline" tamano={20} color={colores.primarioOscuro} />
-              <Text style={styles.introTexto}>
-                Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío
-                {' '}(y lo que el motorizado deba pagar en el lugar, si aplica).
-              </Text>
-            </View>
+            <Aviso estilo={styles.intro}>
+              {'Recogemos lo que necesites en cualquier lugar y te lo llevamos. Solo pagas el envío (y lo que el motorizado deba pagar en el lugar, si aplica).'}
+            </Aviso>
 
             <Titulo estilo={styles.seccion}>¿Qué debemos recoger?</Titulo>
             <Campo
@@ -295,10 +291,7 @@ export default function NuevoEncargoScreen({ navigation }) {
             ) : null}
 
             {error ? (
-              <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
-                <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
-                <Text style={styles.errorTexto}>{error}</Text>
-              </View>
+              <Aviso tipo="error" estilo={styles.errorCaja}>{error}</Aviso>
             ) : null}
 
             <View style={styles.filaBotones}>
@@ -337,22 +330,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pasoCirculoActivo: { backgroundColor: colores.primario },
-  pasoNumero: { fontFamily: fuente.display, fontSize: 20, color: colores.tenue },
+  pasoNumero: { fontFamily: fuente.extra, fontSize: 16, color: colores.tenue },
   pasoNumeroActivo: { color: '#fff' },
-  pasoTexto: { fontFamily: fuente.displayMedio, fontSize: 18, letterSpacing: 0.5, textTransform: 'uppercase', color: colores.suave },
+  pasoTexto: { fontFamily: fuente.negrita, fontSize: 15, color: colores.suave },
   pasoTextoActivo: { color: colores.primarioOscuro },
 
-  intro: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: colores.acentoSuave,
-    borderRadius: radio.medio,
-    padding: 14,
-    marginBottom: 6,
-  },
-  introTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
-  seccion: { fontSize: 26, marginTop: 18, marginBottom: 10 },
+  intro: { marginBottom: 6 },
+  seccion: { fontSize: 20, marginTop: 18, marginBottom: 10 },
   multilinea: { minHeight: 76, textAlignVertical: 'top' },
 
   grupoContacto: { ...estiloTarjeta, marginTop: 16 },
@@ -366,8 +350,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   grupoTextos: { flex: 1 },
-  grupoTitulo: { fontSize: 21 },
-  grupoAyuda: { fontSize: 13, color: colores.tenue, marginTop: 2 },
+  grupoTitulo: { fontSize: 17 },
+  grupoAyuda: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 2 },
   ultimo: { marginBottom: 0 },
 
   filaSwitch: {
@@ -379,8 +363,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginVertical: 16,
   },
-  switchTexto: { flex: 1, fontSize: 15, fontWeight: '600', color: colores.texto },
-  moneda: { fontSize: 18, fontWeight: '700', color: colores.tenue },
+  switchTexto: { flex: 1, fontFamily: fuente.negrita, fontSize: 15, color: colores.texto },
+  moneda: { fontFamily: fuente.negrita, fontSize: 18, color: colores.tenue },
 
   resumen: {
     flexDirection: 'row',
@@ -392,9 +376,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   resumenIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  resumenTexto: { fontFamily: fuente.displayMedio, fontSize: 20, textTransform: 'uppercase', color: colores.texto },
-  resumenPrecio: { fontFamily: fuente.display, fontSize: 34, color: colores.primarioOscuro },
-  resumenPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
+  resumenTexto: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
+  resumenPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
+  resumenPrecioTenue: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
 
   avisoPerfil: {
     flexDirection: 'row',
@@ -408,19 +392,10 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   avisoCuerpo: { flex: 1 },
-  avisoPerfilTexto: { fontSize: 14, color: '#5c3300' },
-  avisoPerfilAccion: { fontSize: 14, fontWeight: '800', color: colores.naranja, marginTop: 6 },
+  avisoPerfilTexto: { fontFamily: fuente.media, fontSize: 14, color: '#5c3300' },
+  avisoPerfilAccion: { fontFamily: fuente.extra, fontSize: 14, color: colores.naranja, marginTop: 6 },
 
-  errorCaja: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.chico,
-    padding: 12,
-    marginTop: 14,
-  },
-  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
+  errorCaja: { marginTop: 14 },
 
   continuar: { marginTop: 20 },
   filaBotones: { flexDirection: 'row', gap: 12, marginTop: 18 },

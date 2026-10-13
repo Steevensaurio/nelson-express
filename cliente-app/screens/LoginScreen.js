@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
 import {
-  StyleSheet, View, Image, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform,
+  StyleSheet, View, Image, Pressable, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import api from '../services/api';
 import { colores, fuente, radio, sombraTarjeta } from '../constants/tema';
-import { Aviso, Boton, Campo, Icono, Rayas, Titulo } from '../components/ui';
+import { Aviso, Boton, Campo, Icono, Rayas, Text, Titulo } from '../components/ui';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
@@ -156,11 +156,9 @@ const styles = StyleSheet.create({
   logo: { width: 86, height: 86, resizeMode: 'contain' },
   titular: {
     marginTop: 18,
-    fontFamily: fuente.display,
-    fontSize: 54,
-    lineHeight: 52,
-    letterSpacing: 0.2,
-    textTransform: 'uppercase',
+    fontFamily: fuente.extra,
+    fontSize: 34,
+    lineHeight: 40,
     color: '#fff',
   },
 
@@ -176,7 +174,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.14,
     elevation: 6,
   },
-  tarjetaTitulo: { fontSize: 26, marginBottom: 16 },
+  tarjetaTitulo: { fontSize: 22, marginBottom: 16 },
   ojo: { padding: 4 },
   aviso: { marginBottom: 14 },
   boton: { marginTop: 4 },
