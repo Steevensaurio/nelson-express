@@ -9,10 +9,8 @@ import { colorEstado, etiquetaEstado, iconoEstado } from '../constants/estados';
 // Text de la app: con familias de Nunito cada peso es su propia fuente, así que traduce `fontWeight` a la
 // familia que toca (y lo quita, para que Android no lo combine). Todas las pantallas importan Text de aquí.
 export function Text({ style, ...props }) {
-  const plano = StyleSheet.flatten(style) ?? {};
-  if (plano.fontFamily) return <RNText {...props} style={plano} />;
-  const { fontWeight, ...resto } = plano;
-  return <RNText {...props} style={{ ...resto, fontFamily: familiaPorPeso(fontWeight) }} />;
+  const { fontWeight, ...resto } = StyleSheet.flatten(style) ?? {};
+  return <RNText {...props} style={{ ...resto, fontFamily: resto.fontFamily ?? familiaPorPeso(fontWeight) }} />;
 }
 
 // Los íconos van junto a texto visible, así que se ocultan al lector de pantalla.
