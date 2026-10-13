@@ -193,7 +193,7 @@ export default function Despacho() {
           </div>
 
           <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Tabla de pedidos">
-            <table>
+            <table className="tabla-despacho">
               <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
               <thead>
                 <tr>

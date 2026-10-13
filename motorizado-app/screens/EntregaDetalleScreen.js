@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: 17 },
+  bloqueTitulo: { fontSize: 20 },
   valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
   secundario: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 3 },
   referencia: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 4 },

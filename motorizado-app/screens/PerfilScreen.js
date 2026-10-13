@@ -123,7 +123,7 @@ export default function PerfilScreen({ navigation }) {
               {perfil.vehiculo_color ? <Text style={styles.tenue}>{perfil.vehiculo_color}</Text> : null}
             </View>
             {perfil.vehiculo_placa ? (
-              <View style={styles.placa} accessible accessibilityLabel={`Número de placa ${perfil.vehiculo_placa}`}>
+              <View style={styles.placa} accessible accessibilityLabel={`Placa ${perfil.vehiculo_placa}`}>
                 <Text style={styles.placaTexto}>{perfil.vehiculo_placa}</Text>
               </View>
             ) : null}
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   presionado: { opacity: 0.85 },
 
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 17, marginBottom: 10 },
+  seccion: { fontSize: 20, marginBottom: 10 },
   fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   filaTexto: { fontFamily: fuente.media, fontSize: 16, color: colores.texto },
   vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

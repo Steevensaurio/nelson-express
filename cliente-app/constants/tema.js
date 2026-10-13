@@ -8,7 +8,7 @@ export const colores = {
   // Azul del logo: detalles decorativos y texto sobre negro (7.4:1), nunca texto sobre fondo claro.
   acento: '#00b2ec',
   acentoSuave: '#e0f5fd',
-  // El negro del logo: solo en piezas pequeñas y de alto contraste (la placa del número de pedido).
+  // El negro del logo: solo en piezas pequeñas y de alto contraste (textos e íconos pequeños).
   negro: '#0a0a0a',
   fondo: '#f3f6f8',
   tarjeta: '#fff',

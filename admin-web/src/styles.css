@@ -488,12 +488,14 @@ button.resumen-tarjeta:hover {
 }
 
 .resumen-tarjeta.activa,
+.resumen-tarjeta.destacada,
 button.resumen-tarjeta.activa:hover {
   background: var(--marca);
   color: #fff;
 }
 
-.resumen-tarjeta.activa .resumen-texto {
+.resumen-tarjeta.activa .resumen-texto,
+.resumen-tarjeta.destacada .resumen-texto {
   color: #fff;
 }
 
@@ -602,6 +604,11 @@ button.resumen-tarjeta.activa:hover {
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 920px;
+}
+
+/* La tabla de Despacho tiene más columnas: necesita más ancho antes de desplazarse. */
+.tabla-despacho {
   min-width: 1200px;
 }
 
@@ -660,7 +667,7 @@ td strong {
 }
 
 .fila-encargo td {
-  height: 160px;
+  height: 176px;
 }
 
 .fila-atencion td,
@@ -818,7 +825,8 @@ td strong {
   color: #fff;
 }
 
-.resumen-tarjeta.activa .resumen-numero {
+.resumen-tarjeta.activa .resumen-numero,
+.resumen-tarjeta.destacada .resumen-numero {
   color: #fff;
 }
 

@@ -108,7 +108,7 @@ export default function Ganancias() {
                 <span className="resumen-numero">{dinero(resumen.total)}</span>
                 <span className="resumen-texto">Total generado</span>
               </div>
-              <div className="resumen-tarjeta activa">
+              <div className="resumen-tarjeta destacada">
                 <span className="resumen-numero">{dinero(resumen.comision)}</span>
                 <span className="resumen-texto">Me deben entregar ({porcentaje})</span>
               </div>

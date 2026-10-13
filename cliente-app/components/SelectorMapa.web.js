@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { colores, radio } from '../constants/tema';
-import { Boton, Campo, Icono } from './ui';
+import { Boton, Campo, Icono, Text } from './ui';
 
 export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicial }) {
   const [lat, setLat] = useState(coordenadaInicial ? coordenadaInicial.latitude.toString() : '');

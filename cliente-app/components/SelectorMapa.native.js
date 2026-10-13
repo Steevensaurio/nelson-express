@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colores, radio } from '../constants/tema';
-import { Boton, Icono } from './ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Boton, Icono, Text } from './ui';
 
 // Mismo mapa gratuito (Leaflet + OpenStreetMap, sin API key) que ya usa el panel del despachador,
 // cargado en un WebView: react-native-maps solo funciona con Google Maps en Android y necesita una
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cancelarPresionado: { backgroundColor: colores.peligroSuave },
-  cancelarTexto: { color: colores.peligro, fontWeight: '800', fontSize: 15 },
+  cancelarTexto: { color: colores.peligro, fontFamily: fuente.extra, fontSize: 15 },
   barra: {
     backgroundColor: '#fff',
     paddingHorizontal: 14,

@@ -210,14 +210,14 @@ const styles = StyleSheet.create({
   presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   // Todos los tickets tienen la misma estructura (dos tramos de una línea cada uno y un pie), así que miden lo mismo.
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  tramo: { flexDirection: 'row', gap: 12, marginTop: 14 },
+  tramo: { flexDirection: 'row', gap: 12, marginTop: 10 },
   tramoIcono: { marginTop: 2 },
   tramoCuerpo: { flex: 1, minWidth: 0 },
   rotulo: { fontFamily: fuente.negrita, fontSize: 12, color: colores.tenue },
   valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto, marginTop: 1 },
   pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pieRotulo: { flex: 1, fontFamily: fuente.negrita, fontSize: 14, color: colores.tenue },
-  precio: { fontFamily: fuente.extra, fontSize: 26, color: colores.verde },
+  precio: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: colores.verde },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });
