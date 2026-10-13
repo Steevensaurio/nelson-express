@@ -415,6 +415,7 @@ input[type='checkbox'] {
   gap: 20px;
 }
 
+.contenido > h1:not(.solo-lectores),
 .contenido > h2 {
   font-size: 22px;
 }
