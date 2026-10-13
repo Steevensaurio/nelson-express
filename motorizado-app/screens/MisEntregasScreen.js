@@ -1,35 +1,44 @@
-import { useState, useCallback, useRef } from 'react';
-import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
-import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
+import { useState, useCallback, useLayoutEffect, useRef } from 'react';
+import { View, FlatList, Pressable, StyleSheet } from 'react-native';
+import { useFocusEffect, useIsFocused, useScrollToTop } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
-import { colores, fuente, radio } from '../constants/tema';
-import { Boleta, Entrada, Icono, Insignia, Placa } from '../components/ui';
+import { colores, fuente } from '../constants/tema';
+import { Boleta, Cabecera, Entrada, Icono, Insignia, NumeroPedido, Text, Titulo } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
 
-// Un extremo de la carrera (recoger / entregar): rótulo corto y el lugar.
-function Tramo({ icono, rotulo, titulo, detalle }) {
+// Un extremo de la carrera (recoger / entregar): rótulo corto y el lugar, en una sola línea.
+function Tramo({ icono, rotulo, valor }) {
   return (
     <View style={styles.tramo}>
       <Icono nombre={icono} tamano={20} color={colores.primarioOscuro} estilo={styles.tramoIcono} />
       <View style={styles.tramoCuerpo}>
         <Text style={styles.rotulo}>{rotulo}</Text>
-        <Text style={styles.valor}>{titulo}</Text>
-        {detalle ? <Text style={styles.detalle}>{detalle}</Text> : null}
+        <Text style={styles.valor} numberOfLines={1}>{valor}</Text>
       </View>
     </View>
   );
 }
 
+const resumenEnCurso = (n) => (n === 0 ? 'Sin entregas en curso' : `${n} ${n === 1 ? 'entrega' : 'entregas'} en curso`);
+
 export default function MisEntregasScreen({ navigation }) {
   const [entregas, setEntregas] = useState([]);
   const [refrescando, setRefrescando] = useState(false);
+  const insets = useSafeAreaInsets();
+  const [nombre, setNombre] = useState('');
   const lista = useRef(null);
+  const enfocada = useIsFocused(); // la barra de estado es clara solo mientras se ve esta cabecera celeste
   useScrollToTop(lista); // tocar de nuevo la pestaña activa vuelve al inicio de la lista
   const [verHistorial, setVerHistorial] = useState(false);
+
+  // La cabecera celeste hace de encabezado de la pantalla.
+  useLayoutEffect(() => { navigation.setOptions({ headerShown: false }); }, [navigation]);
 
   const cargar = useCallback(async () => {
     try {
@@ -41,6 +50,11 @@ export default function MisEntregasScreen({ navigation }) {
   }, []);
 
   const { suscribir, conectado } = useTiempoReal();
+
+  // Mismo origen del nombre que Perfil; se relee al volver por si lo cambió en "Editar perfil".
+  useFocusEffect(useCallback(() => {
+    api.get('/perfil/').then((r) => setNombre(r.data.first_name ?? '')).catch(() => {});
+  }, []));
 
   useFocusEffect(
     useCallback(() => {
@@ -66,6 +80,11 @@ export default function MisEntregasScreen({ navigation }) {
 
   return (
     <View style={styles.pantalla}>
+      {enfocada ? <StatusBar style="light" /> : null}
+      <Cabecera estilo={{ paddingTop: insets.top + 14 }}>
+        <Titulo estilo={styles.saludo}>{nombre ? `Hola, ${nombre}` : 'Hola'}</Titulo>
+        <Text style={styles.resumen}>{resumenEnCurso(enCurso.length)}</Text>
+      </Cabecera>
       <View style={styles.filtros} accessibilityRole="tablist">
         {[
           { texto: 'En curso', cantidad: enCurso.length, historial: false },
@@ -110,6 +129,7 @@ export default function MisEntregasScreen({ navigation }) {
           return (
             <Entrada indice={index}>
               <Pressable
+                testID="ticket-entrega"
                 accessibilityRole="button"
                 accessibilityLabel={`Entrega ${item.id}${valor ? `, ${valor}` : ''}. Estado: ${etiquetaEstado[item.estado]}. Recoger en ${item.recogida.nombre}, ${item.recogida.direccion}. Entregar en ${item.destino_direccion}. Ver detalle`}
                 onPress={() => navigation.navigate('EntregaDetalle', { entrega: item })}
@@ -126,21 +146,15 @@ export default function MisEntregasScreen({ navigation }) {
                   }
                 >
                   <View style={styles.encabezado}>
-                    <Placa numero={item.id} />
+                    <NumeroPedido numero={item.id} prefijo="Entrega" />
                     <Insignia estado={item.estado} />
                   </View>
                   <Tramo
                     icono={item.tipo === 'ENCARGO' ? 'cube-outline' : 'storefront-outline'}
                     rotulo="Recoger en"
-                    titulo={item.recogida.nombre}
-                    detalle={item.recogida.direccion}
+                    valor={item.recogida.nombre}
                   />
-                  <Tramo
-                    icono="location-outline"
-                    rotulo="Entregar en"
-                    titulo={item.destino_direccion}
-                    detalle={item.destino_referencia}
-                  />
+                  <Tramo icono="location-outline" rotulo="Entregar en" valor={item.destino_direccion} />
                 </Boleta>
               </Pressable>
             </Entrada>
@@ -154,8 +168,13 @@ export default function MisEntregasScreen({ navigation }) {
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
   container: { backgroundColor: colores.fondo },
-  lista: { padding: 12, paddingBottom: 24, gap: 14, flexGrow: 1 },
-  filtros: { flexDirection: 'row', gap: 10, padding: 12, paddingBottom: 4 },
+  lista: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
+
+  saludo: { fontSize: 22, lineHeight: 28, color: '#fff' },
+  resumen: { marginTop: 2, fontFamily: fuente.media, fontSize: 14, color: '#fff' },
+
+  // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.
+  filtros: { flexDirection: 'row', margin: 16, marginBottom: 4, padding: 4, borderRadius: 12, backgroundColor: '#e6ecf0' },
   filtro: {
     flex: 1,
     minHeight: 48,
@@ -163,38 +182,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: radio.medio,
-    backgroundColor: colores.tarjeta,
-    borderWidth: 1.5,
-    borderColor: colores.bordeCampo,
+    borderRadius: 9,
   },
-  filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
-  filtroTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.6, textTransform: 'uppercase', color: colores.tenue },
-  filtroTextoActivo: { color: '#fff' },
+  filtroActivo: {
+    backgroundColor: '#fff',
+    elevation: 1,
+    shadowColor: '#002838',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  filtroTexto: { fontFamily: fuente.negrita, fontSize: 13.5, color: '#4d5b64' },
+  filtroTextoActivo: { color: colores.primarioOscuro },
   contador: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 6,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
     paddingHorizontal: 6,
-    backgroundColor: '#e8edf0',
+    backgroundColor: '#d5dde2',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
-  contadorTexto: { fontFamily: fuente.displayMedio, fontSize: 16, color: colores.tenue },
-  contadorTextoActivo: { color: '#fff' },
+  contadorActivo: { backgroundColor: colores.acentoSuave },
+  contadorTexto: { fontFamily: fuente.negrita, fontSize: 12, color: '#4d5b64' },
+  contadorTextoActivo: { color: colores.primarioOscuro },
 
   presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  // Todos los tickets tienen la misma estructura (dos tramos de una línea cada uno y un pie), así que miden lo mismo.
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   tramo: { flexDirection: 'row', gap: 12, marginTop: 14 },
   tramoIcono: { marginTop: 2 },
-  tramoCuerpo: { flex: 1 },
-  rotulo: { fontFamily: fuente.displayMedio, fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.suave },
-  valor: { fontSize: 16, fontWeight: '700', color: colores.texto, marginTop: 1 },
-  detalle: { fontSize: 14, color: colores.tenue, marginTop: 1 },
+  tramoCuerpo: { flex: 1, minWidth: 0 },
+  rotulo: { fontFamily: fuente.negrita, fontSize: 12, color: colores.tenue },
+  valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto, marginTop: 1 },
   pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pieRotulo: { flex: 1, fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
-  precio: { fontFamily: fuente.display, fontSize: 34, lineHeight: 34, color: colores.verde },
+  pieRotulo: { flex: 1, fontFamily: fuente.negrita, fontSize: 14, color: colores.tenue },
+  precio: { fontFamily: fuente.extra, fontSize: 26, color: colores.verde },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

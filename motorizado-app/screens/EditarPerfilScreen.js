@@ -125,7 +125,7 @@ export default function EditarPerfilScreen({ navigation }) {
             autoCapitalize="words"
           />
           <Campo
-            etiqueta="Placa"
+            etiqueta="Número de placa"
             value={datos.vehiculo_placa}
             onChangeText={cambiar('vehiculo_placa')}
             placeholder="Ej. ABC-1234"
@@ -156,6 +156,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16, gap: 14 },
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 22, marginBottom: 12 },
+  seccion: { fontSize: 17, marginBottom: 12 },
   ultimo: { marginBottom: 0 },
 });

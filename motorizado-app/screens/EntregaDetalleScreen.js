@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { Text, View, ScrollView, StyleSheet, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colorAccion, iconoEstado, siguienteEstado, textoAccion } from '../constants/estados';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boleta, Boton, Icono, Insignia, Placa, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boleta, Boton, Icono, Insignia, NumeroPedido, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -108,27 +108,32 @@ export default function EntregaDetalleScreen({ route }) {
           </Aviso>
         ) : null}
 
-        <Boleta pie={<Text style={styles.fecha}>Pedido hecho el {formatearFecha(entrega.creado_en)}</Text>}>
-          <View style={styles.encabezado}>
-            <Placa numero={entrega.id} />
-            <Insignia estado={entrega.estado} />
-          </View>
-          {entrega.costo_envio != null ? (
+        <View testID="ticket-entrega-detalle">
+          <Boleta pie={<Text style={styles.fecha}>Pedido hecho el {formatearFecha(entrega.creado_en)}</Text>}>
+            <View style={styles.encabezado}>
+              <NumeroPedido numero={entrega.id} prefijo="Entrega" />
+              <Insignia estado={entrega.estado} />
+            </View>
+            {/* Los pedidos hechos antes de existir las tarifas no tienen valor de carrera: se muestra "—". */}
             <View
               style={styles.carrera}
               accessible
-              accessibilityLabel={`Valor de la carrera: ${parseFloat(entrega.costo_envio).toFixed(2)} dólares${entrega.distancia_km ? `, aproximadamente ${parseFloat(entrega.distancia_km).toFixed(1)} kilómetros` : ''}`}
+              accessibilityLabel={
+                entrega.costo_envio != null
+                  ? `Valor de la carrera: ${parseFloat(entrega.costo_envio).toFixed(2)} dólares${entrega.distancia_km ? `, aproximadamente ${parseFloat(entrega.distancia_km).toFixed(1)} kilómetros` : ''}`
+                  : 'Valor de la carrera: sin valor registrado'
+              }
             >
-              <View>
-                <Text style={styles.carreraRotulo}>Tu carrera</Text>
-                {entrega.distancia_km ? (
-                  <Text style={styles.carreraKm}>Aprox. {parseFloat(entrega.distancia_km).toFixed(1)} km</Text>
-                ) : null}
-              </View>
-              <Text style={styles.carreraValor}>${parseFloat(entrega.costo_envio).toFixed(2)}</Text>
+              <Text style={styles.carreraRotulo}>Tu carrera</Text>
+              <Text style={styles.carreraValor}>
+                {entrega.costo_envio != null ? `$${parseFloat(entrega.costo_envio).toFixed(2)}` : '—'}
+              </Text>
+              {entrega.costo_envio != null && entrega.distancia_km ? (
+                <Text style={styles.carreraKm}>Aprox. {parseFloat(entrega.distancia_km).toFixed(1)} km</Text>
+              ) : null}
             </View>
-          ) : null}
-        </Boleta>
+          </Boleta>
+        </View>
 
         {entrega.estado === 'CANCELADO' ? (
           <Aviso tipo="error" icono="close-circle">
@@ -245,18 +250,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16, gap: 14 },
   card: { ...estiloTarjeta },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  fecha: { fontSize: 13, color: colores.tenue },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  fecha: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
 
-  carrera: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  carreraRotulo: { fontFamily: fuente.displayMedio, fontSize: 17, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
-  carreraKm: { fontSize: 14, color: colores.tenue, marginTop: 2 },
-  carreraValor: { fontFamily: fuente.display, fontSize: 56, lineHeight: 54, color: colores.verde },
+  carrera: { marginTop: 14 },
+  carreraRotulo: { fontFamily: fuente.negrita, fontSize: 14, color: colores.tenue },
+  carreraValor: { fontFamily: fuente.extra, fontSize: 40, lineHeight: 48, color: colores.verde },
+  carreraKm: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue },
 
   bloqueCabecera: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   bloqueIcono: {
@@ -267,17 +267,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: 22 },
-  valor: { fontSize: 17, fontWeight: '700', color: colores.texto },
-  secundario: { fontSize: 15, color: colores.tenue, marginTop: 3 },
-  referencia: { fontSize: 15, color: colores.tenue, fontStyle: 'italic', marginTop: 4 },
+  bloqueTitulo: { fontSize: 17 },
+  valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  secundario: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 3 },
+  referencia: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 4 },
   botonSecundario: { marginTop: 12, minHeight: 56 },
 
   contacto: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colores.borde },
-  contactoRotulo: { fontFamily: fuente.displayMedio, fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.suave },
-  contactoNombre: { fontSize: 16, fontWeight: '700', color: colores.texto, marginTop: 2 },
+  contactoRotulo: { fontFamily: fuente.negrita, fontSize: 12, color: colores.tenue },
+  contactoNombre: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto, marginTop: 2 },
 
-  producto: { fontSize: 16, paddingVertical: 3, color: colores.texto },
+  producto: { fontFamily: fuente.media, fontSize: 15, paddingVertical: 3, color: colores.texto },
 
   barraInferior: {
     backgroundColor: colores.tarjeta,

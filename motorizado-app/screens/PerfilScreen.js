@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Icono, Rayas, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Icono, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
   `${perfil.first_name} ${perfil.last_name}`.trim() || perfil.username;
@@ -123,7 +123,7 @@ export default function PerfilScreen({ navigation }) {
               {perfil.vehiculo_color ? <Text style={styles.tenue}>{perfil.vehiculo_color}</Text> : null}
             </View>
             {perfil.vehiculo_placa ? (
-              <View style={styles.placa} accessible accessibilityLabel={`Placa ${perfil.vehiculo_placa}`}>
+              <View style={styles.placa} accessible accessibilityLabel={`Número de placa ${perfil.vehiculo_placa}`}>
                 <Text style={styles.placaTexto}>{perfil.vehiculo_placa}</Text>
               </View>
             ) : null}
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   contenido: { padding: 16, paddingBottom: 32, gap: 14 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: 24 },
   reintentar: { marginTop: 12 },
-  tenue: { color: colores.tenue, fontSize: 14 },
+  tenue: { fontFamily: fuente.media, color: colores.tenue, fontSize: 14 },
 
   cabecera: {
     flexDirection: 'row',
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { fontFamily: fuente.display, fontSize: 32, color: colores.primarioOscuro },
+  avatarTexto: { fontFamily: fuente.extra, fontSize: 26, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1, gap: 6, alignItems: 'flex-start' },
-  nombre: { fontFamily: fuente.display, fontSize: 32, lineHeight: 32, textTransform: 'uppercase', color: '#fff' },
+  nombre: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: '#fff' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -175,23 +175,23 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
   },
-  chipTexto: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  desde: { color: '#fff', fontSize: 13 },
+  chipTexto: { fontFamily: fuente.extra, color: '#fff', fontSize: 13 },
+  desde: { fontFamily: fuente.media, color: '#fff', fontSize: 13 },
 
   estadisticas: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center' },
   estadistica: { flex: 1, alignItems: 'center' },
   estadisticaLinea: { width: 1, alignSelf: 'stretch', backgroundColor: colores.borde },
-  estadisticaNumero: { fontFamily: fuente.display, fontSize: 48, lineHeight: 50, color: colores.texto },
-  estadisticaTexto: { fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
+  estadisticaNumero: { fontFamily: fuente.extra, fontSize: 36, lineHeight: 44, color: colores.texto },
+  estadisticaTexto: { fontFamily: fuente.negrita, fontSize: 13, color: colores.tenue },
   presionado: { opacity: 0.85 },
 
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 22, marginBottom: 10 },
+  seccion: { fontSize: 17, marginBottom: 10 },
   fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
-  filaTexto: { fontSize: 16, color: colores.texto },
+  filaTexto: { fontFamily: fuente.media, fontSize: 16, color: colores.texto },
   vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   vehiculoDatos: { flex: 1, paddingRight: 12 },
-  vehiculoModelo: { fontSize: 17, fontWeight: '700', color: colores.texto },
+  vehiculoModelo: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
   placa: {
     borderWidth: 2,
     borderColor: colores.texto,
@@ -200,6 +200,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 12,
   },
-  placaTexto: { fontFamily: fuente.display, fontSize: 24, letterSpacing: 2, color: colores.texto },
+  placaTexto: { fontFamily: fuente.extra, fontSize: 22, letterSpacing: 1, color: colores.texto },
   espacio: { marginTop: 2 },
 });

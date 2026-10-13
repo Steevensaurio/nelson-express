@@ -130,10 +130,10 @@ export function Insignia({ estado, estilo }) {
 }
 
 // El número de pedido es texto normal en negrita: sin placa ni caja.
-export function NumeroPedido({ numero, estilo }) {
+export function NumeroPedido({ numero, prefijo = 'Pedido', estilo }) {
   return (
-    <Text accessibilityLabel={`Pedido número ${numero}`} style={[s.numeroPedido, estilo]}>
-      Pedido #{numero}
+    <Text accessibilityLabel={`${prefijo} número ${numero}`} style={[s.numeroPedido, estilo]}>
+      {prefijo} #{numero}
     </Text>
   );
 }
