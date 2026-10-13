@@ -17,12 +17,9 @@
   --marca: #007cab;
   --marca-oscura: #005f84;
   --marca-suave: #e0f5fd;
-  --acento: #00b2ec;
-  --negro: #0a0a0a;
   --sombra: 0 1px 3px rgb(11 37 48 / 0.07);
   --radio: 12px;
-  /* Tipografía de marca (letra condensada, como el logo) para títulos, cifras y etiquetas. */
-  --display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --fuente: 'Nunito', system-ui, sans-serif;
   --salida: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;
   scrollbar-color: var(--marca) var(--fondo);
@@ -36,7 +33,7 @@ body {
   margin: 0;
   background: var(--fondo);
   color: var(--texto);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--fuente);
   font-size: 15px;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
@@ -51,10 +48,8 @@ body {
 h1,
 h2 {
   margin: 0;
-  font-family: var(--display);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 /* Una sola entrada orquestada por pantalla: lo principal aparece escalonado, sin rebotes. */
@@ -83,6 +78,7 @@ h2 {
 
 button {
   font: inherit;
+  font-family: var(--fuente);
   cursor: pointer;
 }
 
@@ -133,14 +129,11 @@ button {
 .secundario,
 .peligro,
 .primario {
-  min-height: 40px;
-  border-radius: 8px;
+  min-height: 44px;
+  border-radius: 10px;
   padding: 8px 16px;
-  font-family: var(--display);
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 700;
   transition: background-color 0.15s, border-color 0.15s, transform 0.12s var(--salida);
 }
 
@@ -220,6 +213,7 @@ input,
 select,
 textarea {
   font: inherit;
+  font-family: var(--fuente);
   color: var(--texto);
 }
 
@@ -241,7 +235,7 @@ textarea:focus-visible {
 }
 
 select {
-  min-width: 190px;
+  min-width: 170px;
 }
 
 select:disabled {
@@ -309,8 +303,8 @@ input[type='checkbox'] {
 
 .login-sub {
   margin: 0 0 2px;
-  font-size: 34px;
-  line-height: 1;
+  font-size: 27px;
+  line-height: 1.15;
 }
 
 .login-tarjeta label {
@@ -326,14 +320,11 @@ input[type='checkbox'] {
   background: var(--marca);
   color: #fff;
   border: 2px solid var(--marca);
-  border-radius: 8px;
+  border-radius: 10px;
   min-height: 48px;
   padding: 12px;
-  font-family: var(--display);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .login-tarjeta button[type='submit']:hover:not(:disabled) {
@@ -392,11 +383,8 @@ input[type='checkbox'] {
   border-bottom: 4px solid transparent;
   color: var(--tenue);
   text-decoration: none;
-  font-family: var(--display);
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   transition: color 0.15s, border-color 0.15s;
 }
 
@@ -428,7 +416,7 @@ input[type='checkbox'] {
 }
 
 .contenido > h2 {
-  font-size: 32px;
+  font-size: 22px;
 }
 
 /* Avisos: fondo teñido + filete fino del mismo tono (sin franja lateral). */
@@ -475,26 +463,23 @@ input[type='checkbox'] {
 .resumen {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: var(--tarjeta);
+  gap: 1px;
+  background: var(--borde);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   overflow: hidden;
 }
 
 .resumen-tarjeta {
-  background: transparent;
+  background: var(--tarjeta);
   border: 0;
-  border-right: 1px solid var(--borde);
   padding: 14px 20px 16px;
   text-align: left;
   display: flex;
   flex-direction: column;
+  gap: 2px;
   color: var(--texto);
   transition: background-color 0.15s, color 0.15s;
-}
-
-.resumen-tarjeta:last-child {
-  border-right: 0;
 }
 
 button.resumen-tarjeta:hover {
@@ -516,18 +501,14 @@ button.resumen-tarjeta.activa:hover {
 }
 
 .resumen-numero {
-  font-family: var(--display);
-  font-size: 52px;
+  font-size: 28px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .resumen-texto {
-  font-family: var(--display);
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--tenue);
 }
 
@@ -542,7 +523,7 @@ button.resumen-tarjeta.activa:hover {
 
 .motorizados h2,
 .tabla-encabezado h2 {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .motorizados ul {
@@ -620,27 +601,27 @@ button.resumen-tarjeta.activa:hover {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 920px;
+  min-width: 1200px;
 }
 
 th {
   text-align: left;
-  font-family: var(--display);
-  font-size: 15px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
   color: var(--tenue);
   font-weight: 700;
-  padding: 10px 16px;
+  padding: 10px 12px;
   border-top: 1px solid var(--borde);
   border-bottom: 2px solid var(--borde);
   background: var(--fondo);
 }
 
+/* En una tabla, height de la celda actúa como alto mínimo. Los pedidos de comida y los encargos
+   tienen contenido distinto, así que cada tipo parte de su propio alto y todas sus filas miden lo mismo. */
 td {
-  padding: 14px 16px;
+  height: 76px;
+  padding: 12px;
   border-bottom: 1px solid var(--borde);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 tbody tr:hover td {
@@ -651,8 +632,34 @@ tbody tr:hover td {
   text-align: right;
 }
 
-.productos {
+/* Textos libres largos: máximo 2 líneas; el texto completo va en el atributo title. */
+.clamp,
+.clamp-1 {
   max-width: 260px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.clamp.ancho {
+  max-width: 380px;
+}
+
+td strong {
+  white-space: nowrap;
+}
+
+.fila-comida td {
+  height: 88px;
+}
+
+.fila-encargo td {
+  height: 160px;
 }
 
 .fila-atencion td,
@@ -667,20 +674,6 @@ tbody tr:hover td {
   font-weight: 800;
 }
 
-/* Número de pedido: la placa negra de la marca (el único negro de la pantalla). */
-.placa {
-  display: inline-block;
-  background: var(--negro);
-  color: var(--acento);
-  border-radius: 4px;
-  padding: 1px 8px 0;
-  font-family: var(--display);
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  line-height: 1.3;
-}
-
 .vacio {
   text-align: center;
   color: var(--tenue);
@@ -690,44 +683,46 @@ tbody tr:hover td {
 /* ---------- Estados ---------- */
 
 .insignia {
+  --tono: #5b6670;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 8px;
+  background: var(--tono);
   color: #fff;
-  font-family: var(--display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 2px 16px 2px 14px;
-  background: #5b6670;
-  /* Corte inclinado: la marca de "velocidad", sin necesitar un elemento extra. */
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.insignia::before {
-  content: '';
-  width: 8px;
-  height: 8px;
+/* Círculo blanco con el glifo del estado en el color de la etiqueta. */
+.insignia-icono {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: currentColor;
-  opacity: 0.85;
+  background: #fff;
+  color: var(--tono);
+  font-size: 10px;
+  line-height: 1;
 }
 
 .insignia.RECOGIDO {
-  background: #b45309;
+  --tono: #b45309;
 }
 
 .insignia.EN_CAMINO {
-  background: #1a5fc4;
+  --tono: #1a5fc4;
 }
 
 .insignia.ENTREGADO {
-  background: #23744a;
+  --tono: #23744a;
 }
 
 .insignia.CANCELADO {
-  background: #b3261e;
+  --tono: #b3261e;
 }
 
 .punto-vivo {
@@ -768,7 +763,7 @@ tbody tr:hover td {
 
 .modal h2 {
   margin: 0 0 6px;
-  font-size: 28px;
+  font-size: 22px;
 }
 
 .modal label {
@@ -849,11 +844,8 @@ tbody tr:hover td {
 .formulario-encargo legend {
   float: left;
   grid-column: 1 / -1;
-  font-family: var(--display);
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
   padding: 0;
   margin-bottom: 2px;
 }
@@ -925,8 +917,7 @@ tbody tr:hover td {
 }
 
 .encargo-envio {
-  font-family: var(--display);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--marca-oscura);
 }

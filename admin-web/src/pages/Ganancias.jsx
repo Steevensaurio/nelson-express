@@ -181,11 +181,11 @@ export default function Ganancias() {
                   <tbody>
                     {datos.carreras.map((c) => (
                       <tr key={c.id}>
-                        <td><span className="placa">#{c.id}</span></td>
+                        <td><strong>#{c.id}</strong></td>
                         <td>{hora(c.entregado_en)}</td>
                         <td>{c.motorizado.nombre}</td>
                         <td>{c.recogida}</td>
-                        <td>{c.destino_direccion}</td>
+                        <td><div className="clamp ancho" title={c.destino_direccion}>{c.destino_direccion}</div></td>
                         <td className="derecha">{c.distancia_km ? Number(c.distancia_km).toFixed(1) : '—'}</td>
                         <td className="derecha"><strong>{c.costo_envio != null ? dinero(c.costo_envio) : '—'}</strong></td>
                       </tr>

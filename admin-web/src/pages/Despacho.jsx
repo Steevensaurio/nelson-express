@@ -18,6 +18,10 @@ const ETIQUETA_ESTADO = {
   CANCELADO: 'Cancelado',
 };
 
+const ICONO_ESTADO = { ENTREGADO: '✓', EN_CAMINO: '➜', CANCELADO: '✕' };
+
+const productos = (p) => p.detalles.map((d) => `${d.cantidad} x ${d.producto_nombre}`).join(', ');
+
 const ESTADOS_FINALES = ['ENTREGADO', 'CANCELADO'];
 const esFinal = (pedido) => ESTADOS_FINALES.includes(pedido.estado);
 // Debe coincidir con ESTADOS_CANCELABLES del backend: con la comida ya recogida no se cancela.
@@ -208,9 +212,9 @@ export default function Despacho() {
                   const necesitaAtencion = !esFinal(p) && !p.motorizado;
                   const asignadoFueraDeLista = p.motorizado && !motorizados.some((m) => m.id === p.motorizado.id);
                   return (
-                    <tr key={p.id} className={necesitaAtencion ? 'fila-atencion' : ''}>
+                    <tr key={p.id} className={`${p.tipo === 'ENCARGO' ? 'fila-encargo' : 'fila-comida'} ${necesitaAtencion ? 'fila-atencion' : ''}`}>
                       <td>
-                        <span className="placa">#{p.id}</span>
+                        <strong>Pedido #{p.id}</strong>
                         <div className="tenue">{formatearFecha(p.creado_en)}</div>
                         {necesitaAtencion ? <div className="hace">{haceTiempo(p.creado_en)}</div> : null}
                       </td>
@@ -218,28 +222,26 @@ export default function Despacho() {
                         {p.recogida.nombre}
                         {p.tipo === 'ENCARGO' ? (
                           <>
-                            <div className="tenue productos">{p.descripcion}</div>
+                            <div className="tenue clamp" title={p.descripcion}>{p.descripcion}</div>
                             <div className="tenue">
                               Entrega: {p.recogida_contacto.nombre} · {p.recogida_contacto.telefono}
                             </div>
-                            <div className="tenue">{p.recogida.direccion}</div>
+                            <div className="tenue clamp" title={p.recogida.direccion}>{p.recogida.direccion}</div>
                             {p.pagar_en_recogida ? (
                               <div className="hace">Motorizado paga aprox. ${Number(p.monto_estimado).toFixed(2)}</div>
                             ) : null}
                           </>
                         ) : (
-                          <div className="tenue productos">
-                            {p.detalles.map((d) => `${d.cantidad} x ${d.producto_nombre}`).join(', ')}
-                          </div>
+                          <div className="tenue clamp" title={productos(p)}>{productos(p)}</div>
                         )}
                       </td>
                       <td>
-                        {p.cliente.nombre}
+                        <div className="clamp-1" title={p.cliente.nombre}>{p.cliente.nombre}</div>
                         <div className="tenue">{p.cliente.telefono || 'Sin teléfono'}</div>
                       </td>
                       <td>
-                        {p.destino_direccion}
-                        {p.destino_referencia ? <div className="tenue cursiva">{p.destino_referencia}</div> : null}
+                        <div className="clamp" title={p.destino_direccion}>{p.destino_direccion}</div>
+                        {p.destino_referencia ? <div className="tenue cursiva clamp-1" title={p.destino_referencia}>{p.destino_referencia}</div> : null}
                         {p.tipo === 'ENCARGO' ? (
                           <div className="tenue">
                             Recibe: {p.entrega_contacto.nombre} · {p.entrega_contacto.telefono}
@@ -259,9 +261,12 @@ export default function Despacho() {
                         )}
                       </td>
                       <td>
-                        <span className={`insignia ${p.estado}`}>{ETIQUETA_ESTADO[p.estado]}</span>
+                        <span className={`insignia ${p.estado}`}>
+                          <span aria-hidden="true" className="insignia-icono">{ICONO_ESTADO[p.estado] ?? '•'}</span>
+                          {ETIQUETA_ESTADO[p.estado]}
+                        </span>
                         {p.estado === 'CANCELADO' && p.motivo_cancelacion ? (
-                          <div className="tenue cursiva">{p.motivo_cancelacion}</div>
+                          <div className="tenue cursiva clamp" title={p.motivo_cancelacion}>{p.motivo_cancelacion}</div>
                         ) : null}
                       </td>
                       <td>
