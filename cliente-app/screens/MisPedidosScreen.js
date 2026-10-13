@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
-import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
-import { colores, fuente, radio } from '../constants/tema';
-import { Boleta, Entrada, Icono, Insignia, Placa } from '../components/ui';
+import { colores, fuente } from '../constants/tema';
+import { Boleta, Entrada, Icono, Insignia, NumeroPedido, Text } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -88,9 +88,13 @@ export default function MisPedidosScreen({ navigation }) {
           const total = item.detalles.reduce((suma, d) => suma + d.precio_unitario * d.cantidad, 0) + parseFloat(item.costo_envio ?? 0);
           const esEncargo = item.tipo === 'ENCARGO';
           const titulo = esEncargo ? 'Encargo' : item.negocio.nombre;
+          const textoPie = MOSTRAR_PRECIOS
+            ? `Total $${total.toFixed(2)}`
+            : item.costo_envio == null ? 'Envío por confirmar' : `Envío $${parseFloat(item.costo_envio).toFixed(2)}`;
           return (
-            <Entrada indice={index}>
+            <Entrada indice={index} estilo={styles.celda}>
               <Pressable
+                testID="ticket-pedido"
                 accessibilityRole="button"
                 accessibilityLabel={`${esEncargo ? `Encargo: ${item.descripcion}` : item.negocio.nombre}. Estado: ${etiquetaEstado[item.estado]}. Entrega en ${item.destino_direccion}. Ver detalle`}
                 onPress={() => navigation.navigate('PedidoDetalle', { pedido: item })}
@@ -100,19 +104,20 @@ export default function MisPedidosScreen({ navigation }) {
                 <Boleta
                   pie={
                     <View style={styles.pie}>
-                      <Icono nombre="location-outline" tamano={18} color={colores.primarioOscuro} />
-                      <Text style={styles.destino} numberOfLines={2}>{item.destino_direccion}</Text>
-                      {MOSTRAR_PRECIOS ? <Text style={styles.total}>${total.toFixed(2)}</Text> : null}
-                      <Icono nombre="chevron-forward" tamano={20} color={colores.suave} />
+                      <Text style={styles.envio} numberOfLines={1}>{textoPie}</Text>
+                      <View style={styles.verDetalle}>
+                        <Text style={styles.verDetalleTexto} numberOfLines={1}>Ver detalle</Text>
+                        <Icono nombre="chevron-forward" tamano={16} color={colores.primarioOscuro} />
+                      </View>
                     </View>
                   }
                 >
                   <View style={styles.encabezado}>
-                    <Placa numero={item.id} />
+                    <NumeroPedido numero={item.id} />
                     <Insignia estado={item.estado} />
                   </View>
-                  <Text style={styles.nombre} numberOfLines={2}>{titulo}</Text>
-                  {esEncargo ? <Text style={styles.descripcion} numberOfLines={2}>{item.descripcion}</Text> : null}
+                  <Text style={styles.nombre} numberOfLines={1}>{titulo}</Text>
+                  <Text style={styles.destino} numberOfLines={1}>{item.destino_direccion}</Text>
                 </Boleta>
               </Pressable>
             </Entrada>
@@ -133,7 +138,8 @@ export default function MisPedidosScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
-  filtros: { flexDirection: 'row', gap: 10, padding: 12, paddingBottom: 4 },
+  // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.
+  filtros: { flexDirection: 'row', margin: 16, marginBottom: 4, padding: 4, borderRadius: 12, backgroundColor: '#e6ecf0' },
   filtro: {
     flex: 1,
     minHeight: 48,
@@ -141,35 +147,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: radio.medio,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: colores.bordeCampo,
+    borderRadius: 9,
   },
-  filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
-  filtroTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.6, textTransform: 'uppercase', color: colores.tenue },
-  filtroTextoActivo: { color: '#fff' },
+  filtroActivo: {
+    backgroundColor: '#fff',
+    elevation: 1,
+    shadowColor: '#002838',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  filtroTexto: { fontFamily: fuente.negrita, fontSize: 13.5, color: '#4d5b64' },
+  filtroTextoActivo: { color: colores.primarioOscuro },
   contador: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 6,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
     paddingHorizontal: 6,
-    backgroundColor: '#e8edf0',
+    backgroundColor: '#d5dde2',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
-  contadorTexto: { fontFamily: fuente.displayMedio, fontSize: 16, color: colores.tenue },
-  contadorTextoActivo: { color: '#fff' },
+  contadorActivo: { backgroundColor: colores.acentoSuave },
+  contadorTexto: { fontFamily: fuente.negrita, fontSize: 12, color: '#4d5b64' },
+  contadorTextoActivo: { color: colores.primarioOscuro },
   container: { backgroundColor: colores.fondo },
-  lista: { padding: 12, paddingBottom: 24, gap: 14, flexGrow: 1 },
+  lista: { padding: 16, paddingBottom: 24, flexGrow: 1 },
+  celda: { marginBottom: 12 },
   presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  nombre: { marginTop: 12, fontFamily: fuente.display, fontSize: 30, lineHeight: 30, letterSpacing: 0.2, textTransform: 'uppercase', color: colores.texto },
-  descripcion: { marginTop: 4, fontSize: 15, color: colores.tenue },
-  pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  destino: { flex: 1, fontSize: 14, color: colores.texto },
-  total: { fontFamily: fuente.display, fontSize: 22, color: colores.texto },
+  // Todos los tickets tienen la misma estructura (una línea de nombre, una de dirección, un pie) y por eso la misma altura.
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  nombre: { marginTop: 10, fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
+  destino: { marginTop: 3, fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
+  pie: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  envio: { flex: 1, fontFamily: fuente.extra, fontSize: 13.5, color: colores.texto },
+  verDetalle: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  verDetalleTexto: { fontFamily: fuente.negrita, fontSize: 13, color: colores.primarioOscuro },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });
