@@ -3,10 +3,10 @@ import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colorEstado, esFinal, etiquetaEstado } from '../constants/estados';
+import { esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
-import { colores, radio } from '../constants/tema';
-import { Icono, Insignia, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Boleta, Entrada, Icono, Insignia, Placa } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -84,38 +84,38 @@ export default function MisPedidosScreen({ navigation }) {
         onRefresh={refrescar}
         data={verHistorial ? historial : activos}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const total = item.detalles.reduce((suma, d) => suma + d.precio_unitario * d.cantidad, 0) + parseFloat(item.costo_envio ?? 0);
           const esEncargo = item.tipo === 'ENCARGO';
-          const titulo = esEncargo ? `Encargo: ${item.descripcion}` : item.negocio.nombre;
+          const titulo = esEncargo ? 'Encargo' : item.negocio.nombre;
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${titulo}. Estado: ${etiquetaEstado[item.estado]}. Entrega en ${item.destino_direccion}. Ver detalle`}
-              onPress={() => navigation.navigate('PedidoDetalle', { pedido: item })}
-              android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
-            >
-              <View style={[styles.franja, { backgroundColor: colorEstado[item.estado] }]} />
-              <View style={styles.cuerpo}>
-                <View style={styles.encabezado}>
-                  <Insignia estado={item.estado} />
-                  <Text style={styles.numero}>#{item.id}</Text>
-                </View>
-                <View style={styles.titular}>
-                  <View style={styles.tipoIcono}>
-                    <Icono nombre={esEncargo ? 'cube-outline' : 'restaurant-outline'} tamano={18} color={colores.primarioOscuro} />
+            <Entrada indice={index}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${esEncargo ? `Encargo: ${item.descripcion}` : item.negocio.nombre}. Estado: ${etiquetaEstado[item.estado]}. Entrega en ${item.destino_direccion}. Ver detalle`}
+                onPress={() => navigation.navigate('PedidoDetalle', { pedido: item })}
+                android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+                style={({ pressed }) => pressed && styles.presionada}
+              >
+                <Boleta
+                  pie={
+                    <View style={styles.pie}>
+                      <Icono nombre="location-outline" tamano={18} color={colores.primarioOscuro} />
+                      <Text style={styles.destino} numberOfLines={2}>{item.destino_direccion}</Text>
+                      {MOSTRAR_PRECIOS ? <Text style={styles.total}>${total.toFixed(2)}</Text> : null}
+                      <Icono nombre="chevron-forward" tamano={20} color={colores.suave} />
+                    </View>
+                  }
+                >
+                  <View style={styles.encabezado}>
+                    <Placa numero={item.id} />
+                    <Insignia estado={item.estado} />
                   </View>
-                  <Text style={styles.nombre} numberOfLines={1}>{titulo}</Text>
-                </View>
-                <View style={styles.destinoFila}>
-                  <Icono nombre="location-outline" tamano={15} color={colores.suave} />
-                  <Text style={styles.destino} numberOfLines={2}>{item.destino_direccion}</Text>
-                </View>
-                {MOSTRAR_PRECIOS ? <Text style={styles.total}>${total.toFixed(2)}</Text> : null}
-              </View>
-              <Icono nombre="chevron-forward" tamano={20} color={colores.suave} estilo={styles.flecha} />
-            </Pressable>
+                  <Text style={styles.nombre} numberOfLines={2}>{titulo}</Text>
+                  {esEncargo ? <Text style={styles.descripcion} numberOfLines={2}>{item.descripcion}</Text> : null}
+                </Boleta>
+              </Pressable>
+            </Entrada>
           );
         }}
         ListEmptyComponent={
@@ -141,48 +141,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: radio.pastilla,
+    borderRadius: radio.medio,
     backgroundColor: '#fff',
     borderWidth: 1.5,
     borderColor: colores.bordeCampo,
   },
   filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
-  filtroTexto: { fontWeight: '700', fontSize: 15, color: colores.tenue },
+  filtroTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.6, textTransform: 'uppercase', color: colores.tenue },
   filtroTextoActivo: { color: '#fff' },
   contador: {
     minWidth: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 6,
     paddingHorizontal: 6,
     backgroundColor: '#e8edf0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
-  contadorTexto: { fontSize: 13, fontWeight: '800', color: colores.tenue },
+  contadorTexto: { fontFamily: fuente.displayMedio, fontSize: 16, color: colores.tenue },
   contadorTextoActivo: { color: '#fff' },
   container: { backgroundColor: colores.fondo },
-  lista: { padding: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
-  card: { ...estiloTarjeta, padding: 0, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  cardPresionada: { opacity: 0.9 },
-  franja: { width: 6, alignSelf: 'stretch' },
-  cuerpo: { flex: 1, padding: 14 },
+  lista: { padding: 12, paddingBottom: 24, gap: 14, flexGrow: 1 },
+  presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  numero: { fontSize: 13, fontWeight: '700', color: colores.suave },
-  titular: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
-  tipoIcono: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colores.acentoSuave,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nombre: { flex: 1, fontSize: 17, fontWeight: '800', color: colores.texto },
-  destinoFila: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginTop: 8 },
-  destino: { flex: 1, fontSize: 14, color: colores.tenue },
-  total: { fontSize: 16, fontWeight: '800', marginTop: 8 },
-  flecha: { marginRight: 10 },
+  nombre: { marginTop: 12, fontFamily: fuente.display, fontSize: 30, lineHeight: 30, letterSpacing: 0.2, textTransform: 'uppercase', color: colores.texto },
+  descripcion: { marginTop: 4, fontSize: 15, color: colores.tenue },
+  pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  destino: { flex: 1, fontSize: 14, color: colores.texto },
+  total: { fontFamily: fuente.display, fontSize: 22, color: colores.texto },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

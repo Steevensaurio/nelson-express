@@ -5,9 +5,10 @@ export const colores = {
   primario: '#007cab',
   // Estado "presionado" y texto azul sobre fondos celestes (5.9:1 con acentoSuave).
   primarioOscuro: '#005f84',
-  // Azul del logo: detalles decorativos (nunca para texto sobre fondo claro).
+  // Azul del logo: detalles decorativos y texto sobre negro (7.4:1), nunca texto sobre fondo claro.
   acento: '#00b2ec',
   acentoSuave: '#e0f5fd',
+  // El negro del logo: solo en piezas pequeñas y de alto contraste (la placa del número de pedido).
   negro: '#0a0a0a',
   fondo: '#f3f6f8',
   tarjeta: '#fff',
@@ -25,20 +26,28 @@ export const colores = {
   peligroSuave: '#fdecea',
 };
 
-export const radio = { chico: 10, medio: 14, grande: 20, pastilla: 999 };
+// Tipografía de marca: Barlow Condensed, parecida al rótulo condensado del logo. Es la "voz" de títulos,
+// precios, números y botones; el cuerpo de texto sigue en la fuente del sistema. Con una familia
+// personalizada no se usa fontWeight: cada peso es su propia familia.
+export const fuente = {
+  display: 'BarlowCondensed_800ExtraBold',
+  displayMedio: 'BarlowCondensed_700Bold',
+};
+
+export const radio = { chico: 8, medio: 12, grande: 14, pastilla: 999 };
 
 export const sombraTarjeta = {
-  elevation: 2,
+  elevation: 1,
   shadowColor: '#0b2530',
   shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
+  shadowOpacity: 0.07,
+  shadowRadius: 6,
 };
 
 // Opciones de navegación compartidas: cabeceras blancas con texto oscuro.
 export const opcionesCabecera = {
   headerStyle: { backgroundColor: colores.tarjeta },
   headerTintColor: colores.texto,
-  headerTitleStyle: { fontWeight: 'bold' },
+  headerTitleStyle: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.4 },
   headerShadowVisible: false,
 };

@@ -13,3 +13,5 @@ node_modules/
 
 # Expo
 .expo/
+# Superpowers brainstorming (maquetas temporales)
+.superpowers/

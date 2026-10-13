@@ -3,7 +3,7 @@ import { Text, FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { MOSTRAR_PRECIOS } from '../constants/config';
-import { colores, radio } from '../constants/tema';
+import { colores, fuente, radio } from '../constants/tema';
 import { Boton, Icono, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
   foto: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colores.acentoSuave },
   fotoVacia: { alignItems: 'center', justifyContent: 'center' },
   info: { padding: 12 },
-  nombre: { fontSize: 15, fontWeight: '700', minHeight: 38, color: colores.texto },
-  precio: { fontSize: 16, fontWeight: '800', color: '#000', marginTop: 4 },
+  nombre: { fontFamily: fuente.display, fontSize: 21, lineHeight: 22, letterSpacing: 0.2, textTransform: 'uppercase', minHeight: 44, color: colores.texto },
+  precio: { fontFamily: fuente.display, fontSize: 26, color: '#000', marginTop: 2 },
   insignia: {
     position: 'absolute',
     top: 8,
@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   hojaCuerpo: { padding: 18 },
-  hojaNombre: { fontSize: 22, fontWeight: '800', color: colores.texto },
-  hojaPrecio: { fontSize: 19, fontWeight: '800', color: '#000', marginTop: 4 },
+  hojaNombre: { fontFamily: fuente.display, fontSize: 36, lineHeight: 36, textTransform: 'uppercase', color: colores.texto },
+  hojaPrecio: { fontFamily: fuente.display, fontSize: 30, color: '#000', marginTop: 4 },
   hojaDescripcion: { fontSize: 15, color: colores.tenue, marginTop: 8, lineHeight: 21 },
   selector: {
     flexDirection: 'row',
@@ -289,6 +289,6 @@ const styles = StyleSheet.create({
   },
   selectorPresionado: { backgroundColor: colores.acentoSuave },
   selectorDeshabilitado: { opacity: 0.45 },
-  selectorCantidad: { fontSize: 24, fontWeight: '800', minWidth: 40, textAlign: 'center' },
+  selectorCantidad: { fontFamily: fuente.display, fontSize: 38, minWidth: 44, textAlign: 'center' },
   quitar: { marginTop: 10 },
 });

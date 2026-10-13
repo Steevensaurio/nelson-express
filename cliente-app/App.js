@@ -15,7 +15,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { RealtimeProvider } from './context/RealtimeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { colores, opcionesCabecera } from './constants/tema';
+import { useEffect } from 'react';
+import { useFonts, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
+import * as SplashScreen from 'expo-splash-screen';
+import { colores, fuente, opcionesCabecera } from './constants/tema';
+
+// El splash se queda hasta que la tipografía de marca esté lista, para no mostrar un cambio de letra.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,7 +46,7 @@ function MainTabs() {
         ...opcionesCabecera,
         tabBarActiveTintColor: colores.primarioOscuro,
         tabBarInactiveTintColor: colores.suave,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
+        tabBarLabelStyle: { fontFamily: fuente.displayMedio, fontSize: 14, letterSpacing: 0.5, textTransform: 'uppercase' },
         tabBarStyle: { backgroundColor: colores.tarjeta, borderTopColor: colores.borde },
       })}
     >
@@ -79,6 +85,15 @@ function AppNavigator() {
 }
 
 export default function App() {
+  const [fuentesListas, errorFuentes] = useFonts({ BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold });
+  const lista = fuentesListas || Boolean(errorFuentes);
+
+  useEffect(() => {
+    if (lista) SplashScreen.hideAsync().catch(() => {});
+  }, [lista]);
+
+  if (!lista) return null;
+
   return (
     <AuthProvider>
       <RealtimeProvider>

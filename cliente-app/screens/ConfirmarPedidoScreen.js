@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
-import { colores, radio } from '../constants/tema';
+import { colores, fuente, radio } from '../constants/tema';
 import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 export default function ConfirmarPedidoScreen({ route, navigation }) {
@@ -254,8 +254,8 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16 },
-  titulo: { fontSize: 22, marginBottom: 14 },
-  subtitulo: { fontSize: 18, marginTop: 20, marginBottom: 10 },
+  titulo: { fontSize: 32, marginBottom: 14 },
+  subtitulo: { fontSize: 26, marginTop: 20, marginBottom: 10 },
   carrito: { ...estiloTarjeta, padding: 6 },
   itemFila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },
   cantidad: {
@@ -279,8 +279,8 @@ const styles = StyleSheet.create({
     margin: 6,
   },
   envioIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  envioTexto: { fontSize: 16, fontWeight: '700', color: colores.texto },
-  envioPrecio: { fontSize: 20, fontWeight: '800', color: colores.primarioOscuro },
+  envioTexto: { fontFamily: fuente.displayMedio, fontSize: 20, textTransform: 'uppercase', color: colores.texto },
+  envioPrecio: { fontFamily: fuente.display, fontSize: 32, color: colores.primarioOscuro },
   envioPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
   totalFila: {
     flexDirection: 'row',
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
-  totalTexto: { fontSize: 17, fontWeight: '800' },
+  totalTexto: { fontFamily: fuente.display, fontSize: 28 },
   nota: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
   notaPrecios: { flex: 1, fontSize: 13, color: colores.tenue, lineHeight: 18 },
 
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   presionada: { opacity: 0.9 },
   sucursalCuerpo: { flex: 1 },
   sucursalFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  sucursalNombre: { fontSize: 16, fontWeight: '800', color: colores.texto },
+  sucursalNombre: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
   cercana: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
     backgroundColor: '#fff4e0',
-    borderLeftWidth: 5,
-    borderLeftColor: colores.naranja,
+    borderWidth: 1,
+    borderColor: '#f1cf9b',
     borderRadius: radio.medio,
     padding: 14,
     marginTop: 16,

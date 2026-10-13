@@ -3,8 +3,8 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { colores, radio } from '../constants/tema';
-import { Boton, Icono, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Aviso, Boton, Icono, Rayas, estiloTarjeta } from '../components/ui';
 
 const iniciales = (perfil) =>
   ((perfil.first_name?.[0] ?? '') + (perfil.last_name?.[0] ?? '') || perfil.username?.[0] || '?').toUpperCase();
@@ -47,7 +47,7 @@ export default function PerfilScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.cabecera}>
-        <View style={styles.cabeceraBurbuja} pointerEvents="none" />
+        <Rayas estilo={styles.rayas} />
         <View style={styles.avatar} aria-hidden>
           <Text style={styles.avatarTexto}>{perfil ? iniciales(perfil) : ''}</Text>
         </View>
@@ -60,12 +60,7 @@ export default function PerfilScreen({ navigation }) {
       </View>
 
       {incompleto ? (
-        <View style={styles.aviso} accessibilityRole="alert">
-          <Icono nombre="alert-circle" tamano={20} color={colores.naranja} />
-          <Text style={styles.avisoTexto}>
-            Completa tu nombre y teléfono para que el motorizado pueda contactarte.
-          </Text>
-        </View>
+        <Aviso tipo="alerta">Completa tu nombre y teléfono para que el motorizado pueda contactarte.</Aviso>
       ) : null}
 
       <View style={styles.grupo}>
@@ -86,25 +81,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     backgroundColor: colores.primario,
-    borderRadius: radio.grande + 4,
+    borderRadius: radio.grande,
     padding: 20,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: colores.primario,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
   },
-  cabeceraBurbuja: {
-    position: 'absolute',
-    right: -50,
-    top: -60,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: colores.primarioOscuro,
-    opacity: 0.55,
-  },
+  rayas: { right: -6 },
   avatar: {
     width: 64,
     height: 64,
@@ -113,21 +94,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { fontSize: 24, fontWeight: '800', color: colores.primarioOscuro },
+  avatarTexto: { fontFamily: fuente.display, fontSize: 30, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1 },
-  nombre: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  nombre: { fontFamily: fuente.display, fontSize: 32, lineHeight: 32, letterSpacing: 0.2, textTransform: 'uppercase', color: '#fff' },
   telefono: { fontSize: 15, color: '#fff', marginTop: 3 },
-  aviso: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-    backgroundColor: '#fff4e0',
-    borderRadius: radio.medio,
-    borderLeftWidth: 5,
-    borderLeftColor: colores.naranja,
-    padding: 14,
-  },
-  avisoTexto: { flex: 1, fontSize: 14, color: '#5c3300', fontWeight: '600' },
   grupo: { ...estiloTarjeta, padding: 4 },
   opcion: {
     minHeight: 64,
@@ -147,7 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   opcionCuerpo: { flex: 1 },
-  opcionTexto: { fontSize: 17, fontWeight: '700', color: colores.texto },
+  opcionTexto: { fontFamily: fuente.display, fontSize: 24, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
   opcionDetalle: { fontSize: 13, color: colores.tenue, marginTop: 2 },
   separador: { height: 1, backgroundColor: colores.borde, marginHorizontal: 12 },
   salir: { marginTop: 6 },

@@ -5,8 +5,8 @@ import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
-import { colores } from '../constants/tema';
-import { FilaDato, Icono, Insignia, Titulo, estiloTarjeta } from '../components/ui';
+import { colores, fuente } from '../constants/tema';
+import { Aviso, Boleta, FilaDato, Icono, Insignia, Placa, Titulo, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -98,25 +98,21 @@ export default function PedidoDetalleScreen({ route }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contenido}>
-      <View style={styles.card}>
+      <Boleta
+        pie={<Text style={styles.fecha}>Pedido hecho el {formatearFecha(pedido.creado_en)}</Text>}
+      >
         <View style={styles.encabezado}>
+          <Placa numero={pedido.id} />
           <Insignia estado={pedido.estado} />
-          <Text style={styles.fecha}>{formatearFecha(pedido.creado_en)}</Text>
         </View>
-        <Titulo estilo={styles.titulo}>Pedido #{pedido.id}</Titulo>
         {pedido.estado !== 'CANCELADO' ? <Seguimiento estado={pedido.estado} /> : null}
-      </View>
+        {pedido.estado === 'CANCELADO' ? (
+          <Text style={styles.cancelada}>Pedido cancelado</Text>
+        ) : null}
+      </Boleta>
 
-      {pedido.estado === 'CANCELADO' ? (
-        <View style={styles.cancelado} accessibilityRole="alert">
-          <Icono nombre="close-circle" tamano={24} color={colores.peligro} />
-          <View style={styles.canceladoCuerpo}>
-            <Text style={styles.canceladoTitulo}>Pedido cancelado</Text>
-            {pedido.motivo_cancelacion ? (
-              <Text style={styles.canceladoTexto}>{pedido.motivo_cancelacion}</Text>
-            ) : null}
-          </View>
-        </View>
+      {pedido.estado === 'CANCELADO' && pedido.motivo_cancelacion ? (
+        <Aviso tipo="error" icono="close-circle">{`Motivo: ${pedido.motivo_cancelacion}`}</Aviso>
       ) : null}
 
       <View style={styles.card}>
@@ -173,16 +169,13 @@ export default function PedidoDetalleScreen({ route }) {
             <Text style={styles.totalTexto}>${total.toFixed(2)}</Text>
           </View>
         ) : (
-          <View style={styles.nota}>
-            <Icono nombre="information-circle-outline" tamano={18} color={colores.primarioOscuro} />
-            <Text style={styles.notaPrecios}>
-              {esEncargo
-                ? pedido.pagar_en_recogida
-                  ? `Al recibir pagas el envío más lo que el motorizado gaste en el lugar (aprox. $${parseFloat(pedido.monto_estimado).toFixed(2)}).`
-                  : 'Al recibir pagas solo el envío.'
-                : NOTA_PRECIOS}
-            </Text>
-          </View>
+          <Aviso tipo="info" estilo={styles.nota}>
+            {esEncargo
+              ? pedido.pagar_en_recogida
+                ? `Al recibir pagas el envío más lo que el motorizado gaste en el lugar (aprox. $${parseFloat(pedido.monto_estimado).toFixed(2)}).`
+                : 'Al recibir pagas solo el envío.'
+              : NOTA_PRECIOS}
+          </Aviso>
         )}
       </View>
     </ScrollView>
@@ -194,15 +187,15 @@ const styles = StyleSheet.create({
   contenido: { padding: 16, paddingBottom: 32, gap: 14 },
   card: { ...estiloTarjeta },
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  titulo: { fontSize: 24, marginTop: 12 },
   fecha: { fontSize: 13, color: colores.tenue },
-  seccion: { fontSize: 17, marginBottom: 6 },
+  cancelada: { marginTop: 14, fontFamily: fuente.display, fontSize: 34, textTransform: 'uppercase', color: colores.peligro },
+  seccion: { fontSize: 22, marginBottom: 6 },
   separador: { height: 1, backgroundColor: colores.borde, marginVertical: 4 },
   valor: { fontSize: 16, fontWeight: '600', color: colores.texto, marginTop: 2 },
   secundario: { fontSize: 14, color: colores.tenue, marginTop: 3 },
-  referencia: { fontSize: 14, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
+  referencia: { fontSize: 14, color: colores.tenue, fontStyle: 'italic', marginTop: 4 },
 
-  seguimiento: { flexDirection: 'row', marginTop: 18 },
+  seguimiento: { flexDirection: 'row', marginTop: 20 },
   paso: { flex: 1, alignItems: 'center' },
   pasoFila: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   conector: { flex: 1, height: 3, backgroundColor: '#dfe5e9' },
@@ -218,21 +211,8 @@ const styles = StyleSheet.create({
   },
   pasoCirculoHecho: { backgroundColor: colores.primario },
   pasoCirculoActual: { borderWidth: 3, borderColor: colores.acentoSuave, width: 44, height: 44, borderRadius: 22 },
-  pasoTexto: { fontSize: 12, fontWeight: '600', color: colores.suave, marginTop: 6 },
-  pasoTextoHecho: { color: colores.texto, fontWeight: '800' },
-
-  cancelado: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: 16,
-    borderLeftWidth: 5,
-    borderLeftColor: colores.peligro,
-    padding: 16,
-  },
-  canceladoCuerpo: { flex: 1 },
-  canceladoTitulo: { fontSize: 16, fontWeight: '800', color: colores.peligro },
-  canceladoTexto: { fontSize: 15, color: colores.texto, marginTop: 4 },
+  pasoTexto: { fontFamily: fuente.displayMedio, fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase', color: colores.suave, marginTop: 6 },
+  pasoTextoHecho: { color: colores.texto },
 
   fila: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 7 },
   filaNombre: { fontSize: 15, flex: 1, paddingRight: 8, color: colores.texto },
@@ -240,20 +220,12 @@ const styles = StyleSheet.create({
   filaTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'baseline',
     borderTopWidth: 1,
     borderTopColor: colores.borde,
     marginTop: 8,
     paddingTop: 12,
   },
-  totalTexto: { fontSize: 17, fontWeight: '800' },
-  nota: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: colores.acentoSuave,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-  },
-  notaPrecios: { flex: 1, fontSize: 13, color: colores.texto, lineHeight: 18 },
+  totalTexto: { fontFamily: fuente.display, fontSize: 26, textTransform: 'uppercase' },
+  nota: { marginTop: 10 },
 });

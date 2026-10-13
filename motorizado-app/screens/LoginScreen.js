@@ -5,14 +5,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import api from '../services/api';
-import { colores, radio, sombraTarjeta } from '../constants/tema';
-import { Boton, Campo, Icono, Titulo } from '../components/ui';
-
-const VENTAJAS = [
-  { icono: 'bicycle', texto: 'Tus entregas' },
-  { icono: 'wallet-outline', texto: 'Tus cuentas' },
-  { icono: 'navigate-outline', texto: 'Rutas' },
-];
+import { colores, fuente, radio, sombraTarjeta } from '../constants/tema';
+import { Aviso, Boton, Campo, Icono, Rayas, Titulo } from '../components/ui';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
@@ -61,10 +55,8 @@ export default function LoginScreen({ onLoginSuccess }) {
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.cabecera, { paddingTop: 28 + insets.top }]}>
-          <View style={styles.circuloGrande} pointerEvents="none" aria-hidden />
-          <View style={styles.circuloChico} pointerEvents="none" aria-hidden />
-
+        <View style={[styles.cabecera, { paddingTop: 24 + insets.top }]}>
+          <Rayas estilo={styles.rayas} />
           <View style={styles.logoMarco}>
             <Image
               source={require('../assets/logo-circular.png')}
@@ -72,7 +64,9 @@ export default function LoginScreen({ onLoginSuccess }) {
               accessibilityLabel="Nelson Express"
             />
           </View>
-          <Text accessibilityRole="header" style={styles.bienvenida}>¡Hola, motorizado!</Text>
+          <Text accessibilityRole="header" style={styles.titular}>
+            {'Hola,\nmotorizado'}
+          </Text>
           <View style={styles.etiquetaRol}>
             <Icono nombre="bicycle" tamano={16} color="#fff" />
             <Text style={styles.etiquetaRolTexto}>Acceso para motorizados</Text>
@@ -123,12 +117,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               }
             />
 
-            {error ? (
-              <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
-                <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
-                <Text style={styles.errorTexto}>{error}</Text>
-              </View>
-            ) : null}
+            {error ? <Aviso tipo="error" estilo={styles.aviso}>{error}</Aviso> : null}
 
             <Boton
               titulo={entrando ? 'Ingresando…' : 'Ingresar'}
@@ -140,17 +129,6 @@ export default function LoginScreen({ onLoginSuccess }) {
               estilo={styles.boton}
             />
           </View>
-
-          <View style={styles.ventajas}>
-            {VENTAJAS.map((v) => (
-              <View key={v.texto} style={styles.ventaja}>
-                <View style={styles.ventajaIcono}>
-                  <Icono nombre={v.icono} tamano={20} color={colores.primarioOscuro} />
-                </View>
-                <Text style={styles.ventajaTexto}>{v.texto}</Text>
-              </View>
-            ))}
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -161,61 +139,51 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colores.fondo },
   cabecera: {
     backgroundColor: colores.primario,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    alignItems: 'center',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     paddingHorizontal: 24,
-    paddingBottom: 72,
+    paddingBottom: 76,
     overflow: 'hidden',
   },
-  circuloGrande: {
-    position: 'absolute',
-    top: -90,
-    right: -80,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: colores.primarioOscuro,
-    opacity: 0.55,
-  },
-  circuloChico: {
-    position: 'absolute',
-    bottom: -40,
-    left: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: colores.primarioOscuro,
-    opacity: 0.4,
-  },
+  rayas: { right: -4 },
   logoMarco: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
+    alignSelf: 'flex-start',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 8,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowRadius: 10,
   },
-  logo: { width: 118, height: 118, resizeMode: 'contain' },
-  bienvenida: { marginTop: 18, fontSize: 28, fontWeight: '800', color: '#fff' },
+  logo: { width: 86, height: 86, resizeMode: 'contain' },
+  titular: {
+    marginTop: 18,
+    fontFamily: fuente.display,
+    fontSize: 54,
+    lineHeight: 52,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+    color: '#fff',
+  },
   etiquetaRol: {
-    marginTop: 8,
+    alignSelf: 'flex-start',
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: radio.pastilla,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderRadius: radio.chico,
     paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   etiquetaRolTexto: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
-  cuerpo: { marginTop: -48, paddingHorizontal: 20 },
+  cuerpo: { marginTop: -52, paddingHorizontal: 20 },
   tarjeta: {
     width: '100%',
     maxWidth: 420,
@@ -227,36 +195,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.14,
     elevation: 6,
   },
-  tarjetaTitulo: { fontSize: 22, marginBottom: 18 },
+  tarjetaTitulo: { fontSize: 26, marginBottom: 16 },
   ojo: { padding: 4 },
-  errorCaja: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.chico,
-    padding: 12,
-    marginBottom: 14,
-  },
-  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
+  aviso: { marginBottom: 14 },
   boton: { marginTop: 4 },
-
-  ventajas: {
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 26,
-  },
-  ventaja: { alignItems: 'center', gap: 6, flex: 1 },
-  ventajaIcono: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colores.acentoSuave,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ventajaTexto: { fontSize: 13, fontWeight: '700', color: colores.tenue },
 });

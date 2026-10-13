@@ -3,12 +3,26 @@ import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colorEstado, esFinal, etiquetaEstado } from '../constants/estados';
-import { colores, radio } from '../constants/tema';
-import { Icono, Insignia, estiloTarjeta } from '../components/ui';
+import { esFinal, etiquetaEstado } from '../constants/estados';
+import { colores, fuente, radio } from '../constants/tema';
+import { Boleta, Entrada, Icono, Insignia, Placa } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
+
+// Un extremo de la carrera (recoger / entregar): rótulo corto y el lugar.
+function Tramo({ icono, rotulo, titulo, detalle }) {
+  return (
+    <View style={styles.tramo}>
+      <Icono nombre={icono} tamano={20} color={colores.primarioOscuro} estilo={styles.tramoIcono} />
+      <View style={styles.tramoCuerpo}>
+        <Text style={styles.rotulo}>{rotulo}</Text>
+        <Text style={styles.valor}>{titulo}</Text>
+        {detalle ? <Text style={styles.detalle}>{detalle}</Text> : null}
+      </View>
+    </View>
+  );
+}
 
 export default function MisEntregasScreen({ navigation }) {
   const [entregas, setEntregas] = useState([]);
@@ -91,50 +105,45 @@ export default function MisEntregasScreen({ navigation }) {
             </Text>
           </View>
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const valor = item.costo_envio != null ? `$${parseFloat(item.costo_envio).toFixed(2)}` : null;
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Entrega ${item.id}${valor ? `, ${valor}` : ''}. Estado: ${etiquetaEstado[item.estado]}. Recoger en ${item.recogida.nombre}, ${item.recogida.direccion}. Entregar en ${item.destino_direccion}. Ver detalle`}
-              onPress={() => navigation.navigate('EntregaDetalle', { entrega: item })}
-              android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
-            >
-              <View style={[styles.franja, { backgroundColor: colorEstado[item.estado] }]} />
-              <View style={styles.cuerpo}>
-                <View style={styles.encabezado}>
-                  <Insignia estado={item.estado} />
-                  <View style={styles.precioCol}>
-                    {valor ? <Text style={styles.precio}>{valor}</Text> : null}
-                    <Text style={styles.numero}>#{item.id}</Text>
+            <Entrada indice={index}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Entrega ${item.id}${valor ? `, ${valor}` : ''}. Estado: ${etiquetaEstado[item.estado]}. Recoger en ${item.recogida.nombre}, ${item.recogida.direccion}. Entregar en ${item.destino_direccion}. Ver detalle`}
+                onPress={() => navigation.navigate('EntregaDetalle', { entrega: item })}
+                android_ripple={{ color: 'rgba(0,124,171,0.12)' }}
+                style={({ pressed }) => pressed && styles.presionada}
+              >
+                <Boleta
+                  pie={
+                    <View style={styles.pie}>
+                      <Text style={styles.pieRotulo}>Tu carrera</Text>
+                      <Text style={styles.precio}>{valor ?? '—'}</Text>
+                      <Icono nombre="chevron-forward" tamano={20} color={colores.suave} />
+                    </View>
+                  }
+                >
+                  <View style={styles.encabezado}>
+                    <Placa numero={item.id} />
+                    <Insignia estado={item.estado} />
                   </View>
-                </View>
-
-                <View style={styles.fila}>
-                  <View style={styles.filaIcono}>
-                    <Icono nombre={item.tipo === 'ENCARGO' ? 'cube-outline' : 'storefront-outline'} tamano={18} color={colores.primarioOscuro} />
-                  </View>
-                  <View style={styles.filaContenido}>
-                    <Text style={styles.etiqueta}>Recoger en</Text>
-                    <Text style={styles.valor}>{item.recogida.nombre}</Text>
-                    <Text style={styles.detalle}>{item.recogida.direccion}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.fila}>
-                  <View style={styles.filaIcono}>
-                    <Icono nombre="location-outline" tamano={18} color={colores.primarioOscuro} />
-                  </View>
-                  <View style={styles.filaContenido}>
-                    <Text style={styles.etiqueta}>Entregar en</Text>
-                    <Text style={styles.valor}>{item.destino_direccion}</Text>
-                    {item.destino_referencia ? <Text style={styles.referencia}>{item.destino_referencia}</Text> : null}
-                  </View>
-                </View>
-              </View>
-              <Icono nombre="chevron-forward" tamano={20} color={colores.suave} estilo={styles.flecha} />
-            </Pressable>
+                  <Tramo
+                    icono={item.tipo === 'ENCARGO' ? 'cube-outline' : 'storefront-outline'}
+                    rotulo="Recoger en"
+                    titulo={item.recogida.nombre}
+                    detalle={item.recogida.direccion}
+                  />
+                  <Tramo
+                    icono="location-outline"
+                    rotulo="Entregar en"
+                    titulo={item.destino_direccion}
+                    detalle={item.destino_referencia}
+                  />
+                </Boleta>
+              </Pressable>
+            </Entrada>
           );
         }}
       />
@@ -145,7 +154,7 @@ export default function MisEntregasScreen({ navigation }) {
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
   container: { backgroundColor: colores.fondo },
-  lista: { padding: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
+  lista: { padding: 12, paddingBottom: 24, gap: 14, flexGrow: 1 },
   filtros: { flexDirection: 'row', gap: 10, padding: 12, paddingBottom: 4 },
   filtro: {
     flex: 1,
@@ -154,50 +163,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: radio.pastilla,
+    borderRadius: radio.medio,
     backgroundColor: colores.tarjeta,
     borderWidth: 1.5,
     borderColor: colores.bordeCampo,
   },
   filtroActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
-  filtroTexto: { fontWeight: '700', fontSize: 15, color: colores.tenue },
+  filtroTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.6, textTransform: 'uppercase', color: colores.tenue },
   filtroTextoActivo: { color: '#fff' },
   contador: {
     minWidth: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 6,
     paddingHorizontal: 6,
     backgroundColor: '#e8edf0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   contadorActivo: { backgroundColor: 'rgba(255,255,255,0.28)' },
-  contadorTexto: { fontSize: 13, fontWeight: '800', color: colores.tenue },
+  contadorTexto: { fontFamily: fuente.displayMedio, fontSize: 16, color: colores.tenue },
   contadorTextoActivo: { color: '#fff' },
 
-  card: { ...estiloTarjeta, padding: 0, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  cardPresionada: { opacity: 0.9 },
-  franja: { width: 6, alignSelf: 'stretch' },
-  cuerpo: { flex: 1, padding: 14 },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  precioCol: { alignItems: 'flex-end' },
-  precio: { fontSize: 22, fontWeight: '800', color: colores.verde },
-  numero: { fontSize: 13, fontWeight: '700', color: colores.suave },
-  fila: { flexDirection: 'row', gap: 12, marginTop: 14 },
-  filaIcono: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colores.acentoSuave,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filaContenido: { flex: 1 },
-  etiqueta: { fontSize: 12, fontWeight: '700', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4 },
+  presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  tramo: { flexDirection: 'row', gap: 12, marginTop: 14 },
+  tramoIcono: { marginTop: 2 },
+  tramoCuerpo: { flex: 1 },
+  rotulo: { fontFamily: fuente.displayMedio, fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.suave },
   valor: { fontSize: 16, fontWeight: '700', color: colores.texto, marginTop: 1 },
   detalle: { fontSize: 14, color: colores.tenue, marginTop: 1 },
-  referencia: { fontSize: 14, color: colores.tenue, fontStyle: 'italic', marginTop: 2 },
-  flecha: { marginRight: 10 },
+  pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pieRotulo: { flex: 1, fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
+  precio: { fontFamily: fuente.display, fontSize: 34, lineHeight: 34, color: colores.verde },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

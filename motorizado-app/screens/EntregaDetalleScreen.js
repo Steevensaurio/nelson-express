@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colorAccion, iconoEstado, siguienteEstado, textoAccion } from '../constants/estados';
-import { colores, radio } from '../constants/tema';
-import { Boton, Icono, Insignia, Titulo, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Aviso, Boleta, Boton, Icono, Insignia, Placa, Titulo, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -103,42 +103,37 @@ export default function EntregaDetalleScreen({ route }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.contenido, !proximoEstado && { paddingBottom: 24 + insets.bottom }]}>
         {reasignada ? (
-          <View style={styles.reasignada} accessibilityRole="alert">
-            <Icono nombre="swap-horizontal" tamano={22} color={colores.naranja} />
-            <Text style={styles.reasignadaTexto}>
-              El despachador reasignó esta entrega a otro motorizado. Ya no te corresponde.
-            </Text>
-          </View>
+          <Aviso tipo="alerta" icono="swap-horizontal">
+            El despachador reasignó esta entrega a otro motorizado. Ya no te corresponde.
+          </Aviso>
         ) : null}
 
-        <View style={styles.card}>
+        <Boleta pie={<Text style={styles.fecha}>Pedido hecho el {formatearFecha(entrega.creado_en)}</Text>}>
           <View style={styles.encabezado}>
+            <Placa numero={entrega.id} />
             <Insignia estado={entrega.estado} />
-            <Text style={styles.fecha}>{formatearFecha(entrega.creado_en)}</Text>
           </View>
-          <Titulo estilo={styles.titulo}>Entrega #{entrega.id}</Titulo>
-        </View>
+          {entrega.costo_envio != null ? (
+            <View
+              style={styles.carrera}
+              accessible
+              accessibilityLabel={`Valor de la carrera: ${parseFloat(entrega.costo_envio).toFixed(2)} dólares${entrega.distancia_km ? `, aproximadamente ${parseFloat(entrega.distancia_km).toFixed(1)} kilómetros` : ''}`}
+            >
+              <View>
+                <Text style={styles.carreraRotulo}>Tu carrera</Text>
+                {entrega.distancia_km ? (
+                  <Text style={styles.carreraKm}>Aprox. {parseFloat(entrega.distancia_km).toFixed(1)} km</Text>
+                ) : null}
+              </View>
+              <Text style={styles.carreraValor}>${parseFloat(entrega.costo_envio).toFixed(2)}</Text>
+            </View>
+          ) : null}
+        </Boleta>
 
         {entrega.estado === 'CANCELADO' ? (
-          <View style={styles.cancelado} accessibilityRole="alert">
-            <Icono nombre="close-circle" tamano={24} color={colores.peligro} />
-            <View style={styles.canceladoCuerpo}>
-              <Text style={styles.canceladoTitulo}>Entrega cancelada</Text>
-              {entrega.motivo_cancelacion ? <Text style={styles.canceladoTexto}>{entrega.motivo_cancelacion}</Text> : null}
-            </View>
-          </View>
-        ) : null}
-
-        {entrega.costo_envio != null ? (
-          <View style={styles.carrera} accessible accessibilityLabel={`Valor de la carrera: ${parseFloat(entrega.costo_envio).toFixed(2)} dólares${entrega.distancia_km ? `, aproximadamente ${parseFloat(entrega.distancia_km).toFixed(1)} kilómetros` : ''}`}>
-            <View>
-              <Text style={styles.carreraRotulo}>Valor de la carrera</Text>
-              {entrega.distancia_km ? (
-                <Text style={styles.carreraKm}>Aprox. {parseFloat(entrega.distancia_km).toFixed(1)} km</Text>
-              ) : null}
-            </View>
-            <Text style={styles.carreraValor}>${parseFloat(entrega.costo_envio).toFixed(2)}</Text>
-          </View>
+          <Aviso tipo="error" icono="close-circle">
+            {`Entrega cancelada${entrega.motivo_cancelacion ? `: ${entrega.motivo_cancelacion}` : ''}`}
+          </Aviso>
         ) : null}
 
         <View style={styles.card}>
@@ -163,13 +158,9 @@ export default function EntregaDetalleScreen({ route }) {
         </View>
 
         {esEncargo && entrega.pagar_en_recogida ? (
-          <View style={styles.avisoPago} accessibilityRole="alert">
-            <Icono nombre="cash-outline" tamano={24} color={colores.naranja} />
-            <Text style={styles.avisoPagoTexto}>
-              Debes pagar al recoger: aprox. ${parseFloat(entrega.monto_estimado).toFixed(2)}. Al entregar cobras al
-              cliente lo que pagaste más tu carrera.
-            </Text>
-          </View>
+          <Aviso tipo="alerta" icono="cash-outline">
+            {`Debes pagar al recoger: aprox. $${parseFloat(entrega.monto_estimado).toFixed(2)}. Al entregar cobras al cliente lo que pagaste más tu carrera.`}
+          </Aviso>
         ) : null}
 
         <View style={styles.card}>
@@ -234,9 +225,7 @@ export default function EntregaDetalleScreen({ route }) {
 
       {proximoEstado ? (
         <View style={[styles.barraInferior, { paddingBottom: 12 + insets.bottom }]}>
-          {error ? (
-            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
-          ) : null}
+          {error ? <Aviso tipo="error" estilo={styles.error}>{error}</Aviso> : null}
           <Boton
             titulo={actualizando ? 'Actualizando…' : textoAccion[proximoEstado]}
             etiqueta={textoAccion[proximoEstado]}
@@ -257,76 +246,36 @@ const styles = StyleSheet.create({
   contenido: { padding: 16, gap: 14 },
   card: { ...estiloTarjeta },
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  titulo: { fontSize: 24, marginTop: 12 },
   fecha: { fontSize: 13, color: colores.tenue },
-
-  reasignada: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#fff4e0',
-    borderLeftWidth: 5,
-    borderLeftColor: colores.naranja,
-    borderRadius: radio.medio,
-    padding: 14,
-  },
-  reasignadaTexto: { flex: 1, fontSize: 15, fontWeight: '600', color: '#5c3300' },
-
-  cancelado: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.grande,
-    borderLeftWidth: 5,
-    borderLeftColor: colores.peligro,
-    padding: 16,
-  },
-  canceladoCuerpo: { flex: 1 },
-  canceladoTitulo: { fontSize: 16, fontWeight: '800', color: colores.peligro },
-  canceladoTexto: { fontSize: 15, color: colores.texto, marginTop: 4 },
 
   carrera: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    backgroundColor: '#e6f6ec',
-    borderRadius: radio.grande,
-    padding: 18,
+    marginTop: 16,
   },
-  carreraRotulo: { fontSize: 14, fontWeight: '700', color: colores.texto },
-  carreraKm: { fontSize: 13, color: colores.tenue, marginTop: 2 },
-  carreraValor: { fontSize: 34, fontWeight: '800', color: colores.verde },
+  carreraRotulo: { fontFamily: fuente.displayMedio, fontSize: 17, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
+  carreraKm: { fontSize: 14, color: colores.tenue, marginTop: 2 },
+  carreraValor: { fontFamily: fuente.display, fontSize: 56, lineHeight: 54, color: colores.verde },
 
   bloqueCabecera: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   bloqueIcono: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radio.chico,
     backgroundColor: colores.acentoSuave,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: 16 },
+  bloqueTitulo: { fontSize: 22 },
   valor: { fontSize: 17, fontWeight: '700', color: colores.texto },
   secundario: { fontSize: 15, color: colores.tenue, marginTop: 3 },
   referencia: { fontSize: 15, color: colores.tenue, fontStyle: 'italic', marginTop: 4 },
   botonSecundario: { marginTop: 12, minHeight: 56 },
 
   contacto: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colores.borde },
-  contactoRotulo: { fontSize: 12, fontWeight: '700', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4 },
+  contactoRotulo: { fontFamily: fuente.displayMedio, fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.suave },
   contactoNombre: { fontSize: 16, fontWeight: '700', color: colores.texto, marginTop: 2 },
-
-  avisoPago: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#fff4e0',
-    borderLeftWidth: 5,
-    borderLeftColor: colores.naranja,
-    borderRadius: radio.medio,
-    padding: 14,
-  },
-  avisoPagoTexto: { flex: 1, fontSize: 15, fontWeight: '600', color: '#5c3300', lineHeight: 21 },
 
   producto: { fontSize: 16, paddingVertical: 3, color: colores.texto },
 
@@ -338,5 +287,5 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   botonAccion: { minHeight: 60 },
-  error: { color: colores.peligro, fontWeight: '600', fontSize: 14, textAlign: 'center', marginBottom: 8 },
+  error: { marginBottom: 10 },
 });

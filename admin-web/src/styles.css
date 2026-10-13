@@ -17,8 +17,15 @@
   --marca: #007cab;
   --marca-oscura: #005f84;
   --marca-suave: #e0f5fd;
-  --sombra: 0 2px 8px rgb(11 37 48 / 0.08);
-  --radio: 14px;
+  --acento: #00b2ec;
+  --negro: #0a0a0a;
+  --sombra: 0 1px 3px rgb(11 37 48 / 0.07);
+  --radio: 12px;
+  /* Tipografía de marca (letra condensada, como el logo) para títulos, cifras y etiquetas. */
+  --display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --salida: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+  scrollbar-color: var(--marca) var(--fondo);
 }
 
 * {
@@ -32,11 +39,46 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 15px;
   line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--marca);
+}
+
+::selection {
+  background: var(--marca);
+  color: #fff;
 }
 
 h1,
 h2 {
   margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* Una sola entrada orquestada por pantalla: lo principal aparece escalonado, sin rebotes. */
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.contenido > * {
+  animation: entra 0.3s var(--salida) backwards;
+}
+
+.contenido > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.contenido > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.contenido > *:nth-child(n + 4) {
+  animation-delay: 135ms;
 }
 
 button {
@@ -92,10 +134,20 @@ button {
 .peligro,
 .primario {
   min-height: 40px;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 8px 16px;
-  font-weight: 700;
-  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.12s var(--salida);
+}
+
+.secundario:active,
+.peligro:active,
+.primario:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .primario {
@@ -103,7 +155,6 @@ button {
   color: #fff;
   border: 2px solid var(--marca);
   padding: 10px 24px;
-  box-shadow: 0 4px 12px rgb(0 124 171 / 0.28);
 }
 
 .primario:hover:not(:disabled) {
@@ -116,7 +167,6 @@ button {
   background: #dfe3e6;
   border-color: #dfe3e6;
   color: #5a6268;
-  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -178,7 +228,7 @@ select,
 textarea {
   padding: 10px 12px;
   border: 2px solid var(--borde-campo);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -218,53 +268,49 @@ input[type='checkbox'] {
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  background: var(--marca);
 }
 
-.login::before,
-.login::after {
+/* Las rayas de velocidad de la marca: tres barras inclinadas, la más ancha pegada al borde. */
+.login::before {
   content: '';
   position: absolute;
-  border-radius: 50%;
-  background: #00b2ec;
-  opacity: 0.16;
+  top: 0;
+  bottom: 0;
+  right: -4%;
+  width: 36%;
   z-index: -1;
-}
-
-.login::before {
-  width: 520px;
-  height: 520px;
-  top: -200px;
-  right: -140px;
-}
-
-.login::after {
-  width: 260px;
-  height: 260px;
-  bottom: -90px;
-  left: -70px;
+  background:
+    linear-gradient(#000, #000) 0 0 / 55% 100% no-repeat,
+    linear-gradient(#000, #000) 70% 0 / 27% 100% no-repeat;
+  opacity: 0.16;
+  transform: skewX(-14deg);
 }
 
 .login-logo {
-  width: 170px;
+  width: 150px;
   height: auto;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
 }
 
 .login-tarjeta {
   width: 100%;
   max-width: 380px;
   background: var(--tarjeta);
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 8px 28px rgb(11 37 48 / 0.14);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.22);
 }
 
 .login-sub {
   margin: 0 0 2px;
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
 }
 
 .login-tarjeta label {
@@ -280,11 +326,14 @@ input[type='checkbox'] {
   background: var(--marca);
   color: #fff;
   border: 2px solid var(--marca);
-  border-radius: 12px;
+  border-radius: 8px;
   min-height: 48px;
   padding: 12px;
+  font-family: var(--display);
+  font-size: 20px;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgb(0 124 171 / 0.28);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .login-tarjeta button[type='submit']:hover:not(:disabled) {
@@ -309,9 +358,7 @@ input[type='checkbox'] {
   top: 0;
   z-index: 20;
   background: var(--tarjeta);
-  border-top: 4px solid var(--marca);
   border-bottom: 1px solid var(--borde);
-  box-shadow: var(--sombra);
   padding: 4px 24px;
   display: flex;
   justify-content: space-between;
@@ -340,22 +387,26 @@ input[type='checkbox'] {
 .barra-nav a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  padding: 8px 16px;
-  border-radius: 10px;
+  min-height: 52px;
+  padding: 8px 14px;
+  border-bottom: 4px solid transparent;
   color: var(--tenue);
   text-decoration: none;
+  font-family: var(--display);
+  font-size: 19px;
   font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .barra-nav a:hover {
-  background: var(--fondo);
   color: var(--texto);
 }
 
 .barra-nav a.active {
   color: var(--marca-oscura);
-  background: var(--marca-suave);
+  border-bottom-color: var(--marca);
 }
 
 .barra-usuario {
@@ -377,35 +428,35 @@ input[type='checkbox'] {
 }
 
 .contenido > h2 {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 32px;
 }
 
+/* Avisos: fondo teñido + filete fino del mismo tono (sin franja lateral). */
 .aviso,
 .error-banner,
 .aviso-ok {
   margin: 0;
   padding: 12px 16px;
-  border-radius: 12px;
-  border-left: 5px solid;
+  border-radius: 8px;
+  border: 1px solid;
   font-weight: 600;
 }
 
 .aviso {
   background: var(--alerta-fondo);
-  border-color: var(--alerta);
+  border-color: #f1cf9b;
   color: #5c3300;
 }
 
 .error-banner {
   background: var(--rojo-fondo);
-  border-color: var(--rojo);
+  border-color: #f0b8b3;
   color: #7a1b14;
 }
 
 .aviso-ok {
   background: #e6f6ec;
-  border-color: var(--verde);
+  border-color: #a9d8bb;
   color: #14482c;
 }
 
@@ -420,75 +471,78 @@ input[type='checkbox'] {
 
 /* ---------- Resumen ---------- */
 
+/* Filtros del despacho: una tira segmentada. La cifra grande es el dato; el filtro activo se rellena de marca. */
 .resumen {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
 }
 
 .resumen-tarjeta {
-  background: var(--tarjeta);
-  border: 2px solid transparent;
-  border-top: 5px solid var(--borde-campo);
-  border-radius: var(--radio);
-  padding: 14px 18px 16px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--borde);
+  padding: 14px 20px 16px;
   text-align: left;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--sombra);
-  transition: transform 0.15s, box-shadow 0.15s;
+  color: var(--texto);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.resumen-tarjeta:last-child {
+  border-right: 0;
 }
 
 button.resumen-tarjeta:hover {
-  box-shadow: 0 6px 16px rgb(11 37 48 / 0.14);
+  background: var(--marca-suave);
 }
 
-.resumen-tarjeta.activa {
-  border-color: var(--marca);
-  border-top-color: var(--marca);
-  background: #f6fcff;
+.resumen-tarjeta.activa,
+button.resumen-tarjeta.activa:hover {
+  background: var(--marca);
+  color: #fff;
 }
 
-.tarjeta-sin-asignar {
-  border-top-color: var(--alerta);
+.resumen-tarjeta.activa .resumen-texto {
+  color: #fff;
 }
 
-.tarjeta-en-curso {
-  border-top-color: var(--azul);
-}
-
-.tarjeta-finalizados {
-  border-top-color: var(--verde);
-}
-
-.resumen-tarjeta.urgente .resumen-numero {
+.resumen-tarjeta.urgente:not(.activa) .resumen-numero {
   color: var(--alerta);
 }
 
 .resumen-numero {
-  font-size: 30px;
+  font-family: var(--display);
+  font-size: 52px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1;
 }
 
 .resumen-texto {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--tenue);
-  font-weight: 600;
 }
 
 /* ---------- Motorizados ---------- */
 
 .motorizados {
   background: var(--tarjeta);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   padding: 16px 18px;
-  box-shadow: var(--sombra);
 }
 
 .motorizados h2,
 .tabla-encabezado h2 {
-  font-size: 17px;
-  font-weight: 800;
+  font-size: 24px;
 }
 
 .motorizados ul {
@@ -500,21 +554,32 @@ button.resumen-tarjeta:hover {
   gap: 10px;
 }
 
+/* El estado se lee en el punto + la palabra (libre / en curso), no en un borde de color. */
 .motorizados li {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 16px;
-  border-radius: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 8px 16px 8px 12px;
+  border-radius: 8px;
   border: 1px solid var(--borde);
-  border-left: 5px solid var(--borde-campo);
 }
 
-.motorizados li.libre {
-  border-left-color: var(--verde);
+.motorizados li::before {
+  content: '';
+  grid-row: 1 / 3;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--borde-campo);
 }
 
-.motorizados li.ocupado {
-  border-left-color: var(--azul);
+.motorizados li.libre::before {
+  background: var(--verde);
+}
+
+.motorizados li.ocupado::before {
+  background: var(--azul);
 }
 
 .motorizados li span {
@@ -536,8 +601,8 @@ button.resumen-tarjeta:hover {
 
 .tabla-caja {
   background: var(--tarjeta);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
-  box-shadow: var(--sombra);
   overflow: hidden;
 }
 
@@ -560,11 +625,12 @@ table {
 
 th {
   text-align: left;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--tenue);
-  font-weight: 800;
+  font-weight: 700;
   padding: 10px 16px;
   border-top: 1px solid var(--borde);
   border-bottom: 2px solid var(--borde);
@@ -594,14 +660,25 @@ tbody tr:hover td {
   background: var(--alerta-fondo);
 }
 
-.fila-atencion td:first-child {
-  box-shadow: inset 5px 0 0 var(--alerta);
-}
-
+/* El pedido sin asignar se destaca por el fondo ámbar y el "hace X min" en la celda del número. */
 .hace {
   color: var(--alerta);
   font-size: 13px;
   font-weight: 800;
+}
+
+/* Número de pedido: la placa negra de la marca (el único negro de la pantalla). */
+.placa {
+  display: inline-block;
+  background: var(--negro);
+  color: var(--acento);
+  border-radius: 4px;
+  padding: 1px 8px 0;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
 }
 
 .vacio {
@@ -617,11 +694,15 @@ tbody tr:hover td {
   align-items: center;
   gap: 6px;
   color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 4px 12px;
-  border-radius: 999px;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 16px 2px 14px;
   background: #5b6670;
+  /* Corte inclinado: la marca de "velocidad", sin necesitar un elemento extra. */
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
 
 .insignia::before {
@@ -677,17 +758,17 @@ tbody tr:hover td {
 
 .modal {
   background: var(--tarjeta);
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 24px;
   width: 100%;
   max-width: 440px;
   box-shadow: 0 16px 48px rgb(0 0 0 / 0.3);
+  animation: entra 0.25s var(--salida);
 }
 
 .modal h2 {
   margin: 0 0 6px;
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 28px;
 }
 
 .modal label {
@@ -717,9 +798,9 @@ tbody tr:hover td {
   align-items: flex-end;
   gap: 16px;
   background: var(--tarjeta);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   padding: 16px 18px;
-  box-shadow: var(--sombra);
 }
 
 .filtros-ganancias label {
@@ -741,6 +822,10 @@ tbody tr:hover td {
   color: #fff;
 }
 
+.resumen-tarjeta.activa .resumen-numero {
+  color: #fff;
+}
+
 /* ---------- Nuevo encargo ---------- */
 
 .formulario-encargo {
@@ -752,11 +837,9 @@ tbody tr:hover td {
 
 .formulario-encargo fieldset {
   background: var(--tarjeta);
-  border: 0;
-  border-top: 5px solid var(--marca);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   padding: 16px 18px 18px;
-  box-shadow: var(--sombra);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
@@ -766,8 +849,11 @@ tbody tr:hover td {
 .formulario-encargo legend {
   float: left;
   grid-column: 1 / -1;
-  font-size: 17px;
+  font-family: var(--display);
+  font-size: 26px;
   font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
   padding: 0;
   margin-bottom: 2px;
 }
@@ -839,6 +925,8 @@ tbody tr:hover td {
 }
 
 .encargo-envio {
+  font-family: var(--display);
+  font-size: 26px;
   font-weight: 800;
   color: var(--marca-oscura);
 }

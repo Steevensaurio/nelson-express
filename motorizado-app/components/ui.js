@@ -1,7 +1,9 @@
-import { forwardRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { forwardRef, useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, TextInput, View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colores, radio, sombraTarjeta } from '../constants/tema';
+import { colores, fuente, radio } from '../constants/tema';
 import { colorEstado, etiquetaEstado, iconoEstado } from '../constants/estados';
 
 // Los íconos van junto a texto visible, así que se ocultan al lector de pantalla.
@@ -17,11 +19,13 @@ export function Icono({ nombre, tamano = 20, color = colores.texto, estilo }) {
   );
 }
 
+// Tarjeta plana con filo fino: la profundidad se reserva para lo que se toca (boletas, botones).
 export const estiloTarjeta = {
   backgroundColor: colores.tarjeta,
   borderRadius: radio.grande,
   padding: 16,
-  ...sombraTarjeta,
+  borderWidth: 1,
+  borderColor: colores.borde,
 };
 
 const VARIANTES = {
@@ -37,6 +41,7 @@ const VARIANTES = {
 export function Boton({ titulo, onPress, variante = 'primario', icono, deshabilitado, cargando, etiqueta, estilo, colorFondo }) {
   const v = colorFondo ? { fondo: colorFondo, presionado: colorFondo, texto: '#fff', borde: colorFondo } : VARIANTES[variante];
   const inactivo = Boolean(deshabilitado || cargando);
+  const colorTexto = deshabilitado ? '#5a6268' : v.texto;
   return (
     <Pressable
       accessibilityRole="button"
@@ -49,8 +54,9 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
       style={({ pressed }) => [
         s.boton,
         { backgroundColor: pressed ? v.presionado : v.fondo, borderColor: v.borde },
+        pressed && s.botonPresionado,
         variante === 'primario' && !colorFondo && !inactivo && s.botonSombra,
-        pressed && colorFondo && s.botonPresionado,
+        pressed && colorFondo && s.botonSobrio,
         deshabilitado && s.botonOff,
         estilo,
       ]}
@@ -58,9 +64,9 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
       {cargando ? (
         <ActivityIndicator color={v.texto} />
       ) : icono ? (
-        <Icono nombre={icono} tamano={20} color={deshabilitado ? '#5a6268' : v.texto} />
+        <Icono nombre={icono} tamano={20} color={colorTexto} />
       ) : null}
-      <Text style={[s.botonTexto, { color: deshabilitado ? '#5a6268' : v.texto }]}>{titulo}</Text>
+      <Text style={[s.botonTexto, { color: colorTexto }]}>{titulo}</Text>
     </Pressable>
   );
 }
@@ -98,7 +104,7 @@ export const Campo = forwardRef(function Campo(
   );
 });
 
-// Chip de estado: ícono + palabra + color, para que el color nunca sea el único indicador.
+// Chip de estado inclinado (velocidad): ícono + palabra + color, para que el color nunca sea el único indicador.
 export function Insignia({ estado, estilo }) {
   const etiqueta = etiquetaEstado[estado] ?? estado;
   return (
@@ -107,8 +113,19 @@ export function Insignia({ estado, estilo }) {
       accessibilityLabel={`Estado: ${etiqueta}`}
       style={[s.insignia, { backgroundColor: colorEstado[estado] ?? colores.tenue }, estilo]}
     >
-      <Icono nombre={iconoEstado[estado] ?? 'ellipse-outline'} tamano={14} color="#fff" />
-      <Text style={s.insigniaTexto}>{etiqueta}</Text>
+      <View style={s.insigniaInterior}>
+        <Icono nombre={iconoEstado[estado] ?? 'ellipse-outline'} tamano={15} color="#fff" />
+        <Text style={s.insigniaTexto}>{etiqueta}</Text>
+      </View>
+    </View>
+  );
+}
+
+// El número de pedido como placa de moto: el negro del logo, en pequeño y con el celeste encima (7.4:1).
+export function Placa({ numero, estilo }) {
+  return (
+    <View accessible accessibilityLabel={`Pedido número ${numero}`} style={[s.placa, estilo]}>
+      <Text style={s.placaTexto}>#{numero}</Text>
     </View>
   );
 }
@@ -117,7 +134,7 @@ export function Titulo({ children, estilo }) {
   return <Text accessibilityRole="header" style={[s.titulo, estilo]}>{children}</Text>;
 }
 
-// Un dato con ícono y rótulo pequeño encima del valor.
+// Un dato con ícono y su nombre encima del valor.
 export function FilaDato({ icono, titulo, children }) {
   return (
     <View style={s.fila}>
@@ -132,6 +149,106 @@ export function FilaDato({ icono, titulo, children }) {
   );
 }
 
+const AVISOS = {
+  error: { fondo: colores.peligroSuave, borde: '#efb8b3', texto: '#7a1b14', icono: 'alert-circle', color: colores.peligro, alerta: true },
+  alerta: { fondo: '#fff4e0', borde: '#f1cf9b', texto: '#5c3300', icono: 'alert-circle', color: colores.naranja, alerta: true },
+  info: { fondo: colores.acentoSuave, borde: '#b6e3f5', texto: colores.texto, icono: 'information-circle', color: colores.primarioOscuro },
+  ok: { fondo: '#e6f6ec', borde: '#b3dcc3', texto: '#14482c', icono: 'checkmark-circle', color: colores.verde },
+};
+
+// Recuadro de aviso: fondo teñido con su propio filo e ícono. Sin franja de color a un lado.
+export function Aviso({ tipo = 'info', icono, children, estilo }) {
+  const a = AVISOS[tipo];
+  return (
+    <View
+      accessibilityRole={a.alerta ? 'alert' : undefined}
+      accessibilityLiveRegion={a.alerta ? 'polite' : undefined}
+      style={[s.aviso, { backgroundColor: a.fondo, borderColor: a.borde }, estilo]}
+    >
+      <Icono nombre={icono ?? a.icono} tamano={20} color={a.color} />
+      <View style={s.avisoCuerpo}>
+        {typeof children === 'string' ? <Text style={[s.avisoTexto, { color: a.texto }]}>{children}</Text> : children}
+      </View>
+    </View>
+  );
+}
+
+// Rayas de velocidad, tomadas de las barras del logo: tres franjas inclinadas. Se recortan en el contenedor.
+export function Rayas({ color = '#fff', opacidad = 0.16, estilo }) {
+  return (
+    <View pointerEvents="none" aria-hidden style={[s.rayas, estilo]}>
+      {[38, 18, 8].map((ancho, i) => (
+        <View
+          key={ancho}
+          style={{
+            width: ancho,
+            height: '140%',
+            marginLeft: i === 0 ? 0 : 16,
+            backgroundColor: color,
+            opacity: opacidad,
+            transform: [{ skewX: '-24deg' }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+const DASHES = Array.from({ length: 56 });
+
+// La boleta de pedido: tarjeta con perforación y muescas laterales. `pie` va debajo de la línea punteada.
+// `fondo` es el color de la pantalla (las muescas se pintan de ese color para parecer recortes).
+export function Boleta({ children, pie, estilo, fondo = colores.fondo }) {
+  return (
+    <View style={[s.boleta, estilo]}>
+      <View style={s.boletaCuerpo}>{children}</View>
+      {pie ? (
+        <>
+          <View style={s.perforacion} aria-hidden>
+            <View style={[s.muesca, { left: -10, backgroundColor: fondo }]} />
+            <View style={s.dashes}>
+              {DASHES.map((_, i) => <View key={i} style={s.dash} />)}
+            </View>
+            <View style={[s.muesca, { right: -10, backgroundColor: fondo }]} />
+          </View>
+          <View style={s.boletaPie}>{pie}</View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+// Entrada de una lista: sube 14px y aparece una sola vez, con ease-out fuerte. Se salta si el usuario
+// pidió reducir el movimiento. Solo anima los primeros elementos para no entretener a quien ya sabe qué busca.
+export function Entrada({ indice = 0, children, estilo }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let vivo = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((reducir) => {
+      if (!vivo) return;
+      if (reducir || indice > 7) {
+        v.setValue(1);
+        return;
+      }
+      Animated.timing(v, {
+        toValue: 1,
+        duration: 280,
+        delay: indice * 45,
+        easing: Easing.bezier(0.23, 1, 0.32, 1),
+        useNativeDriver: Platform.OS !== 'web',
+      }).start();
+    });
+    return () => { vivo = false; };
+  }, []);
+  return (
+    <Animated.View
+      style={[estilo, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 const web = Platform.select({ web: { outlineStyle: 'none' }, default: {} });
 
 const s = StyleSheet.create({
@@ -140,12 +257,14 @@ const s = StyleSheet.create({
     borderRadius: radio.medio,
     borderWidth: 1.5,
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
+  botonPresionado: { transform: [{ scale: 0.985 }] },
+  botonSobrio: { opacity: 0.88 },
   botonSombra: {
     elevation: 3,
     shadowColor: colores.primario,
@@ -153,9 +272,8 @@ const s = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 10,
   },
-  botonPresionado: { opacity: 0.85 },
   botonOff: { backgroundColor: '#dfe3e6', borderColor: '#dfe3e6' },
-  botonTexto: { fontSize: 16, fontWeight: '700' },
+  botonTexto: { fontFamily: fuente.display, fontSize: 19, letterSpacing: 0.8, textTransform: 'uppercase' },
 
   campo: { marginBottom: 14 },
   etiqueta: { fontSize: 14, fontWeight: '600', color: colores.texto, marginBottom: 6 },
@@ -179,26 +297,64 @@ const s = StyleSheet.create({
 
   insignia: {
     alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: radio.pastilla,
-    paddingVertical: 5,
-    paddingHorizontal: 11,
+    borderRadius: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    transform: [{ skewX: '-10deg' }],
   },
-  insigniaTexto: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  insigniaInterior: { flexDirection: 'row', alignItems: 'center', gap: 5, transform: [{ skewX: '10deg' }] },
+  insigniaTexto: { color: '#fff', fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.6, textTransform: 'uppercase' },
 
-  titulo: { fontSize: 18, fontWeight: '800', color: colores.texto },
+  placa: {
+    backgroundColor: colores.negro,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: colores.acento,
+    paddingHorizontal: 9,
+    paddingVertical: 1,
+  },
+  placaTexto: { color: colores.acento, fontFamily: fuente.display, fontSize: 19, letterSpacing: 1 },
+
+  titulo: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.4, textTransform: 'uppercase', color: colores.texto },
 
   fila: { flexDirection: 'row', gap: 12, paddingVertical: 8 },
   filaIcono: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: radio.medio,
     backgroundColor: colores.acentoSuave,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filaCuerpo: { flex: 1 },
-  filaTitulo: { fontSize: 12, fontWeight: '700', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4 },
+  filaTitulo: { fontSize: 13, fontWeight: '700', color: colores.suave },
+
+  aviso: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderWidth: 1, borderRadius: radio.medio, padding: 12 },
+  avisoCuerpo: { flex: 1 },
+  avisoTexto: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+
+  rayas: {
+    position: 'absolute',
+    top: -20,
+    bottom: -20,
+    right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  boleta: {
+    backgroundColor: colores.tarjeta,
+    borderRadius: radio.grande,
+    elevation: 1,
+    shadowColor: '#0b2530',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+  },
+  boletaCuerpo: { padding: 16, paddingBottom: 14 },
+  boletaPie: { padding: 16, paddingTop: 12 },
+  perforacion: { height: 20, justifyContent: 'center' },
+  muesca: { position: 'absolute', width: 20, height: 20, borderRadius: 10, top: 0 },
+  dashes: { flexDirection: 'row', justifyContent: 'space-between', overflow: 'hidden', marginHorizontal: 16 },
+  dash: { width: 5, height: 1.5, backgroundColor: '#c3ced5' },
 });

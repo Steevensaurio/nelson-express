@@ -4,8 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, radio } from '../constants/tema';
-import { Icono, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Aviso, Boleta, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 const dosDigitos = (n) => String(n).padStart(2, '0');
 const aISO = (fecha) => `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
@@ -102,62 +102,49 @@ export default function CuentasScreen() {
             })}
           </View>
 
-          {error ? (
-            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
-          ) : null}
+          {error ? <Aviso tipo="error" estilo={styles.espacioAviso}>{error}</Aviso> : null}
 
           {resumen && !cargando ? (
             <>
-              <View
-                style={styles.tarjetaGrande}
-                accessible
-                accessibilityLabel={`${resumen.carreras} ${resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}`}
+              {/* Liquidación del período, como una boleta: lo que te queda es lo que importa. */}
+              <Boleta
+                estilo={styles.liquidacion}
+                pie={
+                  <View style={styles.liquidacionPie} accessible accessibilityLabel={`Te quedas tú: ${resumen.neto} dólares`}>
+                    <Text style={styles.netoRotulo}>Te quedas tú</Text>
+                    <Text style={styles.netoValor}>${resumen.neto}</Text>
+                  </View>
+                }
               >
-                <View style={styles.tarjetaGrandeIcono}>
-                  <Icono nombre="checkmark-done" tamano={26} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.tarjetaGrandeNumero}>{resumen.carreras}</Text>
-                  <Text style={styles.tarjetaGrandeTexto}>
-                    {resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.filaTarjetas}>
                 <View
-                  style={[styles.tarjeta, styles.tarjetaDebes]}
+                  style={styles.liquidacionLinea}
+                  accessible
+                  accessibilityLabel={`${resumen.carreras} ${resumen.carreras === 1 ? 'entrega completada' : 'entregas completadas'}`}
+                >
+                  <Text style={styles.lineaRotulo}>{resumen.carreras === 1 ? 'Entrega completada' : 'Entregas completadas'}</Text>
+                  <Text style={styles.lineaValor}>{resumen.carreras}</Text>
+                </View>
+                <View style={styles.liquidacionLinea} accessible accessibilityLabel={`Total generado en envíos: ${resumen.total} dólares`}>
+                  <Text style={styles.lineaRotulo}>Total en envíos</Text>
+                  <Text style={styles.lineaValor}>${resumen.total}</Text>
+                </View>
+                <View
+                  style={styles.liquidacionLinea}
                   accessible
                   accessibilityLabel={`Debes entregar${porcentaje ? ` ${porcentaje}` : ''}: ${resumen.comision} dólares`}
                 >
-                  <Icono nombre="arrow-up-circle" tamano={26} color={colores.naranja} />
-                  <Text style={styles.tarjetaNumero}>${resumen.comision}</Text>
-                  <Text style={styles.tarjetaTexto}>Debes entregar{porcentaje ? ` (${porcentaje})` : ''}</Text>
+                  <Text style={[styles.lineaRotulo, styles.lineaDebes]}>Debes entregar{porcentaje ? ` (${porcentaje})` : ''}</Text>
+                  <Text style={[styles.lineaValor, styles.lineaDebes]}>−${resumen.comision}</Text>
                 </View>
-                <View
-                  style={[styles.tarjeta, styles.tarjetaGanas]}
-                  accessible
-                  accessibilityLabel={`Te quedas tú: ${resumen.neto} dólares`}
-                >
-                  <Icono nombre="wallet" tamano={26} color={colores.verde} />
-                  <Text style={styles.tarjetaNumero}>${resumen.neto}</Text>
-                  <Text style={styles.tarjetaTexto}>Te quedas tú</Text>
-                </View>
-              </View>
-
-              <Text style={styles.totalGenerado}>Total generado en envíos: ${resumen.total}</Text>
+              </Boleta>
 
               {resumen.sin_valor > 0 ? (
-                <View style={styles.aviso}>
-                  <Icono nombre="information-circle" tamano={20} color={colores.naranja} />
-                  <Text style={styles.avisoTexto}>
-                    {resumen.sin_valor} {resumen.sin_valor === 1 ? 'entrega no tiene' : 'entregas no tienen'} valor de
-                    envío registrado y cuentan como $0.00.
-                  </Text>
-                </View>
+                <Aviso tipo="alerta" estilo={styles.espacioAviso}>
+                  {`${resumen.sin_valor} ${resumen.sin_valor === 1 ? 'entrega no tiene' : 'entregas no tienen'} valor de envío registrado y cuentan como $0.00.`}
+                </Aviso>
               ) : null}
 
-              <Text accessibilityRole="header" style={styles.seccion}>Detalle</Text>
+              <Titulo estilo={styles.seccion}>Detalle</Titulo>
             </>
           ) : null}
         </>
@@ -195,7 +182,7 @@ const styles = StyleSheet.create({
   atajo: {
     flex: 1,
     minHeight: 48,
-    borderRadius: radio.pastilla,
+    borderRadius: radio.medio,
     backgroundColor: colores.tarjeta,
     borderWidth: 1.5,
     borderColor: colores.bordeCampo,
@@ -203,45 +190,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   atajoActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
-  atajoTexto: { fontWeight: '700', fontSize: 14, color: colores.tenue },
+  atajoTexto: { fontFamily: fuente.display, fontSize: 18, letterSpacing: 0.6, textTransform: 'uppercase', color: colores.tenue },
   atajoTextoActivo: { color: '#fff' },
 
-  tarjetaGrande: {
-    ...estiloTarjeta,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 12,
-  },
-  tarjetaGrandeIcono: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colores.primario,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tarjetaGrandeNumero: { fontSize: 36, fontWeight: '800', color: colores.texto, lineHeight: 40 },
-  tarjetaGrandeTexto: { fontSize: 14, color: colores.tenue },
-
-  filaTarjetas: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  tarjeta: { flex: 1, borderRadius: radio.grande, padding: 16, alignItems: 'center', gap: 6 },
-  tarjetaDebes: { backgroundColor: '#fff4e0' },
-  tarjetaGanas: { backgroundColor: '#e6f6ec' },
-  tarjetaNumero: { fontSize: 26, fontWeight: '800', color: colores.texto },
-  tarjetaTexto: { fontSize: 13, fontWeight: '600', color: colores.tenue, textAlign: 'center' },
-  totalGenerado: { fontSize: 13, color: colores.tenue, textAlign: 'center', marginBottom: 12 },
-  aviso: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: '#fff4e0',
-    borderRadius: radio.medio,
-    padding: 12,
-    marginBottom: 12,
-  },
-  avisoTexto: { flex: 1, fontSize: 13, color: '#5c3300', lineHeight: 18 },
-  seccion: { fontSize: 13, fontWeight: '800', color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 6, marginBottom: 8 },
+  liquidacion: { marginBottom: 14 },
+  liquidacionLinea: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingVertical: 6 },
+  lineaRotulo: { fontSize: 15, color: colores.tenue },
+  lineaValor: { fontFamily: fuente.display, fontSize: 26, color: colores.texto },
+  lineaDebes: { color: colores.naranja },
+  liquidacionPie: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  netoRotulo: { fontFamily: fuente.displayMedio, fontSize: 20, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.texto },
+  netoValor: { fontFamily: fuente.display, fontSize: 52, lineHeight: 52, color: colores.verde },
+  espacioAviso: { marginBottom: 14 },
+  seccion: { fontSize: 24, marginTop: 6, marginBottom: 10 },
   fila: {
     ...estiloTarjeta,
     flexDirection: 'row',
@@ -255,8 +216,7 @@ const styles = StyleSheet.create({
   filaRecogida: { fontSize: 15, fontWeight: '700', color: colores.texto },
   filaDestino: { fontSize: 13, color: colores.tenue, marginTop: 1 },
   filaFecha: { fontSize: 12, color: colores.suave, marginTop: 3 },
-  filaValor: { fontSize: 17, fontWeight: '800', color: colores.verde },
+  filaValor: { fontFamily: fuente.display, fontSize: 24, color: colores.verde },
   vacio: { alignItems: 'center', gap: 12, marginTop: 40, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
-  error: { color: colores.peligro, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
 });

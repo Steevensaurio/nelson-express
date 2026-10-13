@@ -188,7 +188,7 @@ export default function Despacho() {
             </span>
           </div>
 
-          <div className="tabla-scroll">
+          <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Tabla de pedidos">
             <table>
               <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
               <thead>
@@ -210,7 +210,7 @@ export default function Despacho() {
                   return (
                     <tr key={p.id} className={necesitaAtencion ? 'fila-atencion' : ''}>
                       <td>
-                        <strong>#{p.id}</strong>
+                        <span className="placa">#{p.id}</span>
                         <div className="tenue">{formatearFecha(p.creado_en)}</div>
                         {necesitaAtencion ? <div className="hace">{haceTiempo(p.creado_en)}</div> : null}
                       </td>

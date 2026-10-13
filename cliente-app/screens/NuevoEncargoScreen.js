@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import SelectorDireccion from '../components/SelectorDireccion';
-import { colores, radio } from '../constants/tema';
+import { colores, fuente, radio } from '../constants/tema';
 import { Boton, Campo, Icono, Titulo, estiloTarjeta } from '../components/ui';
 
 const PASOS = ['Recogida', 'Entrega'];
@@ -337,9 +337,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pasoCirculoActivo: { backgroundColor: colores.primario },
-  pasoNumero: { fontSize: 15, fontWeight: '800', color: colores.tenue },
+  pasoNumero: { fontFamily: fuente.display, fontSize: 20, color: colores.tenue },
   pasoNumeroActivo: { color: '#fff' },
-  pasoTexto: { fontSize: 14, fontWeight: '700', color: colores.suave },
+  pasoTexto: { fontFamily: fuente.displayMedio, fontSize: 18, letterSpacing: 0.5, textTransform: 'uppercase', color: colores.suave },
   pasoTextoActivo: { color: colores.primarioOscuro },
 
   intro: {
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   introTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
-  seccion: { fontSize: 18, marginTop: 18, marginBottom: 10 },
+  seccion: { fontSize: 26, marginTop: 18, marginBottom: 10 },
   multilinea: { minHeight: 76, textAlignVertical: 'top' },
 
   grupoContacto: { ...estiloTarjeta, marginTop: 16 },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   grupoTextos: { flex: 1 },
-  grupoTitulo: { fontSize: 16 },
+  grupoTitulo: { fontSize: 21 },
   grupoAyuda: { fontSize: 13, color: colores.tenue, marginTop: 2 },
   ultimo: { marginBottom: 0 },
 
@@ -392,8 +392,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   resumenIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  resumenTexto: { fontSize: 16, fontWeight: '700', color: colores.texto },
-  resumenPrecio: { fontSize: 22, fontWeight: '800', color: colores.primarioOscuro },
+  resumenTexto: { fontFamily: fuente.displayMedio, fontSize: 20, textTransform: 'uppercase', color: colores.texto },
+  resumenPrecio: { fontFamily: fuente.display, fontSize: 34, color: colores.primarioOscuro },
   resumenPrecioTenue: { fontSize: 14, fontWeight: '600', color: colores.tenue, textAlign: 'right', flexShrink: 1 },
 
   avisoPerfil: {
@@ -401,8 +401,8 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
     backgroundColor: '#fff4e0',
-    borderLeftWidth: 5,
-    borderLeftColor: colores.naranja,
+    borderWidth: 1,
+    borderColor: '#f1cf9b',
     borderRadius: radio.medio,
     padding: 14,
     marginTop: 14,

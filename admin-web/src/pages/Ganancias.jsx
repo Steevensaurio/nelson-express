@@ -128,7 +128,7 @@ export default function Ganancias() {
             {!motorizado ? (
               <section className="tabla-caja">
                 <div className="tabla-encabezado"><h2>Por motorizado</h2></div>
-                <div className="tabla-scroll">
+                <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Ganancias por motorizado">
                   <table>
                     <caption className="solo-lectores">Ganancias por motorizado</caption>
                     <thead>
@@ -164,7 +164,7 @@ export default function Ganancias() {
                 <h2>Carreras</h2>
                 {datos.carreras_truncadas ? <span className="tenue">Mostrando las 500 más recientes</span> : null}
               </div>
-              <div className="tabla-scroll">
+              <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Carreras entregadas">
                 <table>
                   <caption className="solo-lectores">Carreras entregadas en el rango elegido</caption>
                   <thead>
@@ -181,7 +181,7 @@ export default function Ganancias() {
                   <tbody>
                     {datos.carreras.map((c) => (
                       <tr key={c.id}>
-                        <td><strong>#{c.id}</strong></td>
+                        <td><span className="placa">#{c.id}</span></td>
                         <td>{hora(c.entregado_en)}</td>
                         <td>{c.motorizado.nombre}</td>
                         <td>{c.recogida}</td>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, Switch, StyleSheet, Modal } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from './SelectorMapa';
-import { colores } from '../constants/tema';
+import { colores, fuente } from '../constants/tema';
 import { Boton, Campo, Icono, estiloTarjeta } from './ui';
 
 // Una dirección elegible. Es una opción de un grupo (radio): lo seleccionado se ve por el ícono y el
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   cardSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
   cardPresionada: { opacity: 0.9 },
   cardCuerpo: { flex: 1 },
-  etiqueta: { fontSize: 16, fontWeight: '800', color: colores.texto },
+  etiqueta: { fontFamily: fuente.display, fontSize: 22, letterSpacing: 0.3, textTransform: 'uppercase', color: colores.texto },
   texto: { fontSize: 14, color: colores.tenue, marginTop: 2 },
   referencia: { fontSize: 13, color: colores.tenue, fontStyle: 'italic', marginTop: 3 },
   otra: { marginTop: 10 },

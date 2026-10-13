@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Text, View, Image, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import api from '../services/api';
-import { colores, radio } from '../constants/tema';
-import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Aviso, Boton, Entrada, Icono, Rayas, Titulo, estiloTarjeta } from '../components/ui';
 
 // Una sola sucursal: su dirección. Varias: cuántas hay. Ninguna abierta: aviso.
 const resumenSucursales = (sucursales) => {
@@ -40,15 +40,14 @@ function TarjetaEncargo({ onPress }) {
       android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
       style={({ pressed }) => [styles.encargo, pressed && styles.encargoPresionado]}
     >
-      <View style={styles.encargoBurbuja} pointerEvents="none" />
-      <View style={styles.encargoIcono}>
-        <Icono nombre="cube-outline" tamano={28} color="#fff" />
-      </View>
+      <Rayas estilo={styles.encargoRayas} />
       <View style={styles.encargoCuerpo}>
         <Text style={styles.encargoTitulo}>Pedir un encargo</Text>
         <Text style={styles.encargoTexto}>Recogemos lo que necesites en cualquier lugar y te lo llevamos.</Text>
       </View>
-      <Icono nombre="chevron-forward" tamano={22} color="#fff" />
+      <View style={styles.encargoFlecha}>
+        <Icono nombre="arrow-forward" tamano={22} color={colores.primarioOscuro} />
+      </View>
     </Pressable>
   );
 }
@@ -87,9 +86,8 @@ export default function NegociosScreen({ navigation }) {
       }
       ListEmptyComponent={
         error ? (
-          <View style={styles.aviso} accessibilityRole="alert">
-            <Icono nombre="cloud-offline-outline" tamano={36} color={colores.suave} />
-            <Text style={styles.avisoTexto}>No pudimos cargar los restaurantes. Revisa tu conexión.</Text>
+          <View style={styles.aviso}>
+            <Aviso tipo="error">No pudimos cargar los restaurantes. Revisa tu conexión.</Aviso>
             <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={cargar} />
           </View>
         ) : (
@@ -97,26 +95,28 @@ export default function NegociosScreen({ navigation }) {
         )
       }
       keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => {
+      renderItem={({ item, index }) => {
         const resumen = resumenSucursales(item.sucursales);
         const cerrado = item.sucursales.every((s) => !s.abierta);
         return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${item.nombre}. ${resumen}. Ver menú`}
-            onPress={() => navigation.navigate('Menu', { negocioId: item.id, negocioNombre: item.nombre })}
-            android_ripple={{ color: 'rgba(0,124,171,0.15)' }}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
-          >
-            <FotoNegocio negocio={item} cerrado={cerrado} />
-            <View style={styles.info}>
-              <Text style={styles.nombre} numberOfLines={2}>{item.nombre}</Text>
-              <View style={styles.resumen}>
-                <Icono nombre="location-outline" tamano={14} color={colores.suave} />
-                <Text style={styles.direccion} numberOfLines={2}>{resumen}</Text>
+          <Entrada indice={index} estilo={styles.celda}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${item.nombre}. ${resumen}. Ver menú`}
+              onPress={() => navigation.navigate('Menu', { negocioId: item.id, negocioNombre: item.nombre })}
+              android_ripple={{ color: 'rgba(0,124,171,0.15)' }}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
+            >
+              <FotoNegocio negocio={item} cerrado={cerrado} />
+              <View style={styles.info}>
+                <Text style={styles.nombre} numberOfLines={2}>{item.nombre}</Text>
+                <View style={styles.resumen}>
+                  <Icono nombre="location-outline" tamano={14} color={colores.suave} />
+                  <Text style={styles.direccion} numberOfLines={2}>{resumen}</Text>
+                </View>
               </View>
-            </View>
-          </Pressable>
+            </Pressable>
+          </Entrada>
         );
       }}
     />
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colores.fondo },
   lista: { padding: 12, paddingBottom: 28 },
   columnas: { gap: 12, marginBottom: 12 },
-  seccion: { fontSize: 20, marginTop: 8, marginBottom: 12 },
+  seccion: { fontSize: 30, marginTop: 10, marginBottom: 12 },
 
   encargo: {
     flexDirection: 'row',
@@ -135,46 +135,29 @@ const styles = StyleSheet.create({
     gap: 14,
     backgroundColor: colores.primario,
     borderRadius: radio.grande,
-    padding: 18,
-    marginBottom: 12,
+    paddingVertical: 20,
+    paddingLeft: 18,
+    paddingRight: 14,
+    marginBottom: 14,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: colores.primario,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
   },
   encargoPresionado: { backgroundColor: colores.primarioOscuro },
-  encargoBurbuja: {
-    position: 'absolute',
-    right: -40,
-    top: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: colores.primarioOscuro,
-    opacity: 0.55,
-  },
-  encargoIcono: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+  encargoRayas: { right: 56 },
+  encargoCuerpo: { flex: 1 },
+  encargoTitulo: { color: '#fff', fontFamily: fuente.display, fontSize: 30, letterSpacing: 0.3, textTransform: 'uppercase' },
+  encargoTexto: { color: '#fff', fontSize: 14, marginTop: 2, lineHeight: 19, maxWidth: '86%' },
+  encargoFlecha: {
+    width: 44,
+    height: 44,
+    borderRadius: radio.medio,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  encargoCuerpo: { flex: 1 },
-  encargoTitulo: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  encargoTexto: { color: '#fff', fontSize: 14, marginTop: 3, lineHeight: 19 },
 
-  card: {
-    ...estiloTarjeta,
-    flex: 1,
-    maxWidth: '48.5%', // un negocio suelto en la última fila no se estira a todo el ancho
-    padding: 0,
-    overflow: 'hidden',
-  },
-  cardPresionada: { opacity: 0.9 },
+  celda: { flex: 1, maxWidth: '48.5%' },
+  card: { ...estiloTarjeta, padding: 0, overflow: 'hidden' },
+  cardPresionada: { opacity: 0.9, transform: [{ scale: 0.985 }] },
   foto: {
     width: '100%',
     aspectRatio: 4 / 3,
@@ -189,13 +172,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  veloTexto: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  veloTexto: { color: '#fff', fontFamily: fuente.display, fontSize: 24, letterSpacing: 1, textTransform: 'uppercase' },
   info: { padding: 12 },
-  nombre: { fontSize: 16, fontWeight: '700', minHeight: 40, color: colores.texto },
-  resumen: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 4 },
+  nombre: { fontFamily: fuente.display, fontSize: 21, lineHeight: 22, letterSpacing: 0.2, textTransform: 'uppercase', minHeight: 44, color: colores.texto },
+  resumen: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 6 },
   direccion: { flex: 1, fontSize: 13, color: colores.tenue },
 
   vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },
-  aviso: { alignItems: 'center', gap: 12, marginTop: 32, paddingHorizontal: 24 },
-  avisoTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  aviso: { gap: 12, marginTop: 24 },
 });

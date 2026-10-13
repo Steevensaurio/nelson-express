@@ -25,6 +25,17 @@
       "eas": {
         "projectId": "1050521e-530b-45fe-b61c-b2bb4ffb21a8"
       }
-    }
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#007cab",
+          "image": "./assets/logo-circular.png",
+          "imageWidth": 180
+        }
+      ]
+    ]
   }
 }

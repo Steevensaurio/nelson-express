@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, radio } from '../constants/tema';
-import { Boton, Icono, Titulo, estiloTarjeta } from '../components/ui';
+import { colores, fuente, radio } from '../constants/tema';
+import { Aviso, Boton, Icono, Rayas, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
   `${perfil.first_name} ${perfil.last_name}`.trim() || perfil.username;
@@ -63,7 +63,7 @@ export default function PerfilScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contenido}>
       <View style={styles.cabecera}>
-        <View style={styles.cabeceraBurbuja} pointerEvents="none" aria-hidden />
+        <Rayas />
         <View style={styles.avatar} aria-hidden>
           <Text style={styles.avatarTexto}>{iniciales(perfil)}</Text>
         </View>
@@ -79,26 +79,27 @@ export default function PerfilScreen({ navigation }) {
 
       <View style={styles.estadisticas}>
         <View style={styles.estadistica} accessible accessibilityLabel={`Entregas hoy: ${perfil.entregas_hoy}`}>
-          <Icono nombre="today-outline" tamano={24} color={colores.primarioOscuro} />
           <Text style={styles.estadisticaNumero}>{perfil.entregas_hoy}</Text>
           <Text style={styles.estadisticaTexto}>Entregas hoy</Text>
         </View>
+        <View style={styles.estadisticaLinea} />
         <View style={styles.estadistica} accessible accessibilityLabel={`Entregas totales: ${perfil.entregas_completadas}`}>
-          <Icono nombre="trophy-outline" tamano={24} color={colores.primarioOscuro} />
           <Text style={styles.estadisticaNumero}>{perfil.entregas_completadas}</Text>
           <Text style={styles.estadisticaTexto}>Entregas totales</Text>
         </View>
       </View>
 
       {faltaContacto || !tieneVehiculo ? (
-        <Boton
-          titulo={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}`}
-          etiqueta={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}, para que el despachador y los clientes puedan identificarte`}
-          icono="alert-circle"
-          variante="secundario"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}, para que el despachador y los clientes puedan identificarte`}
           onPress={() => navigation.navigate('EditarPerfil')}
-          estilo={styles.aviso}
-        />
+          style={({ pressed }) => pressed && styles.presionado}
+        >
+          <Aviso tipo="alerta" icono="alert-circle">
+            {`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}`}
+          </Aviso>
+        </Pressable>
       ) : null}
 
       <View style={styles.tarjeta}>
@@ -153,21 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: radio.grande + 4,
     padding: 20,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: colores.primario,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-  },
-  cabeceraBurbuja: {
-    position: 'absolute',
-    right: -50,
-    top: -60,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: colores.primarioOscuro,
-    opacity: 0.55,
   },
   avatar: {
     width: 72,
@@ -177,30 +163,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { fontSize: 26, fontWeight: '800', color: colores.primarioOscuro },
+  avatarTexto: { fontFamily: fuente.display, fontSize: 32, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1, gap: 6, alignItems: 'flex-start' },
-  nombre: { fontSize: 21, fontWeight: '800', color: '#fff' },
+  nombre: { fontFamily: fuente.display, fontSize: 32, lineHeight: 32, textTransform: 'uppercase', color: '#fff' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: radio.pastilla,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderRadius: radio.chico,
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   chipTexto: { color: '#fff', fontSize: 13, fontWeight: '800' },
   desde: { color: '#fff', fontSize: 13 },
 
-  estadisticas: { flexDirection: 'row', gap: 12 },
-  estadistica: { ...estiloTarjeta, flex: 1, alignItems: 'center', gap: 4 },
-  estadisticaNumero: { fontSize: 30, fontWeight: '800', color: colores.texto },
-  estadisticaTexto: { fontSize: 13, fontWeight: '600', color: colores.tenue },
-
-  aviso: { backgroundColor: '#fff4e0', borderColor: colores.naranja },
+  estadisticas: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center' },
+  estadistica: { flex: 1, alignItems: 'center' },
+  estadisticaLinea: { width: 1, alignSelf: 'stretch', backgroundColor: colores.borde },
+  estadisticaNumero: { fontFamily: fuente.display, fontSize: 48, lineHeight: 50, color: colores.texto },
+  estadisticaTexto: { fontFamily: fuente.displayMedio, fontSize: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colores.tenue },
+  presionado: { opacity: 0.85 },
 
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 14, color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 10 },
+  seccion: { fontSize: 22, marginBottom: 10 },
   fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   filaTexto: { fontSize: 16, color: colores.texto },
   vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -211,9 +197,9 @@ const styles = StyleSheet.create({
     borderColor: colores.texto,
     borderRadius: 8,
     backgroundColor: '#fff',
-    paddingVertical: 5,
+    paddingVertical: 3,
     paddingHorizontal: 12,
   },
-  placaTexto: { fontSize: 19, fontWeight: '800', letterSpacing: 2, color: colores.texto },
+  placaTexto: { fontFamily: fuente.display, fontSize: 24, letterSpacing: 2, color: colores.texto },
   espacio: { marginTop: 2 },
 });

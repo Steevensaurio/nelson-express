@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Text, View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
-import { colores, radio } from '../constants/tema';
-import { Boton, Campo, Icono, Titulo, estiloTarjeta } from '../components/ui';
+import { colores } from '../constants/tema';
+import { Aviso, Boton, Campo, Titulo, estiloTarjeta } from '../components/ui';
 
 export default function EditarPerfilScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -137,12 +137,7 @@ export default function EditarPerfilScreen({ navigation }) {
           />
         </View>
 
-        {error ? (
-          <View style={styles.errorCaja} accessibilityRole="alert" accessibilityLiveRegion="polite">
-            <Icono nombre="alert-circle" tamano={20} color={colores.peligro} />
-            <Text style={styles.errorTexto}>{error}</Text>
-          </View>
-        ) : null}
+        {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
         <Boton
           titulo={guardando ? 'Guardando…' : 'Guardar'}
@@ -161,15 +156,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16, gap: 14 },
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 14, color: colores.suave, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 12 },
+  seccion: { fontSize: 22, marginBottom: 12 },
   ultimo: { marginBottom: 0 },
-  errorCaja: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colores.peligroSuave,
-    borderRadius: radio.chico,
-    padding: 12,
-  },
-  errorTexto: { flex: 1, color: colores.peligro, fontSize: 14, fontWeight: '600' },
 });
