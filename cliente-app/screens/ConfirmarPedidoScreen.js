@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: espacio.l },
   titulo: { fontSize: tipo.titulo.fontSize, marginBottom: 14 },
-  subtitulo: { fontSize: tipo.subtitulo.fontSize, marginTop: 20, marginBottom: 10 },
+  subtitulo: { fontSize: tipo.seccion.fontSize, marginTop: 20, marginBottom: 10 },
   carrito: { ...estiloTarjeta, padding: 6 },
   itemFila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingHorizontal: espacio.m, paddingVertical: 10 },
   cantidad: {

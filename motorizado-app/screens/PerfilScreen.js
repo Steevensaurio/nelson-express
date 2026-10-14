@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   presionado: { opacity: 0.85 },
 
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: tipo.subtitulo.fontSize, marginBottom: 10 },
+  seccion: { fontSize: tipo.seccion.fontSize, marginBottom: 10 },
   fila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingVertical: 6 },
   filaTexto: { ...tipo.cuerpo, color: colores.texto },
   vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

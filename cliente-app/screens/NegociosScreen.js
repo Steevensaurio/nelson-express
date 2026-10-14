@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   buscaFoco: { borderColor: colores.sombra },
-  buscaInput: { ...tipo.entrada, flex: 1, minHeight: 44, color: colores.texto, ...web },
+  buscaInput: { ...tipo.cuerpo, flex: 1, minHeight: 44, color: colores.texto, ...web },
 
   encargo: { marginBottom: 14 },
   avisoCarga: { marginBottom: 14 },

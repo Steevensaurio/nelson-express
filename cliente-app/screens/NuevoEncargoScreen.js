@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   pasoTextoActivo: { color: colores.primarioOscuro },
 
   intro: { marginBottom: 6 },
-  seccion: { fontSize: tipo.subtitulo.fontSize, marginTop: 18, marginBottom: 10 },
+  seccion: { fontSize: tipo.seccion.fontSize, marginTop: 18, marginBottom: 10 },
   multilinea: { minHeight: 76, textAlignVertical: 'top' },
 
   grupoContacto: { ...estiloTarjeta, marginTop: espacio.l },

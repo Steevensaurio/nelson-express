@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: tipo.subtitulo.fontSize },
+  bloqueTitulo: { fontSize: tipo.seccion.fontSize },
   valor: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
   secundario: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
   referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: espacio.xs },

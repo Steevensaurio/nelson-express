@@ -416,7 +416,7 @@ const s = StyleSheet.create({
     shadowRadius: 10,
   },
   botonOff: { backgroundColor: colores.linea, borderColor: colores.linea },
-  botonTexto: { ...tipo.entrada, fontFamily: fuente.extra },
+  botonTexto: { ...tipo.cuerpo, fontFamily: fuente.extra },
 
   campo: { marginBottom: espacio.m + 2 },
   etiqueta: { ...tipo.cuerpoFuerte, color: colores.texto, marginBottom: 6 },
@@ -437,7 +437,7 @@ const s = StyleSheet.create({
   cajaFoco: { borderColor: colores.primario },
   cajaError: { borderColor: colores.peligro },
   cajaBloqueada: { backgroundColor: colores.relleno },
-  input: { flex: 1, ...tipo.entrada, color: colores.texto, paddingVertical: 12, ...web },
+  input: { flex: 1, ...tipo.cuerpo, color: colores.texto, paddingVertical: 12, ...web },
   ayuda: { ...tipo.apoyo, color: colores.tenue, marginTop: 6 },
   error: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.peligro, marginTop: 6 },
 
@@ -454,7 +454,7 @@ const s = StyleSheet.create({
   insigniaIcono: { width: 16, height: 16, borderRadius: 8, backgroundColor: colores.blanco, alignItems: 'center', justifyContent: 'center' },
   insigniaTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.blanco },
 
-  numeroPedido: { ...tipo.entrada, fontFamily: fuente.negrita, color: colores.texto },
+  numeroPedido: { ...tipo.cuerpo, fontFamily: fuente.negrita, color: colores.texto },
 
   titulo: { fontFamily: tipo.titulo.fontFamily, fontSize: tipo.titulo.fontSize, color: colores.texto }, // sin lineHeight: las pantallas lo achican a 18
 

@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   vacio: { alignItems: 'center', gap: espacio.m, marginTop: 32, marginBottom: espacio.l },
   vacioTexto: { ...tipo.cuerpo, textAlign: 'center', color: colores.tenue },
   formulario: { ...estiloTarjeta, marginTop: espacio.xs },
-  formularioTitulo: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.texto, marginBottom: 14 },
+  formularioTitulo: { ...tipo.seccion, color: colores.texto, marginBottom: 14 },
   etiquetaMapa: { ...tipo.cuerpoFuerte, color: colores.texto, marginBottom: 6 },
   botonMapa: { marginBottom: 14 },
   espacio: { marginTop: 10 },

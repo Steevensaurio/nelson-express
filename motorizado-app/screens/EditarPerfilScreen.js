@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: espacio.l, gap: 14 },
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: tipo.subtitulo.fontSize, marginBottom: espacio.m },
+  seccion: { fontSize: tipo.seccion.fontSize, marginBottom: espacio.m },
   ultimo: { marginBottom: 0 },
 });
