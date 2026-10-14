@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import DespachoPedidoListView, DespachoMotorizadoListView, DespachoAsignarView, CotizarEncargoView, EncargoCreateView, DespachoEncargoCreateView, DespachoGananciasView, MisGananciasView, CotizarEnvioView, DespachoCancelarView, PedidoListCreateView, PedidoDetailView, PerfilView, NegocioListView, ProductoListView, MisEntregasView, MiEntregaDetailView, ActualizarEstadoPedidoView, DireccionListCreateView, DireccionDetailView
+from .views import SaludView, DespachoPedidoListView, DespachoMotorizadoListView, DespachoAsignarView, CotizarEncargoView, EncargoCreateView, DespachoEncargoCreateView, DespachoGananciasView, MisGananciasView, CotizarEnvioView, DespachoCancelarView, PedidoListCreateView, PedidoDetailView, PerfilView, NegocioListView, ProductoListView, MisEntregasView, MiEntregaDetailView, ActualizarEstadoPedidoView, DireccionListCreateView, DireccionDetailView
 
 urlpatterns = [
+    path('salud/', SaludView.as_view()),
     path('perfil/', PerfilView.as_view()),
     path('despacho/pedidos/', DespachoPedidoListView.as_view()),
     path('despacho/pedidos/<int:pk>/asignar/', DespachoAsignarView.as_view()),

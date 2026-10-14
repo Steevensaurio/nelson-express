@@ -26,6 +26,15 @@ FINALIZADO = Case(
 )
 
 
+class SaludView(APIView):
+    """Para despertar el servidor (Render lo duerme): sin sesión y sin tocar la base de datos."""
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response({'ok': True})
+
+
 class NegocioListView(generics.ListAPIView):
     queryset = Negocio.objects.filter(activo=True).prefetch_related('sucursales')
     serializer_class = NegocioSerializer
@@ -43,7 +52,7 @@ class PedidoListCreateView(APIView):
         # 1. Trae solo los pedidos del usuario logueado (request.user)
         pedidos = (
             Pedido.objects.filter(cliente=request.user)
-            .select_related('negocio', 'sucursal')
+            .select_related('negocio', 'sucursal', 'cliente')
             .prefetch_related('detalles__producto')
             .annotate(finalizado=FINALIZADO)
             .order_by('finalizado', '-creado_en', '-id')
@@ -149,7 +158,7 @@ class PedidoDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return (
             Pedido.objects.filter(cliente=self.request.user)
-            .select_related('negocio', 'sucursal')
+            .select_related('negocio', 'sucursal', 'cliente')
             .prefetch_related('detalles__producto')
         )
 

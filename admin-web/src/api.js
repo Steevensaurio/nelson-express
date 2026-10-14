@@ -18,7 +18,7 @@ let alRenovar = () => {};
 export const registrarAlRenovar = (fn) => { alRenovar = fn; };
 
 // Despierta al servidor (Render duerme el plan gratis) sin pasar por el interceptor: se ignora todo error.
-export const calentarServidor = () => { axios.get(`${baseURL}/`, { timeout: 60000 }).catch(() => {}); };
+export const calentarServidor = () => { axios.get(`${baseURL}/salud/`, { timeout: 60000 }).catch(() => {}); };
 
 // Pide un access nuevo con el refresh guardado. Llamada simple de axios (no `api`) para no
 // reentrar en el interceptor. Si el servidor responde con error, la sesión ya no sirve.
