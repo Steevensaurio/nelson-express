@@ -1,23 +1,38 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet, View, Image, Pressable, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
-import { colores, fuente, radio, sombraTarjeta } from '../constants/tema';
-import { Aviso, Boton, Campo, Icono, Rayas, Text, Titulo } from '../components/ui';
+import { colores, fuente } from '../constants/tema';
+import { Aviso, Boton, Campo, Entrada, Icono, Rayas, Text, Titulo } from '../components/ui';
+
+// Segundos tras los que se avisa que el servidor (Render gratis) está despertando.
+const ESPERA_LENTA_MS = 5000;
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
   const claveRef = useRef(null);
+  // Un doble toque dispara dos veces antes de que el estado `entrando` se actualice: el ref lo impide.
+  const enCurso = useRef(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [verClave, setVerClave] = useState(false);
-  const [error, setError] = useState('');
   const [entrando, setEntrando] = useState(false);
+  const [lento, setLento] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!entrando) return undefined;
+    const id = setTimeout(() => setLento(true), ESPERA_LENTA_MS);
+    return () => { clearTimeout(id); setLento(false); };
+  }, [entrando]);
 
   const handleLogin = async () => {
+    if (enCurso.current) return;
+    enCurso.current = true;
     setEntrando(true);
     setError('');
     try {
@@ -38,163 +53,174 @@ export default function LoginScreen({ onLoginSuccess }) {
           : 'No se pudo conectar con el servidor. Revisa tu conexión.'
       );
       setEntrando(false);
+    } finally {
+      enCurso.current = false;
     }
   };
 
   const puedeEntrar = Boolean(username.trim() && password && !entrando);
 
   return (
-    // El ScrollView permite desplazarse cuando el teclado tapa los campos; el KeyboardAvoidingView
-    // sube el contenido para que el campo que se escribe quede a la vista.
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    // Degradado de la marca a pantalla completa; la hoja blanca con el formulario queda pegada abajo.
+    <LinearGradient
+      colors={['#0a9bd0', '#007cab', '#004e6e']}
+      // El tono más claro solo ocupa la esquina de las franjas: el texto pequeño queda sobre azul
+      // oscuro (blanco sobre #0a9bd0 es 3.2:1; sobre este degradado, 4.7:1 o más).
+      locations={[0, 0.07, 1]}
+      start={{ x: 0.85, y: 0 }}
+      end={{ x: 0.2, y: 1 }}
+      style={styles.flex}
+    >
       <StatusBar style="light" />
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 + insets.bottom }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.cabecera, { paddingTop: 24 + insets.top }]}>
-          <Rayas estilo={styles.rayas} />
-          <View style={styles.logoMarco}>
-            <Image
-              source={require('../assets/logo-circular.png')}
-              style={styles.logo}
-              accessibilityLabel="Nelson Express"
-            />
+      {/* El ScrollView permite desplazarse cuando el teclado tapa los campos; el KeyboardAvoidingView
+          sube el contenido para que el campo que se escribe quede a la vista. */}
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.cabecera, { paddingTop: 20 + insets.top }]}>
+            <Rayas opacidad={0.12} estilo={styles.rayas} />
+            <View style={styles.marca}>
+              <View style={styles.logoMarco} aria-hidden>
+                <Image source={require('../assets/logo-circular.png')} style={styles.logo} />
+              </View>
+              <View style={styles.marcaTextos}>
+                <Text style={styles.marcaNombre}>Nelson Express</Text>
+                <Text style={styles.marcaSubtitulo}>App para motorizados</Text>
+              </View>
+            </View>
+            <Text accessibilityRole="header" style={styles.titular}>
+              {'Listo\n'}
+              <Text style={styles.acento}>para rodar</Text>
+            </Text>
+            <Text style={styles.apoyo}>Entra para ver tus entregas.</Text>
           </View>
-          <Text accessibilityRole="header" style={styles.titular}>
-            {'Hola,\nmotorizado'}
-          </Text>
-          <View style={styles.etiquetaRol}>
-            <Icono nombre="bicycle" tamano={16} color="#fff" />
-            <Text style={styles.etiquetaRolTexto}>Acceso para motorizados</Text>
-          </View>
-        </View>
 
-        <View style={styles.cuerpo}>
-          <View style={styles.tarjeta}>
-            <Titulo estilo={styles.tarjetaTitulo}>Inicia sesión</Titulo>
+          <Entrada estilo={styles.entrada}>
+            <View style={[styles.hoja, { paddingBottom: 24 + insets.bottom }]}>
+              <View style={styles.formulario}>
+                <Titulo estilo={styles.hojaTitulo}>Bienvenido de nuevo</Titulo>
 
-            <Campo
-              etiqueta="Usuario"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="username"
-              textContentType="username"
-              returnKeyType="next"
-              onSubmitEditing={() => claveRef.current?.focus()}
-              blurOnSubmit={false}
-              izquierda={<Icono nombre="person-outline" tamano={20} color={colores.suave} />}
-            />
+                <Campo
+                  relleno
+                  etiqueta="Usuario"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="username"
+                  textContentType="username"
+                  returnKeyType="next"
+                  onSubmitEditing={() => claveRef.current?.focus()}
+                  blurOnSubmit={false}
+                  izquierda={<Icono nombre="person-outline" tamano={20} color={colores.suave} />}
+                />
 
-            <Campo
-              ref={claveRef}
-              etiqueta="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!verClave}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="current-password"
-              textContentType="password"
-              returnKeyType="go"
-              onSubmitEditing={puedeEntrar ? handleLogin : undefined}
-              izquierda={<Icono nombre="lock-closed-outline" tamano={20} color={colores.suave} />}
-              derecha={
-                <Pressable
-                  onPress={() => setVerClave((v) => !v)}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  style={styles.ojo}
-                >
-                  <Icono nombre={verClave ? 'eye-off-outline' : 'eye-outline'} tamano={22} color={colores.tenue} />
-                </Pressable>
-              }
-            />
+                <Campo
+                  relleno
+                  ref={claveRef}
+                  etiqueta="Contraseña"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!verClave}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="current-password"
+                  textContentType="password"
+                  returnKeyType="go"
+                  onSubmitEditing={puedeEntrar ? handleLogin : undefined}
+                  izquierda={<Icono nombre="lock-closed-outline" tamano={20} color={colores.suave} />}
+                  derecha={
+                    <Pressable
+                      onPress={() => setVerClave((v) => !v)}
+                      hitSlop={12}
+                      accessibilityRole="button"
+                      accessibilityLabel={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      style={styles.ojo}
+                    >
+                      <Icono nombre={verClave ? 'eye-off-outline' : 'eye-outline'} tamano={22} color={colores.tenue} />
+                    </Pressable>
+                  }
+                />
 
-            {error ? <Aviso tipo="error" estilo={styles.aviso}>{error}</Aviso> : null}
+                {error ? <Aviso tipo="error" estilo={styles.aviso}>{error}</Aviso> : null}
 
-            <Boton
-              titulo={entrando ? 'Ingresando…' : 'Ingresar'}
-              etiqueta="Ingresar"
-              icono={entrando ? undefined : 'log-in-outline'}
-              onPress={handleLogin}
-              deshabilitado={!puedeEntrar && !entrando}
-              cargando={entrando}
-              estilo={styles.boton}
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+                <Boton
+                  titulo={entrando ? 'Ingresando…' : 'Ingresar'}
+                  etiqueta="Ingresar"
+                  icono={entrando ? undefined : 'log-in-outline'}
+                  onPress={handleLogin}
+                  deshabilitado={!puedeEntrar && !entrando}
+                  cargando={entrando}
+                  estilo={styles.boton}
+                />
+
+                {entrando && lento ? (
+                  <Aviso tipo="info" estilo={styles.avisoLento}>
+                    El servidor está despertando, puede tardar hasta un minuto…
+                  </Aviso>
+                ) : null}
+
+                <Text style={styles.pie}>Nelson Express · Santo Domingo</Text>
+              </View>
+            </View>
+          </Entrada>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colores.fondo },
+  flex: { flex: 1 },
+  scroll: { flexGrow: 1 },
   cabecera: {
-    backgroundColor: colores.primario,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingBottom: 76,
+    paddingHorizontal: 22,
+    paddingBottom: 28,
     overflow: 'hidden',
   },
-  rayas: { right: -4 },
+  // Franjas inclinadas arriba a la derecha, detrás del titular; no llegan a la línea de apoyo.
+  rayas: { right: -14, top: 16, bottom: undefined, height: 120 },
+  marca: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoMarco: {
-    alignSelf: 'flex-start',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
   },
-  logo: { width: 86, height: 86, resizeMode: 'contain' },
+  logo: { width: 52, height: 52, resizeMode: 'contain' },
+  marcaTextos: { flexShrink: 1 },
+  marcaNombre: { fontFamily: fuente.extra, fontSize: 17, color: '#fff' },
+  marcaSubtitulo: { fontFamily: fuente.media, fontSize: 12, color: '#fff', opacity: 0.95 },
   titular: {
-    marginTop: 18,
+    marginTop: 28,
     fontFamily: fuente.extra,
-    fontSize: 36,
-    lineHeight: 42,
+    fontSize: 32,
+    lineHeight: 34,
     color: '#fff',
   },
-  etiquetaRol: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    borderRadius: radio.chico,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  etiquetaRolTexto: { fontFamily: fuente.negrita, fontSize: 14, color: '#fff' },
+  acento: { fontFamily: fuente.extra, color: '#a8e6ff' },
+  apoyo: { marginTop: 8, fontFamily: fuente.media, fontSize: 13.5, color: '#fff' },
 
-  cuerpo: { marginTop: -52, paddingHorizontal: 20 },
-  tarjeta: {
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    backgroundColor: colores.tarjeta,
-    borderRadius: radio.grande + 4,
-    padding: 22,
-    ...sombraTarjeta,
-    shadowOpacity: 0.14,
-    elevation: 6,
+  entrada: { marginTop: 'auto' },
+  hoja: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 24,
+    paddingHorizontal: 22,
   },
-  tarjetaTitulo: { fontSize: 22, marginBottom: 16 },
+  formulario: { width: '100%', maxWidth: 420, alignSelf: 'center' },
+  hojaTitulo: { fontSize: 19, marginBottom: 14 },
   ojo: { padding: 4 },
   aviso: { marginBottom: 14 },
-  boton: { marginTop: 4 },
+  boton: { marginTop: 6, minHeight: 54, borderRadius: 16 },
+  avisoLento: { marginTop: 14 },
+  pie: { marginTop: 14, textAlign: 'center', fontFamily: fuente.media, fontSize: 12, color: colores.tenue },
 });

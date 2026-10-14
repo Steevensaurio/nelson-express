@@ -81,15 +81,16 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
 }
 
 // Campo con etiqueta siempre visible (el placeholder solo ejemplifica), estado de foco y error anunciado.
+// `relleno`: variante del login (fondo gris claro, borde transparente que se marca al enfocar).
 export const Campo = forwardRef(function Campo(
-  { etiqueta, ayuda, error, bloqueado, izquierda, derecha, estilo, estiloInput, onFocus, onBlur, ...props },
+  { etiqueta, ayuda, error, bloqueado, relleno, izquierda, derecha, estilo, estiloInput, onFocus, onBlur, ...props },
   ref
 ) {
   const [foco, setFoco] = useState(false);
   return (
     <View style={[s.campo, estilo]}>
-      <Text style={s.etiqueta}>{etiqueta}</Text>
-      <View style={[s.caja, foco && s.cajaFoco, Boolean(error) && s.cajaError, bloqueado && s.cajaBloqueada]}>
+      <Text style={[s.etiqueta, relleno && s.etiquetaRelleno]}>{etiqueta}</Text>
+      <View style={[s.caja, relleno && s.cajaRelleno, foco && s.cajaFoco, Boolean(error) && s.cajaError, bloqueado && s.cajaBloqueada]}>
         {izquierda}
         <TextInput
           ref={ref}
@@ -328,6 +329,8 @@ const s = StyleSheet.create({
     borderRadius: radio.medio,
     paddingHorizontal: 14,
   },
+  cajaRelleno: { minHeight: 50, borderRadius: 14, borderWidth: 2, borderColor: 'transparent', backgroundColor: '#f1f5f7' },
+  etiquetaRelleno: { fontSize: 12.5 },
   cajaFoco: { borderColor: colores.primario },
   cajaError: { borderColor: colores.peligro },
   cajaBloqueada: { backgroundColor: '#eceff1' },
