@@ -62,6 +62,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Comprime las respuestas (JSON de la API) para que carguen más rápido en datos móviles.
+    'django.middleware.gzip.GZipMiddleware',
     # Sirve los estáticos (CSS/JS del admin, incluida la piel de Jazzmin) directo desde la app: con
     # DEBUG=False Django deja de servirlos solo, y en Render no hay un servidor de estáticos aparte.
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -100,6 +102,8 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # La app guarda la sesión en el móvil y la renueva con el refresh: así no pide contraseña cada vez.
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
 
 ROOT_URLCONF = 'config.urls'
