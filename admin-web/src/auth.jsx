@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api from './api';
+import api, { CLAVE_REFRESH, CLAVE_TOKEN, registrarAlRenovar, registrarCierreDeSesion } from './api';
 
-const CLAVE_TOKEN = 'nelson-despacho-token';
 const AuthContext = createContext(null);
 
 const aplicarToken = (token) => {
@@ -9,52 +8,67 @@ const aplicarToken = (token) => {
   else delete api.defaults.headers.common.Authorization;
 };
 
+// ¿Hay algo guardado de una sesión anterior en esta pestaña? (se lee una vez, al montar)
+const haySesionGuardada = () => Boolean(sessionStorage.getItem(CLAVE_TOKEN) || sessionStorage.getItem(CLAVE_REFRESH));
+
 export function AuthProvider({ children }) {
-  const tokenGuardado = sessionStorage.getItem(CLAVE_TOKEN);
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
-  const [cargando, setCargando] = useState(Boolean(tokenGuardado));
+  const [cargando, setCargando] = useState(haySesionGuardada);
+  // El perfil no se pudo pedir por falta de red o servidor dormido (5xx): la sesión guardada se conserva.
+  const [sinConexion, setSinConexion] = useState(false);
 
   const logout = useCallback(() => {
     sessionStorage.removeItem(CLAVE_TOKEN);
+    sessionStorage.removeItem(CLAVE_REFRESH);
     aplicarToken(null);
     setUsuario(null);
     setToken(null);
   }, []);
 
-  // Un 401 en cualquier petición (token vencido o inválido) cierra la sesión.
-  useEffect(() => {
-    const id = api.interceptors.response.use(
-      (respuesta) => respuesta,
-      (error) => {
-        if (error.response?.status === 401 && !error.config.url.includes('/token/')) logout();
-        return Promise.reject(error);
-      }
-    );
-    return () => api.interceptors.response.eject(id);
-  }, [logout]);
+  // Si el refresh es rechazado (4xx) la sesión ya no sirve; el interceptor de api.js avisa una sola vez.
+  useEffect(() => { registrarCierreDeSesion(logout); }, [logout]);
+
+  // Tras una renovación el estado `token` cambia y el WebSocket se reconecta con el access nuevo.
+  // Solo con sesión abierta: durante la restauración o tras cerrar sesión se ignora.
+  useEffect(() => { registrarAlRenovar((access) => setToken((actual) => (actual ? access : actual))); }, []);
 
   // Al recargar la página, se recupera la sesión y se confirma que sigue teniendo la capacidad.
-  useEffect(() => {
-    if (!tokenGuardado) return;
-    aplicarToken(tokenGuardado);
-    api.get('/perfil/')
-      .then(({ data }) => {
-        if (!data.es_despachador) return logout();
+  // Si el access venció, el interceptor lo renueva con el refresh antes de responder.
+  const restaurar = useCallback(async () => {
+    if (!haySesionGuardada()) return;
+    setSinConexion(false);
+    setCargando(true);
+    aplicarToken(sessionStorage.getItem(CLAVE_TOKEN));
+    try {
+      const { data } = await api.get('/perfil/');
+      if (!data.es_despachador) logout();
+      else {
         setUsuario(data);
-        setToken(tokenGuardado);
-      })
-      .catch(logout)
-      .finally(() => setCargando(false));
-  }, []);
+        setToken(sessionStorage.getItem(CLAVE_TOKEN));
+      }
+    } catch (error) {
+      // Solo una respuesta del servidor (401/403…) invalida la sesión; sin red o con el servidor dormido se espera.
+      if (!error.response || error.response.status >= 500) {
+        setSinConexion(true);
+        return;
+      }
+      logout();
+    }
+    setCargando(false);
+  }, [logout]);
+
+  useEffect(() => { restaurar(); }, [restaurar]);
 
   const login = async (username, password) => {
-    const { data: tokens } = await api.post('/token/', { username, password });
+    // Un arranque en frío de Render puede tardar casi un minuto: más que el timeout global.
+    const { data: tokens } = await api.post('/token/', { username, password }, { timeout: 60000 });
     aplicarToken(tokens.access);
     try {
       const { data: perfil } = await api.get('/perfil/');
       if (!perfil.es_despachador) throw new Error('SIN_ACCESO');
       sessionStorage.setItem(CLAVE_TOKEN, tokens.access);
+      sessionStorage.setItem(CLAVE_REFRESH, tokens.refresh);
       setUsuario(perfil);
       setToken(tokens.access);
     } catch (err) {
@@ -64,7 +78,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, token, cargando, login, logout }}>
+    <AuthContext.Provider value={{ usuario, token, cargando, sinConexion, reintentar: restaurar, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -14,7 +14,15 @@ const TITULOS = {
 };
 
 function RutaProtegida({ children }) {
-  const { usuario, cargando } = useAuth();
+  const { usuario, cargando, sinConexion, reintentar } = useAuth();
+  if (cargando && sinConexion) {
+    return (
+      <div className="cargando" role="status">
+        <p>No se pudo conectar con el servidor. Tu sesión sigue guardada.</p>
+        <button className="secundario" onClick={reintentar}>Reintentar</button>
+      </div>
+    );
+  }
   if (cargando) return <p className="cargando" role="status">Cargando…</p>;
   return usuario ? children : <Navigate to="/login" replace />;
 }

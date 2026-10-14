@@ -34,7 +34,7 @@ body {
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   caret-color: var(--marca);
@@ -155,8 +155,7 @@ button {
   border-color: var(--marca-oscura);
 }
 
-.primario:disabled,
-.login-tarjeta button[type='submit']:disabled {
+.primario:disabled {
   background: #dfe3e6;
   border-color: #dfe3e6;
   color: #5a6268;
@@ -251,85 +250,265 @@ input[type='checkbox'] {
 
 /* ---------- Login ---------- */
 
+/* Móvil: el degradado de la marca llena la pantalla, la marca arriba y la hoja blanca con el formulario pegada abajo.
+   Escritorio (≥900px): pantalla dividida, degradado a la izquierda y formulario centrado en blanco a la derecha.
+   El tono claro del degradado (#0a9bd0, blanco encima solo 3.2:1) queda en la esquina de las franjas, donde no hay texto pequeño. */
 .login {
+  --degradado: linear-gradient(200deg, #0a9bd0 0%, #007cab 7%, #004e6e 100%);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 1rem;
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  background: var(--marca);
+  background: var(--degradado);
 }
 
-/* Las rayas de velocidad de la marca: tres barras inclinadas, la más ancha pegada al borde. */
-.login::before {
-  content: '';
+.login-fondo {
+  position: relative;
+  overflow: hidden;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 22px 28px;
+  color: #fff;
+}
+
+/* Las rayas de velocidad de la marca (tres barras inclinadas) arriba a la derecha, detrás del titular. */
+.login-rayas {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: -4%;
-  width: 36%;
-  z-index: -1;
+  top: 16px;
+  right: -14px;
+  width: 96px;
+  height: 120px;
+  opacity: 0.12;
+  transform: skewX(-24deg);
   background:
-    linear-gradient(#000, #000) 0 0 / 55% 100% no-repeat,
-    linear-gradient(#000, #000) 70% 0 / 27% 100% no-repeat;
-  opacity: 0.16;
-  transform: skewX(-14deg);
+    linear-gradient(#fff, #fff) 0 0 / 38px 100% no-repeat,
+    linear-gradient(#fff, #fff) 54px 0 / 18px 100% no-repeat,
+    linear-gradient(#fff, #fff) 88px 0 / 8px 100% no-repeat;
+}
+
+.login-marca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+:where(.login-marca, .login-texto) p {
+  margin: 0;
 }
 
 .login-logo {
-  width: 150px;
-  height: auto;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 2px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
+  object-fit: contain;
 }
 
-.login-tarjeta {
+.login-marca-nombre {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.login-marca-sub {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-texto {
+  position: relative;
+  margin-top: 28px;
+}
+
+.login-titular {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+/* Solo en texto grande (3:1): el celeste claro no llega a 4.5:1 sobre el degradado. */
+.login-acento {
+  color: #a8e6ff;
+}
+
+.login-apoyo {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login-hoja {
+  margin-top: auto;
+  padding: 24px 22px max(24px, env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-radius: 30px 30px 0 0;
+}
+
+@keyframes sube {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* La única animación de entrada: el formulario sube y aparece. */
+.login-form {
   width: 100%;
-  max-width: 380px;
-  background: var(--tarjeta);
-  border-radius: 16px;
-  padding: 30px;
+  max-width: 400px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.22);
+  animation: sube 0.28s var(--salida) backwards;
 }
 
-.login-sub {
-  margin: 0 0 2px;
-  font-size: 27px;
-  line-height: 1.15;
+.login-form p {
+  margin: 0;
 }
 
-.login-tarjeta label {
+.login-form h1 {
+  font-size: 24px;
+}
+
+.login-form label {
   display: flex;
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--texto);
 }
 
-.login-tarjeta button[type='submit'] {
-  background: var(--marca);
-  color: #fff;
-  border: 2px solid var(--marca);
-  border-radius: 10px;
-  min-height: 48px;
-  padding: 12px;
+.login-form input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde-campo);
+  border-radius: 14px;
+  background: #f1f5f7;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
-.login-tarjeta button[type='submit']:hover:not(:disabled) {
+.login-form button[type='submit'] {
+  min-height: 54px;
+  padding: 12px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--marca);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 8px 16px rgb(0 124 171 / 0.35);
+  transition: background-color 0.15s, transform 0.12s var(--salida);
+}
+
+.login-form button[type='submit']:hover:not(:disabled) {
   background: var(--marca-oscura);
-  border-color: var(--marca-oscura);
+}
+
+.login-form button[type='submit']:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.login-form button[type='submit']:disabled {
+  background: #dfe3e6;
+  color: #5a6268;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Aviso de servidor lento: vacío no ocupa espacio (cancela el hueco del gap) pero sigue en el árbol para que se anuncie. */
+.login-lento {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--marca-suave);
+  color: #0b3a4d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-lento:empty {
+  margin-top: -16px;
+  padding: 0;
+}
+
+.login-pie {
+  text-align: center;
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+@media (min-width: 900px) {
+  .login {
+    display: grid;
+    grid-template-columns: 55fr 45fr;
+    background: #fff;
+  }
+
+  .login-fondo {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 56px clamp(40px, 5vw, 72px);
+    background: var(--degradado);
+  }
+
+  .login-rayas {
+    top: 0;
+    right: 6%;
+    width: 220px;
+    height: 58%;
+    background:
+      linear-gradient(#fff, #fff) 0 0 / 90px 100% no-repeat,
+      linear-gradient(#fff, #fff) 126px 0 / 44px 100% no-repeat,
+      linear-gradient(#fff, #fff) 200px 0 / 20px 100% no-repeat;
+  }
+
+  .login-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .login-marca-nombre {
+    font-size: 20px;
+  }
+
+  .login-marca-sub {
+    font-size: 14px;
+  }
+
+  .login-texto {
+    margin: auto 0;
+    padding: 48px 0;
+  }
+
+  .login-titular {
+    font-size: clamp(44px, 3.6vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+
+  .login-apoyo {
+    margin-top: 16px;
+    max-width: 420px;
+    font-size: 18px;
+  }
+
+  .login-hoja {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0;
+    padding: 48px clamp(24px, 4vw, 64px);
+    border-radius: 0;
+  }
+
+  .login-form h1 {
+    font-size: 28px;
+  }
 }
 
 .error {
@@ -599,6 +778,8 @@ button.resumen-tarjeta.activa:hover {
 
 .tabla-scroll {
   overflow-x: auto;
+  /* Contiene los textos .solo-lectores de la tabla (position: absolute): sin esto se salían de la página en pantallas chicas. */
+  position: relative;
 }
 
 table {
@@ -628,6 +809,7 @@ th {
 td {
   height: 76px;
   padding: 12px;
+  font-size: 15px;
   border-bottom: 1px solid var(--borde);
   vertical-align: middle;
 }
