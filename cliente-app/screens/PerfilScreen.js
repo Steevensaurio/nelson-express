@@ -1,16 +1,16 @@
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useAuth } from '../context/AuthContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Rayas, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Rayas, Text, estiloTarjeta } from '../components/ui';
 
 const iniciales = (perfil) =>
   ((perfil.first_name?.[0] ?? '') + (perfil.last_name?.[0] ?? '') || perfil.username?.[0] || '?').toUpperCase();
 
 function Opcion({ icono, titulo, detalle, onPress }) {
   return (
-    <Pressable
+    <Presionable
       accessibilityRole="button"
       accessibilityLabel={detalle ? `${titulo}. ${detalle}` : titulo}
       onPress={onPress}
@@ -25,7 +25,7 @@ function Opcion({ icono, titulo, detalle, onPress }) {
         {detalle ? <Text style={styles.opcionDetalle}>{detalle}</Text> : null}
       </View>
       <Icono nombre="chevron-forward" tamano={20} color={colores.suave} />
-    </Pressable>
+    </Presionable>
   );
 }
 

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { View, FlatList, Pressable, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorMapa from '../components/SelectorMapa';
 import { colores, fuente } from '../constants/tema';
-import { Aviso, Boton, Campo, Esqueleto, Icono, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Campo, Esqueleto, Icono, Presionable, Text, estiloTarjeta } from '../components/ui';
 
 // Tarjeta de dirección mientras llega la lista.
 function TarjetaEsqueleto() {
@@ -164,7 +164,7 @@ export default function MisDireccionesScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.lista}
         renderItem={({ item }) => (
-          <Pressable
+          <Presionable
             accessibilityRole="button"
             accessibilityLabel={`${item.etiqueta}. ${item.direccion}. Editar`}
             onPress={() => empezarEdicion(item)}
@@ -180,7 +180,7 @@ export default function MisDireccionesScreen() {
               {item.referencia ? <Text style={styles.referencia}>{item.referencia}</Text> : null}
             </View>
             <Icono nombre="create-outline" tamano={20} color={colores.suave} />
-          </Pressable>
+          </Presionable>
         )}
         ListEmptyComponent={
           cargando ? (

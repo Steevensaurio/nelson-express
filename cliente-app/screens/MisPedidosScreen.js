@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { View, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
@@ -7,7 +7,7 @@ import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente } from '../constants/tema';
-import { Aviso, AvisosCarga, Boleta, Boton, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Text } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Boton, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Text } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -34,7 +34,7 @@ const pedirPedidos = pedir('/pedidos/');
 export default function MisPedidosScreen({ navigation }) {
   const { suscribir, conectado } = useTiempoReal();
   // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
-  const { datos, cargando, error, lento, recargar } = useCargaRapida('pedidos', pedirPedidos, {
+  const { datos, vinoDeCache, cargando, error, lento, recargar } = useCargaRapida('pedidos', pedirPedidos, {
     intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
   });
   const pedidos = datos ?? SIN_PEDIDOS;
@@ -64,7 +64,7 @@ export default function MisPedidosScreen({ navigation }) {
         ].map((f) => {
           const activo = verHistorial === f.historial;
           return (
-            <Pressable
+            <Presionable
               key={f.texto}
               accessibilityRole="tab"
               aria-selected={activo}
@@ -76,7 +76,7 @@ export default function MisPedidosScreen({ navigation }) {
               <View style={[styles.contador, activo && styles.contadorActivo]}>
                 <Text style={[styles.contadorTexto, activo && styles.contadorTextoActivo]}>{f.cantidad}</Text>
               </View>
-            </Pressable>
+            </Presionable>
           );
         })}
       </View>
@@ -96,8 +96,8 @@ export default function MisPedidosScreen({ navigation }) {
             ? `Total $${total.toFixed(2)}`
             : item.costo_envio == null ? 'Envío por definir' : `Envío $${parseFloat(item.costo_envio).toFixed(2)}`;
           return (
-            <Entrada indice={index} estilo={styles.celda}>
-              <Pressable
+            <Entrada indice={index} estilo={styles.celda} tipo="fundido" animar={!vinoDeCache}>
+              <Presionable
                 testID="ticket-pedido"
                 accessibilityRole="button"
                 accessibilityLabel={`${esEncargo ? `Encargo: ${item.descripcion}` : item.negocio.nombre}. Estado: ${etiquetaEstado[item.estado]}. Entrega en ${item.destino_direccion}. Ver detalle`}
@@ -123,7 +123,7 @@ export default function MisPedidosScreen({ navigation }) {
                   <Text style={styles.nombre} numberOfLines={1}>{titulo}</Text>
                   <Text style={styles.destino} numberOfLines={1}>{item.destino_direccion}</Text>
                 </Boleta>
-              </Pressable>
+              </Presionable>
             </Entrada>
           );
         }}
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colores.fondo },
   lista: { padding: 16, paddingBottom: 24, flexGrow: 1 },
   celda: { marginBottom: 12 },
-  presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  presionada: { opacity: 0.9 },
   // Todos los tickets tienen la misma estructura (una línea de nombre, una de dirección, un pie) y por eso la misma altura.
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   nombre: { marginTop: 10, fontFamily: fuente.extra, fontSize: 17, color: colores.texto },

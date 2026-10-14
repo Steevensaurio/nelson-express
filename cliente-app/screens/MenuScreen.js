@@ -5,7 +5,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Text, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
 function FotoProducto({ producto, style }) {
@@ -110,7 +110,7 @@ export default function MenuScreen({ route, navigation }) {
         renderItem={({ item }) => {
           const cantidad = cantidades[item.id] || 0;
           return (
-            <Pressable
+            <Presionable
               accessibilityRole="button"
               accessibilityLabel={`${item.nombre}${cantidad > 0 ? `, ${cantidad} en el carrito` : ''}. Toca para ver detalles y agregar`}
               onPress={() => abrirProducto(item)}
@@ -131,7 +131,7 @@ export default function MenuScreen({ route, navigation }) {
                   <Text style={styles.precio}>${parseFloat(item.precio).toFixed(2)}</Text>
                 ) : null}
               </View>
-            </Pressable>
+            </Presionable>
           );
         }}
       />

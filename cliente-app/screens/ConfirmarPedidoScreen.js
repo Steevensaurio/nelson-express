@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { invalidar } from '../services/cache';
@@ -8,7 +8,7 @@ import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const SIN_DIRECCIONES = [];
 const pedirDirecciones = pedir('/direcciones/');
@@ -172,7 +172,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
                     const seleccionada = o.sucursal.id === opcionActiva?.sucursal.id;
                     const cercana = o.sucursal.id === envio.sugerida;
                     return (
-                      <Pressable
+                      <Presionable
                         key={o.sucursal.id}
                         accessibilityRole="radio"
                         aria-checked={seleccionada}
@@ -201,7 +201,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
                             {parseFloat(o.distancia_km).toFixed(1)} km · envío ${parseFloat(o.costo_envio).toFixed(2)}
                           </Text>
                         </View>
-                      </Pressable>
+                      </Presionable>
                     );
                   })}
                 </View>
@@ -211,7 +211,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
         ) : null}
 
         {perfilIncompleto ? (
-          <Pressable
+          <Presionable
             accessibilityRole="button"
             accessibilityLabel="Para pedir necesitamos tu nombre y teléfono. Completar mis datos"
             style={styles.avisoPerfil}
@@ -224,7 +224,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
               </Text>
               <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
             </View>
-          </Pressable>
+          </Presionable>
         ) : null}
 
         <Boton

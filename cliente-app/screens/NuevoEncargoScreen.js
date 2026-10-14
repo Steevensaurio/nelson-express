@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Pressable, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
+  View, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
@@ -9,7 +9,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Campo, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Campo, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const PASOS = ['Recogida', 'Entrega'];
 
@@ -276,7 +276,7 @@ export default function NuevoEncargoScreen({ navigation }) {
             </View>
 
             {perfilIncompleto ? (
-              <Pressable
+              <Presionable
                 accessibilityRole="button"
                 accessibilityLabel="Para pedir necesitamos tu nombre y teléfono. Completar mis datos"
                 style={styles.avisoPerfil}
@@ -289,7 +289,7 @@ export default function NuevoEncargoScreen({ navigation }) {
                   </Text>
                   <Text style={styles.avisoPerfilAccion}>Completar mis datos</Text>
                 </View>
-              </Pressable>
+              </Presionable>
             ) : null}
 
             {error ? (

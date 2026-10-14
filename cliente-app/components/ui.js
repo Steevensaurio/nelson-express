@@ -37,6 +37,65 @@ export const estiloTarjeta = {
   borderColor: colores.borde,
 };
 
+// ── Movimiento ───────────────────────────────────────────────────────────────────────────────
+// Curva de salida fuerte para todo lo que entra o responde (más punch que el `ease-out` del sistema).
+export const SALIDA = Easing.bezier(0.23, 1, 0.32, 1);
+const nativo = Platform.OS !== 'web';
+
+// "Reducir movimiento" del sistema, leído una vez al cargar y mantenido al día. `null` = aún sin saber (se trata como falso).
+let reduccion = null;
+const reduccionLista = AccessibilityInfo.isReduceMotionEnabled().then(
+  (v) => { reduccion = Boolean(v); },
+  () => { reduccion = false; }
+);
+AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => { reduccion = Boolean(v); });
+export const movimientoReducido = () => reduccion === true;
+
+// Valor 0..1 que sube una sola vez al montar el componente (de `desde` a 1). Sin animar (`activo` falso o
+// reducir movimiento) arranca ya en 1: nada parpadea ni se mueve.
+function useAparecer({ activo = true, desde = 0, duracion = 160, retraso = 0 } = {}) {
+  const v = useRef(new Animated.Value(activo && reduccion !== true ? desde : 1)).current;
+  useEffect(() => {
+    if (!activo) return undefined;
+    let vivo = true;
+    let anim;
+    reduccionLista.then(() => {
+      if (!vivo) return;
+      if (reduccion) {
+        v.setValue(1);
+        return;
+      }
+      anim = Animated.timing(v, { toValue: 1, duration: duracion, delay: retraso, easing: SALIDA, useNativeDriver: nativo });
+      anim.start();
+    });
+    return () => { vivo = false; anim?.stop(); };
+  }, []);
+  return v;
+}
+
+const PresionableAnimado = Animated.createAnimatedComponent(Pressable);
+
+// Pressable con retroalimentación física: se encoge a 0.97 al tocar (110 ms) y vuelve al soltar (160 ms), con ease-out.
+// Pasa todas las props al Pressable (rol, etiqueta, disabled, ripple, hitSlop, testID…); `style` puede ser objeto, arreglo
+// o función de `{ pressed }`. Usa solo transform (hilo nativo) y no se mueve si el usuario pidió reducir el movimiento.
+// Se interrumpe sin saltos: soltar a mitad de camino regresa desde la escala actual.
+export function Presionable({ style, onPressIn, onPressOut, ...props }) {
+  const escala = useRef(new Animated.Value(1)).current;
+  const [pressed, setPressed] = useState(false);
+  const mover = (hacia, duracion) => {
+    if (movimientoReducido()) return;
+    Animated.timing(escala, { toValue: hacia, duration: duracion, easing: SALIDA, useNativeDriver: nativo }).start();
+  };
+  return (
+    <PresionableAnimado
+      {...props}
+      onPressIn={(e) => { setPressed(true); mover(0.97, 110); onPressIn?.(e); }}
+      onPressOut={(e) => { setPressed(false); mover(1, 160); onPressOut?.(e); }}
+      style={[typeof style === 'function' ? style({ pressed }) : style, { transform: [{ scale: escala }] }]}
+    />
+  );
+}
+
 const VARIANTES = {
   primario: { fondo: colores.primario, presionado: colores.primarioOscuro, texto: '#fff', borde: colores.primario },
   secundario: { fondo: '#fff', presionado: colores.acentoSuave, texto: colores.primarioOscuro, borde: colores.primario },
@@ -51,7 +110,7 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
   const inactivo = Boolean(deshabilitado || cargando);
   const colorTexto = deshabilitado ? '#5a6268' : v.texto;
   return (
-    <Pressable
+    <Presionable
       accessibilityRole="button"
       accessibilityLabel={etiqueta ?? titulo}
       aria-disabled={inactivo}
@@ -62,7 +121,6 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
       style={({ pressed }) => [
         s.boton,
         { backgroundColor: pressed ? v.presionado : v.fondo, borderColor: v.borde },
-        pressed && s.botonPresionado,
         variante === 'primario' && !inactivo && s.botonSombra,
         deshabilitado && s.botonOff,
         estilo,
@@ -74,7 +132,7 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
         <Icono nombre={icono} tamano={20} color={colorTexto} />
       ) : null}
       <Text style={[s.botonTexto, { color: colorTexto }]}>{titulo}</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -166,19 +224,26 @@ const AVISOS = {
 };
 
 // Recuadro de aviso: fondo teñido con su propio filo e ícono. Sin franja de color a un lado.
-export function Aviso({ tipo = 'info', icono, children, estilo }) {
+// Al aparecer (solo al montarse) se desvanece 160 ms subiendo 6 px, para que un aviso nuevo no «salte»; `animar={false}` lo omite.
+export function Aviso({ tipo = 'info', icono, children, estilo, animar = true }) {
   const a = AVISOS[tipo];
+  const v = useAparecer({ activo: animar, duracion: 160 });
   return (
-    <View
+    <Animated.View
       accessibilityRole={a.alerta ? 'alert' : undefined}
       accessibilityLiveRegion={a.alerta ? 'polite' : undefined}
-      style={[s.aviso, { backgroundColor: a.fondo, borderColor: a.borde }, estilo]}
+      style={[
+        s.aviso,
+        { backgroundColor: a.fondo, borderColor: a.borde },
+        estilo,
+        { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] },
+      ]}
     >
       <Icono nombre={icono ?? a.icono} tamano={20} color={a.color} />
       <View style={s.avisoCuerpo}>
         {typeof children === 'string' ? <Text style={[s.avisoTexto, { color: a.texto }]}>{children}</Text> : children}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -245,7 +310,7 @@ export function Cabecera({ children, estilo }) {
 // Botón grande de la pantalla de negocios: celeste, con franjas inclinadas y la flecha en un recuadro blanco.
 export function BotonEncargo({ titulo, subtitulo, onPress, estilo }) {
   return (
-    <Pressable
+    <Presionable
       accessibilityRole="button"
       accessibilityLabel={`${titulo}. ${subtitulo}`}
       onPress={onPress}
@@ -263,7 +328,7 @@ export function BotonEncargo({ titulo, subtitulo, onPress, estilo }) {
       <View style={s.encargoFlecha}>
         <Icono nombre="arrow-forward" tamano={24} color={colores.primario} />
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -291,35 +356,23 @@ export function Boleta({ children, pie, estilo, fondo = colores.fondo }) {
   );
 }
 
-// Entrada de una lista: sube 14px y aparece una sola vez, con ease-out fuerte. Se salta si el usuario
-// pidió reducir el movimiento. Solo anima los primeros elementos para no entretener a quien ya sabe qué busca.
-export function Entrada({ indice = 0, children, estilo }) {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    let vivo = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((reducir) => {
-      if (!vivo) return;
-      if (reducir || indice > 7) {
-        v.setValue(1);
-        return;
-      }
-      Animated.timing(v, {
-        toValue: 1,
-        duration: 280,
-        delay: indice * 45,
-        easing: Easing.bezier(0.23, 1, 0.32, 1),
-        useNativeDriver: Platform.OS !== 'web',
-      }).start();
-    });
-    return () => { vivo = false; };
-  }, []);
-  return (
-    <Animated.View
-      style={[estilo, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }]}
-    >
-      {children}
-    </Animated.View>
-  );
+// Entrada de contenido, una sola vez al montarse y solo si `animar` (por defecto sí).
+// tipo 'subir' (por defecto, la hoja del login): sube 14 px y aparece, 280 ms.
+// tipo 'fundido' (filas de una lista que llegan tras el esqueleto): solo opacidad, 160 ms, desde 40 % para que nunca
+// se vea un hueco, con un escalonado de 30 ms por fila hasta 150 ms. Las listas pasan `animar={false}` si ya tenían datos
+// guardados (nada que anunciar). Solo anima las primeras filas; sin movimiento si el usuario lo pidió.
+export function Entrada({ indice = 0, children, estilo, animar = true, tipo = 'subir' }) {
+  const fundido = tipo === 'fundido';
+  const v = useAparecer({
+    activo: animar && indice <= 7,
+    desde: fundido ? 0.4 : 0,
+    duracion: fundido ? 160 : 280,
+    retraso: fundido ? Math.min(indice * 30, 150) : indice * 45,
+  });
+  const animado = fundido
+    ? { opacity: v }
+    : { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] };
+  return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;
 }
 
 const web = Platform.select({ web: { outlineStyle: 'none' }, default: {} });
@@ -336,7 +389,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  botonPresionado: { transform: [{ scale: 0.985 }] },
   botonSombra: {
     elevation: 3,
     shadowColor: colores.primario,

@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { View, Pressable, Switch, StyleSheet, Modal } from 'react-native';
+import { View, Switch, StyleSheet, Modal } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from './SelectorMapa';
 import { colores, fuente } from '../constants/tema';
-import { Aviso, Boton, Campo, Icono, Text, estiloTarjeta } from './ui';
+import { Aviso, Boton, Campo, Icono, Presionable, Text, estiloTarjeta } from './ui';
 
 // Una dirección elegible. Es una opción de un grupo (radio): lo seleccionado se ve por el ícono y el
 // borde, y se anuncia como "seleccionado" a los lectores de pantalla.
 function Opcion({ etiqueta, direccion, referencia, seleccionada, onPress }) {
   return (
-    <Pressable
+    <Presionable
       accessibilityRole="radio"
       aria-checked={seleccionada}
       accessibilityLabel={`${etiqueta}. ${direccion || 'Sin dirección'}${referencia ? `. ${referencia}` : ''}`}
@@ -27,7 +27,7 @@ function Opcion({ etiqueta, direccion, referencia, seleccionada, onPress }) {
         <Text style={styles.texto}>{direccion || 'Sin dirección'}</Text>
         {referencia ? <Text style={styles.referencia}>{referencia}</Text> : null}
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 

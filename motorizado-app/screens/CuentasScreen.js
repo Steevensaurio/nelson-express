@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
-import { View, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boleta, Esqueleto, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Esqueleto, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const dosDigitos = (n) => String(n).padStart(2, '0');
 const aISO = (fecha) => `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
@@ -92,7 +92,7 @@ export default function CuentasScreen() {
             {ATAJOS.map((a) => {
               const activo = atajo === a.texto;
               return (
-                <Pressable
+                <Presionable
                   key={a.texto}
                   accessibilityRole="tab"
                   aria-selected={activo}
@@ -101,7 +101,7 @@ export default function CuentasScreen() {
                   onPress={() => setAtajo(a.texto)}
                 >
                   <Text style={[styles.atajoTexto, activo && styles.atajoTextoActivo]}>{a.texto}</Text>
-                </Pressable>
+                </Presionable>
               );
             })}
           </View>

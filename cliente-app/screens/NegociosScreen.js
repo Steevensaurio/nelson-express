@@ -7,7 +7,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { colores, fuente } from '../constants/tema';
 import { filtrarNegocios } from '../constants/negocios';
-import { Aviso, AvisosCarga, Boton, BotonEncargo, Cabecera, Entrada, Esqueleto, Icono, Text, Titulo } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, BotonEncargo, Cabecera, Entrada, Esqueleto, Icono, Presionable, Text, Titulo } from '../components/ui';
 
 // Abierto si al menos una sucursal lo está; el número es el de sucursales abiertas.
 const resumenSucursales = (sucursales) => {
@@ -48,7 +48,7 @@ const pedirPerfil = pedir('/perfil/');
 export default function NegociosScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   // Lo último conocido se pinta al instante y se refresca por detrás (el perfil, que se comparte con otras pantallas, solo cada 60 s).
-  const { datos, cargando, error, lento, recargar } = useCargaRapida('negocios', pedirNegocios, { maxEdad: 60000 });
+  const { datos, vinoDeCache, cargando, error, lento, recargar } = useCargaRapida('negocios', pedirNegocios, { maxEdad: 60000 });
   const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
   const negocios = datos ?? SIN_NEGOCIOS;
   const nombre = perfil?.first_name ?? '';
@@ -129,8 +129,8 @@ export default function NegociosScreen({ navigation }) {
         renderItem={({ item, index }) => {
           const resumen = resumenSucursales(item.sucursales);
           return (
-            <Entrada indice={index} estilo={styles.celda}>
-              <Pressable
+            <Entrada indice={index} estilo={styles.celda} tipo="fundido" animar={!vinoDeCache}>
+              <Presionable
                 testID="fila-negocio"
                 accessibilityRole="button"
                 accessibilityLabel={`${item.nombre}. ${resumen ?? 'Cerrado'}. Ver menú`}
@@ -149,7 +149,7 @@ export default function NegociosScreen({ navigation }) {
                   </View>
                 </View>
                 <Icono nombre="chevron-forward" tamano={20} color={colores.suave} />
-              </Pressable>
+              </Presionable>
             </Entrada>
           );
         }}
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  filaPresionada: { opacity: 0.9, transform: [{ scale: 0.985 }] },
+  filaPresionada: { opacity: 0.9 },
   atenuado: { opacity: 0.45 },
   logo: {
     width: 54,

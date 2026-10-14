@@ -1,5 +1,5 @@
 import { useState, useCallback, useLayoutEffect, useRef } from 'react';
-import { View, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import { useFocusEffect, useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +8,7 @@ import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { colores, fuente } from '../constants/tema';
-import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Text, Titulo } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Text, Titulo } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -61,7 +61,7 @@ const resumenEnCurso = (n) => (n === 0 ? 'Sin entregas en curso' : `${n} ${n ===
 export default function MisEntregasScreen({ navigation }) {
   const { suscribir, conectado } = useTiempoReal();
   // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
-  const { datos, cargando, error, lento, recargar } = useCargaRapida('entregas', pedirEntregas, {
+  const { datos, vinoDeCache, cargando, error, lento, recargar } = useCargaRapida('entregas', pedirEntregas, {
     intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
   });
   const entregas = datos ?? SIN_ENTREGAS;
@@ -108,7 +108,7 @@ export default function MisEntregasScreen({ navigation }) {
         ].map((f) => {
           const activo = verHistorial === f.historial;
           return (
-            <Pressable
+            <Presionable
               key={f.texto}
               accessibilityRole="tab"
               aria-selected={activo}
@@ -120,7 +120,7 @@ export default function MisEntregasScreen({ navigation }) {
               <View style={[styles.contador, activo && styles.contadorActivo]}>
                 <Text style={[styles.contadorTexto, activo && styles.contadorTextoActivo]}>{f.cantidad}</Text>
               </View>
-            </Pressable>
+            </Presionable>
           );
         })}
       </View>
@@ -156,8 +156,8 @@ export default function MisEntregasScreen({ navigation }) {
         renderItem={({ item, index }) => {
           const valor = item.costo_envio != null ? `$${parseFloat(item.costo_envio).toFixed(2)}` : null;
           return (
-            <Entrada indice={index}>
-              <Pressable
+            <Entrada indice={index} tipo="fundido" animar={!vinoDeCache}>
+              <Presionable
                 testID="ticket-entrega"
                 accessibilityRole="button"
                 accessibilityLabel={`Entrega ${item.id}${valor ? `, ${valor}` : ''}. Estado: ${etiquetaEstado[item.estado]}. Recoger en ${item.recogida.nombre}, ${item.recogida.direccion}. Entregar en ${item.destino_direccion}. Ver detalle`}
@@ -185,7 +185,7 @@ export default function MisEntregasScreen({ navigation }) {
                   />
                   <Tramo icono="location-outline" rotulo="Entregar en" valor={item.destino_direccion} />
                 </Boleta>
-              </Pressable>
+              </Presionable>
             </Entrada>
           );
         }}
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   contadorTexto: { fontFamily: fuente.negrita, fontSize: 12, color: '#4d5b64' },
   contadorTextoActivo: { color: colores.primarioOscuro },
 
-  presionada: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  presionada: { opacity: 0.9 },
   // Todos los tickets tienen la misma estructura (dos tramos de una línea cada uno y un pie), así que miden lo mismo.
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   tramo: { flexDirection: 'row', gap: 12, marginTop: 10 },

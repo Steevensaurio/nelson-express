@@ -147,7 +147,7 @@ export default function LoginScreen({ onLoginSuccess }) {
                   }
                 />
 
-                {error ? <Aviso tipo="error" estilo={styles.aviso}>{error}</Aviso> : null}
+                {error ? <Aviso tipo="error" animar={false} estilo={styles.aviso}>{error}</Aviso> : null}
 
                 <Boton
                   titulo={entrando ? 'Ingresando…' : 'Ingresar'}
@@ -160,7 +160,7 @@ export default function LoginScreen({ onLoginSuccess }) {
                 />
 
                 {entrando && lento ? (
-                  <Aviso tipo="info" estilo={styles.avisoLento}>
+                  <Aviso tipo="info" animar={false} estilo={styles.avisoLento}>
                     El servidor está despertando, puede tardar hasta un minuto…
                   </Aviso>
                 ) : null}

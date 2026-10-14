@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
   `${perfil.first_name} ${perfil.last_name}`.trim() || perfil.username;
@@ -121,7 +121,7 @@ export default function PerfilScreen({ navigation }) {
       </View>
 
       {faltaContacto || !tieneVehiculo ? (
-        <Pressable
+        <Presionable
           accessibilityRole="button"
           accessibilityLabel={`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}, para que el despachador y los clientes puedan identificarte`}
           onPress={() => navigation.navigate('EditarPerfil')}
@@ -130,7 +130,7 @@ export default function PerfilScreen({ navigation }) {
           <Aviso tipo="alerta" icono="alert-circle">
             {`Completa tu perfil: ${faltaContacto ? 'nombre y teléfono' : 'datos de tu vehículo'}`}
           </Aviso>
-        </Pressable>
+        </Presionable>
       ) : null}
 
       <View style={styles.tarjeta}>

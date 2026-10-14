@@ -134,11 +134,11 @@ button {
   padding: 8px 16px;
   font-size: 15px;
   font-weight: 700;
-  transition: background-color 0.15s, border-color 0.15s, transform 0.12s var(--salida);
+  transition: background-color 0.15s, border-color 0.15s, transform 120ms var(--salida);
 }
 
-.secundario:active,
-.peligro:active,
+.secundario:active:not(:disabled),
+.peligro:active:not(:disabled),
 .primario:active:not(:disabled) {
   transform: scale(0.97);
 }
@@ -402,7 +402,7 @@ input[type='checkbox'] {
   font-size: 16px;
   font-weight: 800;
   box-shadow: 0 8px 16px rgb(0 124 171 / 0.35);
-  transition: background-color 0.15s, transform 0.12s var(--salida);
+  transition: background-color 0.15s, transform 120ms var(--salida);
 }
 
 .login-form button[type='submit']:hover:not(:disabled) {
@@ -659,11 +659,15 @@ input[type='checkbox'] {
   flex-direction: column;
   gap: 2px;
   color: var(--texto);
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, color 0.15s, transform 120ms var(--salida);
 }
 
 button.resumen-tarjeta:hover {
   background: var(--marca-suave);
+}
+
+button.resumen-tarjeta:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .resumen-tarjeta.activa,
@@ -812,6 +816,7 @@ td {
   font-size: 15px;
   border-bottom: 1px solid var(--borde);
   vertical-align: middle;
+  transition: background-color 120ms;
 }
 
 tbody tr:hover td {

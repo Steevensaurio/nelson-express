@@ -47,6 +47,7 @@ function MainTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         ...opcionesCabecera,
+        animation: 'fade', // las pestañas son pares: fundido de 150 ms, nunca deslizamiento
         tabBarActiveTintColor: colores.primarioOscuro,
         tabBarInactiveTintColor: colores.suave,
         tabBarLabelStyle: { fontFamily: fuente.negrita, fontSize: 12 },

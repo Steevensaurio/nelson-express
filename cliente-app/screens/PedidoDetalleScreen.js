@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { Platform, View, ScrollView, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { Animated, Platform, View, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
@@ -7,7 +7,7 @@ import { useTiempoReal } from '../context/RealtimeContext';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente } from '../constants/tema';
 import { FRASES, anchoLinea, colorPaso, haloPaso } from '../constants/seguimiento';
-import { Aviso, Boleta, FilaDato, Icono, Insignia, NumeroPedido, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, Boleta, FilaDato, Icono, Insignia, NumeroPedido, SALIDA, Text, Titulo, estiloTarjeta, movimientoReducido } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -30,6 +30,27 @@ const enfocableWeb = Platform.OS === 'web' ? { tabIndex: 0 } : {};
 
 const PASO_DE_ESTADO = { PENDIENTE: 0, ACEPTADO: 0, RECOGIDO: 1, EN_CAMINO: 2, ENTREGADO: 3 };
 
+// Círculo de un paso. Si se completa mientras se mira la pantalla da un pequeño «pop» (0.85 → 1, 200 ms, ease-out, hilo nativo);
+// al abrir la pantalla aparece tal cual. Su color cambia al instante.
+function CirculoPaso({ hecho, color, children }) {
+  const escala = useRef(new Animated.Value(1)).current;
+  const hechoAntes = useRef(hecho);
+  useLayoutEffect(() => {
+    const recienHecho = hecho && !hechoAntes.current;
+    hechoAntes.current = hecho;
+    if (!recienHecho || movimientoReducido()) return undefined;
+    escala.setValue(0.85); // antes de pintar: nunca se ve el círculo grande y luego chico
+    const pop = Animated.timing(escala, { toValue: 1, duration: 200, easing: SALIDA, useNativeDriver: Platform.OS !== 'web' });
+    pop.start();
+    return () => pop.stop();
+  }, [hecho]);
+  return (
+    <Animated.View style={[styles.pasoCirculo, hecho && { backgroundColor: color }, { transform: [{ scale: escala }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
 // Seguimiento en 4 pasos. Para lectores de pantalla se anuncia como una sola barra de progreso.
 // Lo recorrido (círculos y línea) toma el color del estado; el paso actual lleva un anillo (halo) del mismo tono, en color sólido.
 // La pista va del centro del primer círculo al del último (cada paso ocupa 1/4 del ancho), así que la línea no pasa del final.
@@ -37,6 +58,21 @@ function Seguimiento({ estado }) {
   const actual = PASO_DE_ESTADO[estado];
   const completo = estado === 'ENTREGADO';
   const color = colorPaso(estado);
+  // La línea crece desde donde estaba hasta el nuevo paso (260 ms, ease-out) solo cuando el estado cambia con la pantalla abierta;
+  // el estado inicial se pinta tal cual. El ancho es layout, no transform: va en el hilo de JS, pero es una barra pequeña sin hijos.
+  const avance = useRef(new Animated.Value(anchoLinea(actual, PASOS.length))).current;
+  const pasoPrevio = useRef(actual);
+  useEffect(() => {
+    if (pasoPrevio.current === actual) return;
+    pasoPrevio.current = actual;
+    const destino = anchoLinea(actual, PASOS.length);
+    if (movimientoReducido()) {
+      avance.setValue(destino);
+      return;
+    }
+    Animated.timing(avance, { toValue: destino, duration: 260, easing: SALIDA, useNativeDriver: false }).start();
+  }, [actual]);
+  useEffect(() => () => avance.stopAnimation(), []);
   return (
     <View
       accessible
@@ -49,16 +85,19 @@ function Seguimiento({ estado }) {
       style={styles.seguimiento}
     >
       <View style={[styles.pista, { left: `${50 / PASOS.length}%`, right: `${50 / PASOS.length}%` }]}>
-        <View style={[styles.relleno, { width: `${anchoLinea(actual, PASOS.length) * 100}%`, backgroundColor: color }]} />
+        <Animated.View
+          testID="seguimiento-relleno"
+          style={[styles.relleno, { width: avance.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: color }]}
+        />
       </View>
       {PASOS.map((paso, i) => {
         const hecho = i <= actual;
         return (
           <View key={paso.etiqueta} style={styles.paso}>
             <View style={[styles.halo, i === actual && !completo && { borderColor: haloPaso(estado) }]}>
-              <View style={[styles.pasoCirculo, hecho && { backgroundColor: color }]}>
+              <CirculoPaso hecho={hecho} color={color}>
                 <Icono nombre={hecho && (i < actual || completo) ? 'checkmark' : paso.icono} tamano={16} color={hecho ? '#fff' : colores.suave} />
-              </View>
+              </CirculoPaso>
             </View>
             <Text style={[styles.pasoTexto, hecho && styles.pasoTextoHecho]} numberOfLines={1}>{paso.etiqueta}</Text>
           </View>
