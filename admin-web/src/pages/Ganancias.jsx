@@ -3,6 +3,7 @@ import api from '../api';
 import Barra from '../components/Barra.jsx';
 import { useAuth } from '../auth.jsx';
 import { useTiempoReal } from '../useTiempoReal.js';
+import { useMedia } from '../useMedia.js';
 
 const dinero = (valor) => `$${Number(valor).toFixed(2)}`;
 
@@ -61,6 +62,7 @@ export default function Ganancias() {
     setHasta(fechaLocal(h));
   };
 
+  const enTabla = useMedia('(min-width: 768px)');
   const resumen = datos?.resumen;
   const porcentaje = datos ? (datos.comision_porcentaje ? `${datos.comision_porcentaje}%` : 'según cada pedido') : '';
 
@@ -72,9 +74,19 @@ export default function Ganancias() {
         <h1 className="solo-lectores">Ganancias</h1>
         <section className="filtros-ganancias" aria-label="Filtros">
           <div className="atajos">
-            {ATAJOS.map((a) => (
-              <button key={a.texto} className="secundario" onClick={() => aplicarAtajo(a.rango)}>{a.texto}</button>
-            ))}
+            {ATAJOS.map((a) => {
+              const [d, h] = a.rango();
+              return (
+                <button
+                  key={a.texto}
+                  className="secundario"
+                  aria-pressed={fechaLocal(d) === desde && fechaLocal(h) === hasta}
+                  onClick={() => aplicarAtajo(a.rango)}
+                >
+                  {a.texto}
+                </button>
+              );
+            })}
           </div>
           <label>
             Desde
@@ -128,6 +140,25 @@ export default function Ganancias() {
             {!motorizado ? (
               <section className="tabla-caja">
                 <div className="tabla-encabezado"><h2>Por motorizado</h2></div>
+                {!enTabla ? (
+                  datos.por_motorizado.length === 0 ? (
+                    <p className="vacio">No hay carreras en este rango.</p>
+                  ) : (
+                    <ul className="lista-datos">
+                      {datos.por_motorizado.map((f) => (
+                        <li key={f.motorizado.id}>
+                          <strong className="lista-datos-titulo">{f.motorizado.nombre}</strong>
+                          <dl>
+                            <div><dt>Carreras</dt><dd>{f.carreras}</dd></div>
+                            <div><dt>Total generado</dt><dd>{dinero(f.total)}</dd></div>
+                            <div><dt>Me debe entregar</dt><dd><strong>{dinero(f.comision)}</strong></dd></div>
+                            <div><dt>Se queda</dt><dd>{dinero(f.neto)}</dd></div>
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                ) : (
                 <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Ganancias por motorizado">
                   <table>
                     <caption className="solo-lectores">Ganancias por motorizado</caption>
@@ -156,6 +187,7 @@ export default function Ganancias() {
                     </tbody>
                   </table>
                 </div>
+                )}
               </section>
             ) : null}
 
@@ -164,6 +196,29 @@ export default function Ganancias() {
                 <h2>Carreras</h2>
                 {datos.carreras_truncadas ? <span className="tenue">Mostrando las 500 más recientes</span> : null}
               </div>
+              {!enTabla ? (
+                datos.carreras.length === 0 ? (
+                  <p className="vacio">No hay carreras en este rango.</p>
+                ) : (
+                  <ul className="lista-datos">
+                    {datos.carreras.map((c) => (
+                      <li key={c.id}>
+                        <div className="lista-datos-cabeza">
+                          <strong className="lista-datos-titulo">Pedido #{c.id}</strong>
+                          <strong>{c.costo_envio != null ? dinero(c.costo_envio) : '—'}</strong>
+                        </div>
+                        <dl>
+                          <div><dt>Entregado</dt><dd>{hora(c.entregado_en)}</dd></div>
+                          <div><dt>Motorizado</dt><dd>{c.motorizado.nombre}</dd></div>
+                          <div><dt>Recogida</dt><dd>{c.recogida}</dd></div>
+                          <div><dt>Destino</dt><dd>{c.destino_direccion}</dd></div>
+                          <div><dt>Km</dt><dd>{c.distancia_km ? Number(c.distancia_km).toFixed(1) : '—'}</dd></div>
+                        </dl>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              ) : (
               <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Carreras entregadas">
                 <table>
                   <caption className="solo-lectores">Carreras entregadas en el rango elegido</caption>
@@ -196,6 +251,7 @@ export default function Ganancias() {
                   </tbody>
                 </table>
               </div>
+              )}
             </section>
           </>
         ) : !error ? <p className="cargando" role="status">Cargando…</p> : null}
