@@ -6,7 +6,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from .models import DetallePedido, Negocio, Pedido, Producto, Sucursal, Usuario
+from .models import DetallePedido, Negocio, Pedido, Producto, Sucursal, Tarifa, Usuario
 
 
 class SaludTests(TestCase):
@@ -74,3 +74,62 @@ class ConsultasConstantesTests(TestCase):
             self.consultas(self.cliente, f'/api/pedidos/{encargo.id}/'),
             self.consultas(self.cliente, f'/api/pedidos/{comida.id}/') - 1,  # la comida además trae sus detalles
         )
+
+
+class TelefonoTests(TestCase):
+    MSG = 'Ingresa un teléfono válido de Ecuador: celular 09XXXXXXXX (10 dígitos) o fijo 0XXXXXXXX (9 dígitos).'
+
+    def test_validos_se_normalizan(self):
+        from .serializers import validar_telefono
+        casos = {
+            '0991234567': '0991234567', '099 123 4567': '0991234567', '(099) 123-4567': '0991234567',
+            '+593991234567': '0991234567', '593991234567': '0991234567', '+593 99 123 4567': '0991234567',
+            '022345678': '022345678', '02-234.5678': '022345678', '+59322345678': '022345678',
+            '072345678': '072345678', '': '', '  ': '',
+        }
+        for entrada, esperado in casos.items():
+            self.assertEqual(validar_telefono(entrada), esperado, entrada)
+
+    def test_invalidos_se_rechazan(self):
+        from rest_framework import serializers
+        from .serializers import validar_telefono
+        for malo in ['099123456', '09912345678', 'abc', '0891234567', '082345678', '092345678',
+                     '012345678', '+5938991234567', '+593 1 2345678', '991234567', '0991234567x']:
+            with self.assertRaises(serializers.ValidationError, msg=malo) as e:
+                validar_telefono(malo)
+            self.assertEqual(e.exception.detail[0], self.MSG)
+
+    def test_perfil_normaliza_y_rechaza(self):
+        u = Usuario.objects.create_user('perfil', first_name='Ana')
+        c = APIClient()
+        c.force_authenticate(u)
+        r = c.patch('/api/perfil/', {'telefono': '+593 99 123 4567'}, format='json')
+        self.assertEqual((r.status_code, r.data['telefono']), (200, '0991234567'))
+        r = c.patch('/api/perfil/', {'telefono': '12345'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.data['telefono'][0], self.MSG)
+
+    def encargo(self, **extra):
+        return {
+            'descripcion': 'Llaves', 'recogida_direccion': 'A', 'recogida_lat': '-0.25', 'recogida_lng': '-79.17',
+            'destino_direccion': 'B', 'destino_lat': '-0.26', 'destino_lng': '-79.18',
+            'cliente_nombre': 'Luis', **extra,
+        }
+
+    def test_despacho_telefono_obligatorio_normalizado_y_reutiliza_legado(self):
+        Tarifa.objects.create(pk=1)  # Tarifa.actual() recien creada trae factor_calles como str
+        desp = Usuario.objects.create_user('desp2', es_despachador=True)
+        legado = Usuario.objects.create_user('legado', first_name='Viejo', telefono='099 123 4567')
+        c = APIClient()
+        c.force_authenticate(desp)
+        r = c.post('/api/despacho/encargos/', self.encargo(cliente_telefono=''), format='json')
+        self.assertEqual(r.status_code, 400)
+        r = c.post('/api/despacho/encargos/', self.encargo(cliente_telefono='123'), format='json')
+        self.assertEqual(r.data['cliente_telefono'][0], self.MSG)
+        r = c.post('/api/despacho/encargos/', self.encargo(cliente_telefono='+593991234567'), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente_id, legado.id)
+        r = c.post('/api/despacho/encargos/', self.encargo(
+            cliente_telefono='0987654321', recogida_contacto_telefono='+59322345678'), format='json')
+        p = Pedido.objects.get(pk=r.data['id'])
+        self.assertEqual((p.cliente.telefono, p.recogida_contacto_telefono), ('0987654321', '022345678'))

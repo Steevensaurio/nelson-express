@@ -9,14 +9,29 @@ from .models import Pedido, Negocio, Sucursal, Tarifa, Producto, DetallePedido, 
 
 
 
+MENSAJE_TELEFONO = 'Ingresa un teléfono válido de Ecuador: celular 09XXXXXXXX (10 dígitos) o fijo 0XXXXXXXX (9 dígitos).'
+
+
+def normalizar_telefono(texto):
+    """Forma nacional (solo dígitos, empieza con 0) de un celular 09XXXXXXXX o fijo 0[2-7]XXXXXXX; None si no es válido."""
+    t = re.sub(r'[\s\-.()]', '', texto or '')
+    if t.startswith('+593'):
+        t = '0' + t[4:]
+    elif t.startswith('593'):
+        t = '0' + t[3:]
+    if re.fullmatch(r'09[0-9]{8}|0[2-7][0-9]{7}', t):
+        return t
+    return None
+
+
 def validar_telefono(value):
-    """Solo números, espacios, guiones y un + al inicio. Devuelve el texto sin espacios en los extremos."""
-    value = value.strip()
-    if value and not re.fullmatch(r'\+?[0-9][0-9\s\-]{6,19}', value):
-        raise serializers.ValidationError(
-            'Ingresa un teléfono válido (solo números, espacios, guiones y un + al inicio).'
-        )
-    return value
+    """Devuelve el teléfono normalizado ('' si viene vacío); quien lo exige obligatorio lo comprueba aparte."""
+    if not value.strip():
+        return ''
+    normalizado = normalizar_telefono(value)
+    if normalizado is None:
+        raise serializers.ValidationError(MENSAJE_TELEFONO)
+    return normalizado
 
 
 class RecogidaMixin(serializers.Serializer):
@@ -446,7 +461,7 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
         valor = validar_telefono(valor)
         if not valor:
             raise serializers.ValidationError('Este campo es obligatorio.')
-        return re.sub(r'[\s-]', '', valor)
+        return valor
 
     @transaction.atomic
     def create(self, datos):
@@ -456,6 +471,13 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
         # ese teléfono se reutiliza -aunque sea motorizado o despachador pidiendo para sí mismo-;
         # si no, se crea una cuenta nueva sin contraseña (no puede iniciar sesión por su cuenta).
         cliente = Usuario.objects.filter(telefono=telefono).first()
+        if cliente is None:
+            # Filas anteriores a la validación pueden estar guardadas con espacios o +593.
+            # ponytail: recorre usuarios con teléfono; pocos hoy, indexar una columna normalizada si crecen.
+            for u in Usuario.objects.exclude(telefono=''):
+                if normalizar_telefono(u.telefono) == telefono:
+                    cliente = u
+                    break
         if cliente is None:
             cliente = Usuario(
                 username=f'tel_{re.sub(r"[^0-9]", "", telefono)}', rol=Usuario.Rol.CLIENTE,
