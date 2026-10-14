@@ -20,11 +20,13 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
   const [lento, setLento] = useState(false);
   const datos = dato.clave === clave ? dato.valor : leer(clave); // al cambiar de clave se parte de lo guardado para esa clave
   const error = fallo.clave === clave ? fallo.e : null;
-  // `vinoDeCache`: ya había datos en el primer render de esta clave (la lista no tiene nada que anunciar con una entrada animada).
-  // Pasa a falso si luego se muestra el esqueleto (clave invalidada): lo que llegue después sí entra con fundido.
+  // `vinoDeCache`: los datos ya se mostraron (o estaban en caché en el primer render de esta clave): nada que anunciar con una entrada animada.
+  // Vuelve a falso si se muestra el esqueleto (clave invalidada): la siguiente llegada sí entra con fundido.
   const origen = useRef(null);
   if (origen.current?.clave !== clave) origen.current = { clave, vino: datos !== undefined };
   else if (datos === undefined) origen.current.vino = false;
+  // Tras pintar datos, ya se mostraron: filtros, segmentos y filas nuevas no vuelven a animar (solo la primera llegada tras un esqueleto).
+  useEffect(() => { if (datos !== undefined) origen.current.vino = true; }, [datos !== undefined, clave]);
 
   const fn = useRef(cargarFn);
   fn.current = cargarFn;

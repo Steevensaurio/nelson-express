@@ -39,7 +39,6 @@ function MainTabs() {
           <Ionicons name={ICONOS[route.name][focused ? 0 : 1]} size={size} color={color} />
         ),
         ...opcionesCabecera,
-        animation: 'fade', // las pestañas son pares: fundido de 150 ms, nunca deslizamiento
         tabBarActiveTintColor: colores.primarioOscuro,
         tabBarInactiveTintColor: colores.suave,
         tabBarLabelStyle: { fontFamily: fuente.negrita, fontSize: 12 },
