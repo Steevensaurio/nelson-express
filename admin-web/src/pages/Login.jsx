@@ -42,7 +42,7 @@ export default function Login() {
   };
 
   return (
-    <main className="login" id="contenido">
+    <main className="login" id="contenido" tabIndex={-1}>
       <section className="login-fondo">
         <div className="login-rayas" aria-hidden="true" />
         <div className="login-marca">

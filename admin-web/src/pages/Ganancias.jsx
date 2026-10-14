@@ -70,7 +70,7 @@ export default function Ganancias() {
     <div className="pagina">
       <Barra />
 
-      <main className="contenido" id="contenido">
+      <main className="contenido" id="contenido" tabIndex={-1}>
         <h1 className="solo-lectores">Ganancias</h1>
         <section className="filtros-ganancias" aria-label="Filtros">
           <div className="atajos">

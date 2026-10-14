@@ -61,6 +61,31 @@
   box-sizing: border-box;
 }
 
+/* Sin el destello gris del navegador al tocar: cada control tiene su :active y su foco propios.
+   scroll-padding: los saltos a #ancla no quedan debajo de la barra fija. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-padding-top: 72px;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* Sin la espera de doble toque en los controles. */
+a,
+button,
+select,
+label,
+input {
+  touch-action: manipulation;
+}
+
+/* El destino del enlace "Saltar al contenido" recibe el foco sin dibujar un marco alrededor de toda la página. */
+[tabindex='-1']:focus {
+  outline: none;
+}
+
 body {
   margin: 0;
   background: var(--fondo);
@@ -70,6 +95,7 @@ body {
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   caret-color: var(--marca);
+  overflow-wrap: break-word;
 }
 
 ::selection {
@@ -183,9 +209,11 @@ button {
   padding: 10px 24px;
 }
 
-.primario:hover:not(:disabled) {
-  background: var(--marca-oscura);
-  border-color: var(--marca-oscura);
+@media (hover: hover) {
+  .primario:hover:not(:disabled) {
+    background: var(--marca-oscura);
+    border-color: var(--marca-oscura);
+  }
 }
 
 .primario:disabled {
@@ -201,8 +229,10 @@ button {
   border: 2px solid var(--marca);
 }
 
-.secundario:hover {
-  background: var(--marca-suave);
+@media (hover: hover) {
+  .secundario:hover {
+    background: var(--marca-suave);
+  }
 }
 
 .peligro {
@@ -211,8 +241,10 @@ button {
   border: 2px solid var(--rojo);
 }
 
-.peligro:hover:not(:disabled) {
-  background: var(--rojo-fondo);
+@media (hover: hover) {
+  .peligro:hover:not(:disabled) {
+    background: var(--rojo-fondo);
+  }
 }
 
 .peligro.solido {
@@ -220,8 +252,10 @@ button {
   color: var(--blanco);
 }
 
-.peligro.solido:hover:not(:disabled) {
-  background: var(--rojo-oscuro);
+@media (hover: hover) {
+  .peligro.solido:hover:not(:disabled) {
+    background: var(--rojo-oscuro);
+  }
 }
 
 .peligro:disabled {
@@ -236,7 +270,8 @@ button {
   font-weight: 700;
   text-decoration: underline;
   margin-left: 8px;
-  padding: 4px;
+  padding: 4px 8px;
+  min-height: 44px;
 }
 
 /* ---------- Campos ---------- */
@@ -440,8 +475,10 @@ input[type='checkbox'] {
   transition: background-color 0.15s, transform 120ms var(--salida);
 }
 
-.login-form button[type='submit']:hover:not(:disabled) {
-  background: var(--marca-oscura);
+@media (hover: hover) {
+  .login-form button[type='submit']:hover:not(:disabled) {
+    background: var(--marca-oscura);
+  }
 }
 
 .login-form button[type='submit']:active:not(:disabled) {
@@ -1364,8 +1401,36 @@ td strong {
   padding: 24px;
   width: 100%;
   max-width: 440px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 16px 48px rgb(0 0 0 / 0.3);
   animation: entra 0.25s var(--salida);
+}
+
+/* Celular: hoja anclada abajo a todo el ancho, con los botones apilados. */
+@media (max-width: 479px) {
+  .fondo-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: none;
+    border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
+    padding: 22px max(18px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
+  }
+
+  .modal-acciones {
+    flex-direction: column;
+  }
+
+  .modal-acciones button {
+    width: 100%;
+    min-height: 48px;
+  }
 }
 
 .modal h2 {
