@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, Entrada, Icono, Rayas, Text, Titulo } from '../components/ui';
 
 // Segundos tras los que se avisa que el servidor (Render gratis) está despertando.
@@ -66,7 +66,7 @@ export default function LoginScreen({ onLoginSuccess }) {
   return (
     // Degradado de la marca a pantalla completa; la hoja blanca con el formulario queda pegada abajo.
     <LinearGradient
-      colors={['#0a9bd0', '#007cab', '#004e6e']}
+      colors={colores.degradado}
       // El tono más claro solo ocupa la esquina de las franjas: el texto pequeño queda sobre azul
       // oscuro (blanco sobre #0a9bd0 es 3.2:1; sobre este degradado, 4.7:1 o más).
       locations={[0, 0.07, 1]}
@@ -104,7 +104,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </View>
 
           <Entrada estilo={styles.entrada}>
-            <View style={[styles.hoja, { paddingBottom: 24 + insets.bottom }]}>
+            <View style={[styles.hoja, { paddingBottom: espacio.xl + insets.bottom }]}>
               <View style={styles.formulario}>
                 <Titulo estilo={styles.hojaTitulo}>Bienvenido de nuevo</Titulo>
 
@@ -188,42 +188,42 @@ const styles = StyleSheet.create({
   },
   // Franjas inclinadas arriba a la derecha, detrás del titular; no llegan a la línea de apoyo.
   rayas: { right: -14, top: 16, bottom: undefined, height: 120 },
-  marca: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  marca: { flexDirection: 'row', alignItems: 'center', gap: espacio.m },
   logoMarco: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logo: { width: 52, height: 52, resizeMode: 'contain' },
   marcaTextos: { flexShrink: 1 },
-  marcaNombre: { fontFamily: fuente.extra, fontSize: 17, color: '#fff' },
-  marcaSubtitulo: { fontFamily: fuente.media, fontSize: 12, color: '#fff', opacity: 0.95 },
+  marcaNombre: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.blanco },
+  marcaSubtitulo: { ...tipo.apoyo, color: colores.blanco, opacity: 0.95 },
   titular: {
     marginTop: 28,
     fontFamily: fuente.extra,
-    fontSize: 32,
+    fontSize: tipo.display.fontSize,
     lineHeight: 34,
-    color: '#fff',
+    color: colores.blanco,
   },
-  acento: { fontFamily: fuente.extra, color: '#a8e6ff' },
-  apoyo: { marginTop: 8, fontFamily: fuente.media, fontSize: 13.5, color: '#fff' },
+  acento: { fontFamily: fuente.extra, color: colores.acentoClaro },
+  apoyo: { ...tipo.apoyo, marginTop: espacio.s, color: colores.blanco },
 
   entrada: { marginTop: 'auto' },
   hoja: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 24,
+    backgroundColor: colores.blanco,
+    borderTopLeftRadius: radio.hoja,
+    borderTopRightRadius: radio.hoja,
+    paddingTop: espacio.xl,
     paddingHorizontal: 22,
   },
   formulario: { width: '100%', maxWidth: 420, alignSelf: 'center' },
-  hojaTitulo: { fontSize: 19, marginBottom: 14 },
-  ojo: { padding: 4 },
+  hojaTitulo: { fontSize: tipo.subtitulo.fontSize, marginBottom: 14 },
+  ojo: { padding: espacio.xs },
   aviso: { marginBottom: 14 },
-  boton: { marginTop: 6, minHeight: 54, borderRadius: 16 },
+  boton: { marginTop: 6, minHeight: 54, borderRadius: radio.grande },
   avisoLento: { marginTop: 14 },
-  pie: { marginTop: 14, textAlign: 'center', fontFamily: fuente.media, fontSize: 12, color: colores.tenue },
+  pie: { ...tipo.apoyo, marginTop: 14, textAlign: 'center', color: colores.tenue },
 });

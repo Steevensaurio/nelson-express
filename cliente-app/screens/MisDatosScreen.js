@@ -4,14 +4,15 @@ import api from '../services/api';
 import { guardar as guardarEnCache } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
-import { colores } from '../constants/tema';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
+import { colores, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, estiloTarjeta } from '../components/ui';
 
 const pedirPerfil = pedir('/perfil/');
 
 export default function MisDatosScreen({ navigation }) {
   // Mismo perfil (y misma clave) que Negocios y Perfil: si ya está en caché el formulario sale lleno al instante.
-  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const [nombre, setNombre] = useState(perfil?.first_name ?? '');
   const [apellido, setApellido] = useState(perfil?.last_name ?? '');
   const [telefono, setTelefono] = useState(perfil?.telefono ?? '');
@@ -90,7 +91,7 @@ export default function MisDatosScreen({ navigation }) {
         </View>
 
         {error || (errorCarga && !perfil) ? (
-          <Aviso tipo="error">{error || 'No se pudieron cargar tus datos'}</Aviso>
+          <Aviso tipo="error">{error || 'No pudimos cargar tus datos. Revisa tu conexión.'}</Aviso>
         ) : null}
 
         <Boton
@@ -108,7 +109,7 @@ export default function MisDatosScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, gap: 14 },
+  contenido: { padding: espacio.l, gap: 14 },
   tarjeta: { ...estiloTarjeta },
   ultimo: { marginBottom: 0 },
 });

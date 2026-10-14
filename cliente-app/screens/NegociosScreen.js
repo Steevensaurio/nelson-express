@@ -5,7 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
-import { colores, fuente } from '../constants/tema';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
+import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
 import { filtrarNegocios } from '../constants/negocios';
 import { Aviso, AvisosCarga, Boton, BotonEncargo, Cabecera, Entrada, Esqueleto, Icono, Presionable, Text, Titulo } from '../components/ui';
 
@@ -48,8 +49,8 @@ const pedirPerfil = pedir('/perfil/');
 export default function NegociosScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   // Lo último conocido se pinta al instante y se refresca por detrás (el perfil, que se comparte con otras pantallas, solo cada 60 s).
-  const { datos, vinoDeCache, cargando, error, lento, recargar } = useCargaRapida('negocios', pedirNegocios, { maxEdad: 60000 });
-  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos, vinoDeCache, cargando, error, lento, recargar } = useCargaRapida('negocios', pedirNegocios, { maxEdad: MAX_EDAD_MS });
+  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const negocios = datos ?? SIN_NEGOCIOS;
   const nombre = perfil?.first_name ?? '';
   const [busqueda, setBusqueda] = useState('');
@@ -111,7 +112,7 @@ export default function NegociosScreen({ navigation }) {
         }
         ListEmptyComponent={
           cargando ? (
-            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               {[0, 1, 2, 3, 4, 5].map((i) => <FilaEsqueleto key={i} />)}
             </View>
           ) : error && datos === undefined ? (
@@ -163,23 +164,23 @@ const web = Platform.select({ web: { outlineStyle: 'none' }, default: {} });
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   flex: { flex: 1 },
-  lista: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 },
+  lista: { paddingHorizontal: espacio.l, paddingTop: 14, paddingBottom: 28 },
 
-  saludo: { fontSize: 22, lineHeight: 28, color: '#fff' },
+  saludo: { fontSize: tipo.titulo.fontSize, lineHeight: 28, color: colores.blanco },
   busca: {
     marginTop: 14,
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: colores.blanco,
     paddingHorizontal: 14,
   },
-  buscaFoco: { borderColor: '#0b2530' },
-  buscaInput: { flex: 1, minHeight: 44, fontFamily: fuente.media, fontSize: 16, color: colores.texto, ...web },
+  buscaFoco: { borderColor: colores.sombra },
+  buscaInput: { ...tipo.entrada, flex: 1, minHeight: 44, color: colores.texto, ...web },
 
   encargo: { marginBottom: 14 },
   avisoCarga: { marginBottom: 14 },
@@ -189,14 +190,14 @@ const styles = StyleSheet.create({
     minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: espacio.m,
     backgroundColor: colores.tarjeta,
-    borderRadius: 16,
+    borderRadius: radio.grande,
     paddingVertical: 10,
     paddingLeft: 10,
     paddingRight: 14,
     elevation: 1,
-    shadowColor: '#0b2530',
+    shadowColor: colores.sombra,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -207,20 +208,20 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 14,
-    backgroundColor: '#f1f4f6',
+    backgroundColor: colores.relleno,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoImagen: { width: '100%', height: '100%' },
   textos: { flex: 1, minWidth: 0 },
-  nombre: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  nombre: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
   nombreCerrado: { color: colores.tenue },
   estado: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: colores.verde },
-  esqueletoLinea: { marginTop: 8 },
-  estadoTexto: { flexShrink: 1, fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
+  esqueletoLinea: { marginTop: espacio.s },
+  estadoTexto: { ...tipo.apoyo, flexShrink: 1, color: colores.tenue },
 
-  vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },
-  aviso: { gap: 12, marginTop: 10 },
+  vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: tipo.cuerpo.fontSize },
+  aviso: { gap: espacio.m, marginTop: 10 },
 });

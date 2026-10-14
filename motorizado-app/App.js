@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
-import { colores, fuente, opcionesCabecera } from './constants/tema';
+import { colores, fuente, opcionesCabecera, tipo } from './constants/tema';
 import { calentarServidor } from './services/api';
 
 // El splash se queda hasta que la tipografía de marca esté lista, para no mostrar un cambio de letra.
@@ -41,7 +41,7 @@ function MainTabs() {
         ...opcionesCabecera,
         tabBarActiveTintColor: colores.primarioOscuro,
         tabBarInactiveTintColor: colores.suave,
-        tabBarLabelStyle: { fontFamily: fuente.negrita, fontSize: 12 },
+        tabBarLabelStyle: { fontFamily: fuente.negrita, fontSize: tipo.etiqueta.fontSize },
         tabBarStyle: { backgroundColor: colores.tarjeta, borderTopColor: colores.borde },
       })}
     >

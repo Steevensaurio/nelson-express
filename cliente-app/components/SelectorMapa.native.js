@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Boton, Icono, Text } from './ui';
 
 // Mismo mapa gratuito (Leaflet + OpenStreetMap, sin API key) que ya usa el panel del despachador,
@@ -159,7 +159,7 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
       </Pressable>
 
       {coordenada && (
-        <View style={[styles.barra, { paddingBottom: 12 + insets.bottom }]}>
+        <View style={[styles.barra, { paddingBottom: espacio.m + insets.bottom }]}>
           <Boton
             titulo={confirmando ? 'Obteniendo dirección…' : 'Confirmar ubicación'}
             icono="checkmark"
@@ -175,7 +175,7 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
 const styles = StyleSheet.create({
   container: { flex: 1 },
   cargandoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo },
-  cargandoTexto: { marginTop: 12, color: colores.tenue, fontSize: 16 },
+  cargandoTexto: { marginTop: espacio.m, color: colores.tenue, fontSize: tipo.cuerpo.fontSize },
   mapa: { flex: 1 },
   ayuda: {
     position: 'absolute',
@@ -183,13 +183,13 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    padding: 12,
+    gap: espacio.s,
+    backgroundColor: colores.blanco,
+    padding: espacio.m,
     borderRadius: radio.medio,
     elevation: 4,
   },
-  ayudaTexto: { flex: 1, fontSize: 14, color: colores.texto },
+  ayudaTexto: { flex: 1, fontSize: tipo.cuerpo.fontSize, color: colores.texto },
   cancelarBoton: {
     position: 'absolute',
     left: 12,
@@ -197,17 +197,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
+    backgroundColor: colores.blanco,
+    paddingHorizontal: espacio.l,
     borderRadius: radio.pastilla,
     elevation: 4,
   },
   cancelarPresionado: { backgroundColor: colores.peligroSuave },
-  cancelarTexto: { color: colores.peligro, fontFamily: fuente.extra, fontSize: 15 },
+  cancelarTexto: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.peligro },
   barra: {
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingTop: espacio.m,
     borderTopWidth: 1,
     borderTopColor: colores.borde,
   },

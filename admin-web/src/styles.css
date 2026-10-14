@@ -18,7 +18,46 @@
   --marca-oscura: #005f84;
   --marca-suave: #e0f5fd;
   --sombra: 0 1px 3px rgb(11 37 48 / 0.07);
+  --radio-chico: 8px;
   --radio: 12px;
+  --radio-grande: 16px;
+  --radio-hoja: 30px;
+  --blanco: #fff;
+  --rojo-oscuro: #8c1d18;
+  --rojo-borde: #efb8b3;
+  --rojo-texto: #7a1b14;
+  --alerta-borde: #f1cf9b;
+  --alerta-texto: #5c3300;
+  --ok-fondo: #e6f6ec;
+  --ok-borde: #b3dcc3;
+  --ok-texto: #14482c;
+  --info-texto: #0b3a4d;
+  --neutro: #5b6670;
+  --vivo: #1fa855;
+  --linea: #dfe5e9;
+  --relleno: #eceff1;
+  --acento-palido: #f4fbfe;
+  /* Login: degradado de la marca, acento de la palabra destacada y relleno de los campos (igual que las apps). */
+  --degradado-1: #0a9bd0;
+  --degradado-2: #007cab;
+  --degradado-3: #004e6e;
+  --acento-claro: #a8e6ff;
+  --campo-relleno: #f1f5f7;
+  /* Escala tipográfica (misma que las apps, con los tamaños de escritorio): tamaño / interlineado. */
+  --t-mini: 10px;
+  --t-etiqueta: 13px;
+  --t-etiqueta-lh: 18px;
+  --t-apoyo: 14px;
+  --t-apoyo-lh: 20px;
+  --t-cuerpo: 16px;
+  --t-cuerpo-lh: 22px;
+  --t-subtitulo: 20px;
+  --t-subtitulo-lh: 26px;
+  --t-titulo: 24px;
+  --t-titulo-lh: 30px;
+  --t-precio: 28px;
+  --t-display: 32px;
+  --t-display-lh: 36px;
   --fuente: 'Nunito', system-ui, sans-serif;
   --salida: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;
@@ -34,7 +73,7 @@ body {
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);
-  font-size: 16px;
+  font-size: var(--t-cuerpo);
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   caret-color: var(--marca);
@@ -42,12 +81,13 @@ body {
 
 ::selection {
   background: var(--marca);
-  color: #fff;
+  color: var(--blanco);
 }
 
 h1,
 h2 {
   margin: 0;
+  font-size: var(--t-titulo);
   font-weight: 800;
   line-height: 1.2;
 }
@@ -107,9 +147,9 @@ button {
   top: -60px;
   z-index: 100;
   background: var(--marca-oscura);
-  color: #fff;
+  color: var(--blanco);
   padding: 10px 16px;
-  border-radius: 10px;
+  border-radius: var(--radio);
   font-weight: 700;
   text-decoration: none;
 }
@@ -130,9 +170,9 @@ button {
 .peligro,
 .primario {
   min-height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radio);
   padding: 8px 16px;
-  font-size: 15px;
+  font-size: var(--t-cuerpo);
   font-weight: 700;
   transition: background-color 0.15s, border-color 0.15s, transform 120ms var(--salida);
 }
@@ -145,7 +185,7 @@ button {
 
 .primario {
   background: var(--marca);
-  color: #fff;
+  color: var(--blanco);
   border: 2px solid var(--marca);
   padding: 10px 24px;
 }
@@ -156,14 +196,14 @@ button {
 }
 
 .primario:disabled {
-  background: #dfe3e6;
-  border-color: #dfe3e6;
-  color: #5a6268;
+  background: var(--linea);
+  border-color: var(--linea);
+  color: var(--tenue);
   cursor: not-allowed;
 }
 
 .secundario {
-  background: #fff;
+  background: var(--blanco);
   color: var(--marca-oscura);
   border: 2px solid var(--marca);
 }
@@ -173,7 +213,7 @@ button {
 }
 
 .peligro {
-  background: #fff;
+  background: var(--blanco);
   color: var(--rojo);
   border: 2px solid var(--rojo);
 }
@@ -184,11 +224,11 @@ button {
 
 .peligro.solido {
   background: var(--rojo);
-  color: #fff;
+  color: var(--blanco);
 }
 
 .peligro.solido:hover:not(:disabled) {
-  background: #8c1d18;
+  background: var(--rojo-oscuro);
 }
 
 .peligro:disabled {
@@ -221,8 +261,8 @@ select,
 textarea {
   padding: 10px 12px;
   border: 2px solid var(--borde-campo);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: var(--radio-chico);
+  background: var(--blanco);
 }
 
 input:not([type='checkbox']):focus-visible,
@@ -238,7 +278,7 @@ select {
 }
 
 select:disabled {
-  background: #eceff1;
+  background: var(--relleno);
   color: var(--tenue);
 }
 
@@ -252,9 +292,9 @@ input[type='checkbox'] {
 
 /* Móvil: el degradado de la marca llena la pantalla, la marca arriba y la hoja blanca con el formulario pegada abajo.
    Escritorio (≥900px): pantalla dividida, degradado a la izquierda y formulario centrado en blanco a la derecha.
-   El tono claro del degradado (#0a9bd0, blanco encima solo 3.2:1) queda en la esquina de las franjas, donde no hay texto pequeño. */
+   El tono claro del degradado (--degradado-1, blanco encima solo 3.2:1) queda en la esquina de las franjas, donde no hay texto pequeño. */
 .login {
-  --degradado: linear-gradient(200deg, #0a9bd0 0%, #007cab 7%, #004e6e 100%);
+  --degradado: linear-gradient(200deg, var(--degradado-1) 0%, var(--degradado-2) 7%, var(--degradado-3) 100%);
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -266,7 +306,7 @@ input[type='checkbox'] {
   position: relative;
   overflow: hidden;
   padding: calc(20px + env(safe-area-inset-top, 0px)) 22px 28px;
-  color: #fff;
+  color: var(--blanco);
 }
 
 /* Las rayas de velocidad de la marca (tres barras inclinadas) arriba a la derecha, detrás del titular. */
@@ -279,9 +319,9 @@ input[type='checkbox'] {
   opacity: 0.12;
   transform: skewX(-24deg);
   background:
-    linear-gradient(#fff, #fff) 0 0 / 38px 100% no-repeat,
-    linear-gradient(#fff, #fff) 54px 0 / 18px 100% no-repeat,
-    linear-gradient(#fff, #fff) 88px 0 / 8px 100% no-repeat;
+    linear-gradient(var(--blanco), var(--blanco)) 0 0 / 38px 100% no-repeat,
+    linear-gradient(var(--blanco), var(--blanco)) 54px 0 / 18px 100% no-repeat,
+    linear-gradient(var(--blanco), var(--blanco)) 88px 0 / 8px 100% no-repeat;
 }
 
 .login-marca {
@@ -301,18 +341,18 @@ input[type='checkbox'] {
   height: 56px;
   padding: 2px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--blanco);
   object-fit: contain;
 }
 
 .login-marca-nombre {
-  font-size: 17px;
+  font-size: var(--t-cuerpo);
   font-weight: 800;
   line-height: 1.2;
 }
 
 .login-marca-sub {
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   font-weight: 600;
 }
 
@@ -322,7 +362,7 @@ input[type='checkbox'] {
 }
 
 .login-titular {
-  font-size: 32px;
+  font-size: var(--t-display);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -330,20 +370,20 @@ input[type='checkbox'] {
 
 /* Solo en texto grande (3:1): el celeste claro no llega a 4.5:1 sobre el degradado. */
 .login-acento {
-  color: #a8e6ff;
+  color: var(--acento-claro);
 }
 
 .login-apoyo {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
 .login-hoja {
   margin-top: auto;
   padding: 24px 22px max(24px, env(safe-area-inset-bottom, 0px));
-  background: #fff;
-  border-radius: 30px 30px 0 0;
+  background: var(--blanco);
+  border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
 }
 
 @keyframes sube {
@@ -369,14 +409,14 @@ input[type='checkbox'] {
 }
 
 .login-form h1 {
-  font-size: 24px;
+  font-size: var(--t-titulo);
 }
 
 .login-form label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 700;
   color: var(--texto);
 }
@@ -386,9 +426,9 @@ input[type='checkbox'] {
   min-height: 50px;
   padding: 0 14px;
   border: 1.5px solid var(--borde-campo);
-  border-radius: 14px;
-  background: #f1f5f7;
-  font-size: 16px;
+  border-radius: var(--radio-grande);
+  background: var(--campo-relleno);
+  font-size: var(--t-cuerpo);
   font-weight: 600;
 }
 
@@ -396,10 +436,10 @@ input[type='checkbox'] {
   min-height: 54px;
   padding: 12px;
   border: 0;
-  border-radius: 16px;
+  border-radius: var(--radio-grande);
   background: var(--marca);
-  color: #fff;
-  font-size: 16px;
+  color: var(--blanco);
+  font-size: var(--t-cuerpo);
   font-weight: 800;
   box-shadow: 0 8px 16px rgb(0 124 171 / 0.35);
   transition: background-color 0.15s, transform 120ms var(--salida);
@@ -414,8 +454,8 @@ input[type='checkbox'] {
 }
 
 .login-form button[type='submit']:disabled {
-  background: #dfe3e6;
-  color: #5a6268;
+  background: var(--linea);
+  color: var(--tenue);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -423,10 +463,10 @@ input[type='checkbox'] {
 /* Aviso de servidor lento: vacío no ocupa espacio (cancela el hueco del gap) pero sigue en el árbol para que se anuncie. */
 .login-lento {
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--marca-suave);
-  color: #0b3a4d;
-  font-size: 14px;
+  color: var(--info-texto);
+  font-size: var(--t-apoyo);
   font-weight: 700;
 }
 
@@ -437,7 +477,7 @@ input[type='checkbox'] {
 
 .login-pie {
   text-align: center;
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   color: var(--tenue);
 }
 
@@ -445,7 +485,7 @@ input[type='checkbox'] {
   .login {
     display: grid;
     grid-template-columns: 55fr 45fr;
-    background: #fff;
+    background: var(--blanco);
   }
 
   .login-fondo {
@@ -462,9 +502,9 @@ input[type='checkbox'] {
     width: 220px;
     height: 58%;
     background:
-      linear-gradient(#fff, #fff) 0 0 / 90px 100% no-repeat,
-      linear-gradient(#fff, #fff) 126px 0 / 44px 100% no-repeat,
-      linear-gradient(#fff, #fff) 200px 0 / 20px 100% no-repeat;
+      linear-gradient(var(--blanco), var(--blanco)) 0 0 / 90px 100% no-repeat,
+      linear-gradient(var(--blanco), var(--blanco)) 126px 0 / 44px 100% no-repeat,
+      linear-gradient(var(--blanco), var(--blanco)) 200px 0 / 20px 100% no-repeat;
   }
 
   .login-logo {
@@ -473,11 +513,11 @@ input[type='checkbox'] {
   }
 
   .login-marca-nombre {
-    font-size: 20px;
+    font-size: var(--t-subtitulo);
   }
 
   .login-marca-sub {
-    font-size: 14px;
+    font-size: var(--t-apoyo);
   }
 
   .login-texto {
@@ -494,7 +534,7 @@ input[type='checkbox'] {
   .login-apoyo {
     margin-top: 16px;
     max-width: 420px;
-    font-size: 18px;
+    font-size: var(--t-subtitulo);
   }
 
   .login-hoja {
@@ -507,17 +547,17 @@ input[type='checkbox'] {
   }
 
   .login-form h1 {
-    font-size: 28px;
+    font-size: var(--t-precio);
   }
 }
 
 .error {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--rojo-fondo);
   color: var(--rojo);
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
@@ -562,7 +602,7 @@ input[type='checkbox'] {
   border-bottom: 4px solid transparent;
   color: var(--tenue);
   text-decoration: none;
-  font-size: 15px;
+  font-size: var(--t-cuerpo);
   font-weight: 700;
   transition: color 0.15s, border-color 0.15s;
 }
@@ -596,7 +636,7 @@ input[type='checkbox'] {
 
 .contenido > h1:not(.solo-lectores),
 .contenido > h2 {
-  font-size: 22px;
+  font-size: var(--t-titulo);
 }
 
 /* Avisos: fondo teñido + filete fino del mismo tono (sin franja lateral). */
@@ -605,32 +645,32 @@ input[type='checkbox'] {
 .aviso-ok {
   margin: 0;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radio-chico);
   border: 1px solid;
   font-weight: 600;
 }
 
 .aviso {
   background: var(--alerta-fondo);
-  border-color: #f1cf9b;
-  color: #5c3300;
+  border-color: var(--alerta-borde);
+  color: var(--alerta-texto);
 }
 
 .error-banner {
   background: var(--rojo-fondo);
-  border-color: #f0b8b3;
-  color: #7a1b14;
+  border-color: var(--rojo-borde);
+  color: var(--rojo-texto);
 }
 
 .aviso-ok {
-  background: #e6f6ec;
-  border-color: #a9d8bb;
-  color: #14482c;
+  background: var(--ok-fondo);
+  border-color: var(--ok-borde);
+  color: var(--ok-texto);
 }
 
 .tenue {
   color: var(--tenue);
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
 }
 
 .cursiva {
@@ -674,12 +714,12 @@ button.resumen-tarjeta:active:not(:disabled) {
 .resumen-tarjeta.destacada,
 button.resumen-tarjeta.activa:hover {
   background: var(--marca);
-  color: #fff;
+  color: var(--blanco);
 }
 
 .resumen-tarjeta.activa .resumen-texto,
 .resumen-tarjeta.destacada .resumen-texto {
-  color: #fff;
+  color: var(--blanco);
 }
 
 .resumen-tarjeta.urgente:not(.activa) .resumen-numero {
@@ -687,13 +727,13 @@ button.resumen-tarjeta.activa:hover {
 }
 
 .resumen-numero {
-  font-size: 28px;
+  font-size: var(--t-precio);
   font-weight: 800;
   line-height: 1.1;
 }
 
 .resumen-texto {
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   font-weight: 700;
   color: var(--tenue);
 }
@@ -709,7 +749,7 @@ button.resumen-tarjeta.activa:hover {
 
 .motorizados h2,
 .tabla-encabezado h2 {
-  font-size: 20px;
+  font-size: var(--t-subtitulo);
 }
 
 .motorizados ul {
@@ -728,7 +768,7 @@ button.resumen-tarjeta.activa:hover {
   column-gap: 10px;
   align-items: center;
   padding: 8px 16px 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radio-chico);
   border: 1px solid var(--borde);
 }
 
@@ -750,7 +790,7 @@ button.resumen-tarjeta.activa:hover {
 }
 
 .motorizados li span {
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   color: var(--tenue);
 }
 
@@ -799,7 +839,7 @@ table {
 
 th {
   text-align: left;
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   color: var(--tenue);
   font-weight: 700;
   padding: 10px 12px;
@@ -813,14 +853,14 @@ th {
 td {
   height: 76px;
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--t-cuerpo);
   border-bottom: 1px solid var(--borde);
   vertical-align: middle;
   transition: background-color 120ms;
 }
 
 tbody tr:hover td {
-  background: #f8fbfd;
+  background: var(--acento-palido);
 }
 
 .derecha {
@@ -865,7 +905,7 @@ td strong {
 /* El pedido sin asignar se destaca por el fondo ámbar y el "hace X min" en la celda del número. */
 .hace {
   color: var(--alerta);
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   font-weight: 800;
 }
 
@@ -878,15 +918,15 @@ td strong {
 /* ---------- Estados ---------- */
 
 .insignia {
-  --tono: #5b6670;
+  --tono: var(--neutro);
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 3px 10px 3px 4px;
-  border-radius: 8px;
+  border-radius: var(--radio-chico);
   background: var(--tono);
-  color: #fff;
-  font-size: 13px;
+  color: var(--blanco);
+  font-size: var(--t-etiqueta);
   font-weight: 800;
 }
 
@@ -898,26 +938,26 @@ td strong {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--blanco);
   color: var(--tono);
-  font-size: 10px;
+  font-size: var(--t-mini);
   line-height: 1;
 }
 
 .insignia.RECOGIDO {
-  --tono: #b45309;
+  --tono: var(--alerta);
 }
 
 .insignia.EN_CAMINO {
-  --tono: #1a5fc4;
+  --tono: var(--azul);
 }
 
 .insignia.ENTREGADO {
-  --tono: #23744a;
+  --tono: var(--verde);
 }
 
 .insignia.CANCELADO {
-  --tono: #b3261e;
+  --tono: var(--rojo);
 }
 
 .punto-vivo {
@@ -925,12 +965,12 @@ td strong {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #8a8a8a;
+  background: var(--borde-campo);
   margin-right: 6px;
 }
 
 .punto-vivo.activo {
-  background: #1fa855;
+  background: var(--vivo);
 }
 
 /* ---------- Cancelación (modal) ---------- */
@@ -948,7 +988,7 @@ td strong {
 
 .modal {
   background: var(--tarjeta);
-  border-radius: 16px;
+  border-radius: var(--radio-grande);
   padding: 24px;
   width: 100%;
   max-width: 440px;
@@ -958,13 +998,13 @@ td strong {
 
 .modal h2 {
   margin: 0 0 6px;
-  font-size: 22px;
+  font-size: var(--t-titulo);
 }
 
 .modal label {
   display: block;
   margin: 16px 0 6px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
@@ -997,7 +1037,7 @@ td strong {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
@@ -1009,12 +1049,12 @@ td strong {
 
 .atajos .secundario[aria-pressed='true'] {
   background: var(--marca);
-  color: #fff;
+  color: var(--blanco);
 }
 
 .resumen-tarjeta.activa .resumen-numero,
 .resumen-tarjeta.destacada .resumen-numero {
-  color: #fff;
+  color: var(--blanco);
 }
 
 /* ---------- Nuevo encargo ---------- */
@@ -1040,7 +1080,7 @@ td strong {
 .formulario-encargo legend {
   float: left;
   grid-column: 1 / -1;
-  font-size: 20px;
+  font-size: var(--t-subtitulo);
   font-weight: 800;
   padding: 0;
   margin-bottom: 2px;
@@ -1050,7 +1090,7 @@ td strong {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
@@ -1070,7 +1110,7 @@ td strong {
   gap: 14px;
   background: var(--marca-suave);
   border: 2px dashed var(--marca);
-  border-radius: 12px;
+  border-radius: var(--radio);
   padding: 12px 14px;
 }
 
@@ -1089,7 +1129,7 @@ td strong {
 
 .selector-mapa-ayuda {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--t-etiqueta);
   color: var(--tenue);
 }
 
@@ -1097,7 +1137,7 @@ td strong {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--t-apoyo);
   font-weight: 600;
 }
 
@@ -1113,7 +1153,7 @@ td strong {
 }
 
 .encargo-envio {
-  font-size: 22px;
+  font-size: var(--t-titulo);
   font-weight: 800;
   color: var(--marca-oscura);
 }

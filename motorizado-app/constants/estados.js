@@ -1,3 +1,5 @@
+import { colores } from './tema';
+
 export const siguienteEstado = {
   ACEPTADO: 'RECOGIDO',
   PENDIENTE: 'RECOGIDO',
@@ -7,20 +9,20 @@ export const siguienteEstado = {
 
 // Color del botón que lleva al SIGUIENTE estado. Todos dan 4.5:1 o más con texto blanco.
 export const colorAccion = {
-  RECOGIDO: '#b45309',
-  EN_CAMINO: '#1a5fc4',
-  ENTREGADO: '#23744a',
+  RECOGIDO: colores.naranja,
+  EN_CAMINO: colores.enCamino,
+  ENTREGADO: colores.verde,
 };
 
 // Mismos tonos de siempre (gris, naranja, azul, verde, rojo), oscurecidos lo justo para que el texto
 // blanco se lea (4.5:1). El estado nunca va solo en color: siempre lleva ícono y palabra.
 export const colorEstado = {
-  PENDIENTE: '#5b6670',
-  ACEPTADO: '#5b6670',
-  RECOGIDO: '#b45309',
-  EN_CAMINO: '#1a5fc4',
-  ENTREGADO: '#23744a',
-  CANCELADO: '#b3261e',
+  PENDIENTE: colores.neutro,
+  ACEPTADO: colores.neutro,
+  RECOGIDO: colores.naranja,
+  EN_CAMINO: colores.enCamino,
+  ENTREGADO: colores.verde,
+  CANCELADO: colores.peligro,
 };
 
 export const etiquetaEstado = {

@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text as RNText, TextInput, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colores, escalaTexto, familiaPorPeso, fuente, radio } from '../constants/tema';
+import { colores, escalaTexto, espacio, familiaPorPeso, fuente, radio, tipo } from '../constants/tema';
 import { colorEstado, etiquetaEstado, iconoEstado } from '../constants/estados';
 
 // Text de la app: con familias de Nunito cada peso es su propia fuente, así que traduce `fontWeight` a la
@@ -32,7 +32,7 @@ export function Icono({ nombre, tamano = 20, color = colores.texto, estilo }) {
 export const estiloTarjeta = {
   backgroundColor: colores.tarjeta,
   borderRadius: radio.grande,
-  padding: 16,
+  padding: espacio.l,
   borderWidth: 1,
   borderColor: colores.borde,
 };
@@ -54,7 +54,9 @@ export const movimientoReducido = () => reduccion === true;
 // Valor 0..1 que sube una sola vez al montar el componente (de `desde` a 1). Sin animar (`activo` falso o
 // reducir movimiento) arranca ya en 1: nada parpadea ni se mueve.
 function useAparecer({ activo = true, desde = 0, duracion = 160, retraso = 0 } = {}) {
-  const v = useRef(new Animated.Value(activo && reduccion !== true ? desde : 1)).current;
+  const ref = useRef(null);
+  if (ref.current === null) ref.current = new Animated.Value(activo && reduccion !== true ? desde : 1);
+  const v = ref.current;
   useEffect(() => {
     if (!activo) return undefined;
     let vivo = true;
@@ -80,7 +82,9 @@ const PresionableAnimado = Animated.createAnimatedComponent(Pressable);
 // o función de `{ pressed }`. Usa solo transform (hilo nativo) y no se mueve si el usuario pidió reducir el movimiento.
 // Se interrumpe sin saltos: soltar a mitad de camino regresa desde la escala actual.
 export function Presionable({ style, onPressIn, onPressOut, ...props }) {
-  const escala = useRef(new Animated.Value(1)).current;
+  const ref = useRef(null);
+  if (ref.current === null) ref.current = new Animated.Value(1);
+  const escala = ref.current;
   const [pressed, setPressed] = useState(false);
   const mover = (hacia, duracion) => {
     if (movimientoReducido()) return;
@@ -97,19 +101,19 @@ export function Presionable({ style, onPressIn, onPressOut, ...props }) {
 }
 
 const VARIANTES = {
-  primario: { fondo: colores.primario, presionado: colores.primarioOscuro, texto: '#fff', borde: colores.primario },
-  secundario: { fondo: '#fff', presionado: colores.acentoSuave, texto: colores.primarioOscuro, borde: colores.primario },
-  peligro: { fondo: colores.peligro, presionado: '#8c1d18', texto: '#fff', borde: colores.peligro },
-  peligroSuave: { fondo: '#fff', presionado: colores.peligroSuave, texto: colores.peligro, borde: colores.peligro },
+  primario: { fondo: colores.primario, presionado: colores.primarioOscuro, texto: colores.blanco, borde: colores.primario },
+  secundario: { fondo: colores.tarjeta, presionado: colores.acentoSuave, texto: colores.primarioOscuro, borde: colores.primario },
+  peligro: { fondo: colores.peligro, presionado: colores.peligroOscuro, texto: colores.blanco, borde: colores.peligro },
+  peligroSuave: { fondo: colores.tarjeta, presionado: colores.peligroSuave, texto: colores.peligro, borde: colores.peligro },
   fantasma: { fondo: 'transparent', presionado: colores.acentoSuave, texto: colores.primarioOscuro, borde: 'transparent' },
 };
 
 // Botón con altura mínima de 48dp, feedback al presionar y semántica completa para lectores de pantalla.
 // `colorFondo` pinta el botón con un color propio (la acción de cada estado del pedido).
 export function Boton({ titulo, onPress, variante = 'primario', icono, deshabilitado, cargando, etiqueta, estilo, colorFondo }) {
-  const v = colorFondo ? { fondo: colorFondo, presionado: colorFondo, texto: '#fff', borde: colorFondo } : VARIANTES[variante];
+  const v = colorFondo ? { fondo: colorFondo, presionado: colorFondo, texto: colores.blanco, borde: colorFondo } : VARIANTES[variante];
   const inactivo = Boolean(deshabilitado || cargando);
-  const colorTexto = deshabilitado ? '#5a6268' : v.texto;
+  const colorTexto = deshabilitado ? colores.tenue : v.texto;
   return (
     <Presionable
       accessibilityRole="button"
@@ -219,21 +223,23 @@ export function FilaDato({ icono, titulo, children }) {
 }
 
 const AVISOS = {
-  error: { fondo: colores.peligroSuave, borde: '#efb8b3', texto: '#7a1b14', icono: 'alert-circle', color: colores.peligro, alerta: true },
-  alerta: { fondo: '#fff4e0', borde: '#f1cf9b', texto: '#5c3300', icono: 'alert-circle', color: colores.naranja, alerta: true },
-  info: { fondo: colores.acentoSuave, borde: '#b6e3f5', texto: colores.texto, icono: 'information-circle', color: colores.primarioOscuro },
-  ok: { fondo: '#e6f6ec', borde: '#b3dcc3', texto: '#14482c', icono: 'checkmark-circle', color: colores.verde },
+  error: { fondo: colores.peligroSuave, borde: colores.peligroBorde, texto: colores.peligroTexto, icono: 'alert-circle', color: colores.peligro, alerta: true },
+  alerta: { fondo: colores.alertaFondo, borde: colores.alertaBorde, texto: colores.alertaTexto, icono: 'alert-circle', color: colores.naranja, alerta: true },
+  info: { fondo: colores.acentoSuave, borde: colores.acentoBorde, texto: colores.texto, icono: 'information-circle', color: colores.primarioOscuro },
+  ok: { fondo: colores.okFondo, borde: colores.okBorde, texto: colores.okTexto, icono: 'checkmark-circle', color: colores.verde },
 };
 
 // Recuadro de aviso: fondo teñido con su propio filo e ícono. Sin franja de color a un lado.
 // Al aparecer (solo al montarse) se desvanece 160 ms subiendo 6 px, para que un aviso nuevo no «salte»; `animar={false}` lo omite.
-export function Aviso({ tipo = 'info', icono, children, estilo, animar = true }) {
-  const a = AVISOS[tipo];
-  const v = useAparecer({ activo: animar, duracion: 160 });
+// Los de alerta/error arrancan en 40 % de opacidad (nunca invisibles para TalkBack). Todos son región viva: el aviso de
+// «servidor despertando» (info) también se anuncia al aparecer.
+export function Aviso({ tipo: clase = 'info', icono, children, estilo, animar = true }) {
+  const a = AVISOS[clase];
+  const v = useAparecer({ activo: animar, desde: a.alerta ? 0.4 : 0, duracion: 160 });
   return (
     <Animated.View
       accessibilityRole={a.alerta ? 'alert' : undefined}
-      accessibilityLiveRegion={a.alerta ? 'polite' : undefined}
+      accessibilityLiveRegion="polite"
       style={[
         s.aviso,
         { backgroundColor: a.fondo, borderColor: a.borde },
@@ -255,36 +261,46 @@ export function AvisosCarga({ lento, error, hayDatos, estilo }) {
     return <Aviso tipo="info" estilo={estilo}>El servidor está despertando, puede tardar hasta un minuto…</Aviso>;
   }
   if (hayDatos && error) {
-    return <Aviso tipo="alerta" estilo={estilo}>No se pudo actualizar. Mostrando lo último guardado.</Aviso>;
+    return <Aviso tipo="alerta" estilo={estilo}>No pudimos actualizar. Mostrando lo último guardado.</Aviso>;
   }
   return null;
 }
 
 // Bloque gris que pulsa suave mientras llegan los datos. Es decorativo (aria-hidden): quien lo contiene
 // anuncia "Cargando" una sola vez. Quieto si el usuario pidió reducir el movimiento.
-export function Esqueleto({ ancho = '100%', alto = 16, radio = 8, estilo }) {
-  const v = useRef(new Animated.Value(1)).current;
+// Todos los bloques comparten UN valor animado y un solo bucle: pulsan en fase y cuestan una animación. El bucle arranca
+// con el primer bloque montado y se detiene al desmontarse el último; con «reducir movimiento» quedan quietos.
+const pulso = new Animated.Value(1);
+let usosPulso = 0;
+let buclePulso = null;
+function iniciarPulso() {
+  usosPulso += 1;
+  if (usosPulso > 1) return;
+  reduccionLista.then(() => {
+    if (usosPulso === 0 || reduccion || buclePulso) return;
+    const paso = (toValue) => Animated.timing(pulso, { toValue, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: nativo });
+    buclePulso = Animated.loop(Animated.sequence([paso(0.55), paso(1)]));
+    buclePulso.start();
+  });
+}
+function detenerPulso() {
+  usosPulso -= 1;
+  if (usosPulso > 0) return;
+  buclePulso?.stop();
+  buclePulso = null;
+  pulso.setValue(1);
+}
+
+export function Esqueleto({ ancho = '100%', alto = 16, radio: borde = radio.chico, estilo }) {
   useEffect(() => {
-    let vivo = true;
-    let pulso;
-    AccessibilityInfo.isReduceMotionEnabled().then((reducir) => {
-      if (!vivo || reducir) return;
-      const paso = (toValue) => Animated.timing(v, {
-        toValue,
-        duration: 900,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: Platform.OS !== 'web',
-      });
-      pulso = Animated.loop(Animated.sequence([paso(0.55), paso(1)]));
-      pulso.start();
-    });
-    return () => { vivo = false; pulso?.stop(); };
+    iniciarPulso();
+    return detenerPulso;
   }, []);
-  return <Animated.View aria-hidden style={[{ width: ancho, height: alto, borderRadius: radio, backgroundColor: '#e3e8ec', opacity: v }, estilo]} />;
+  return <Animated.View aria-hidden style={[{ width: ancho, height: alto, borderRadius: borde, backgroundColor: colores.borde, opacity: pulso }, estilo]} />;
 }
 
 // Rayas de velocidad, tomadas de las barras del logo: tres franjas inclinadas. Se recortan en el contenedor.
-export function Rayas({ color = '#fff', opacidad = 0.16, estilo }) {
+export function Rayas({ color = colores.blanco, opacidad = 0.16, estilo }) {
   return (
     <View pointerEvents="none" aria-hidden style={[s.rayas, estilo]}>
       {[38, 18, 8].map((ancho, i) => (
@@ -321,7 +337,7 @@ export function BotonEncargo({ titulo, subtitulo, onPress, estilo }) {
     >
       <Rayas estilo={s.encargoRayas} opacidad={0.16} />
       <View style={s.encargoIcono}>
-        <Icono nombre="cube-outline" tamano={28} color="#fff" />
+        <Icono nombre="cube-outline" tamano={28} color={colores.blanco} />
       </View>
       <View style={s.encargoTextos}>
         <Text style={s.encargoTitulo}>{titulo}</Text>
@@ -385,11 +401,11 @@ const s = StyleSheet.create({
     borderRadius: radio.medio,
     borderWidth: 1.5,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: espacio.s + 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: espacio.s,
   },
   botonSobrio: { opacity: 0.88 },
   botonSombra: {
@@ -399,50 +415,50 @@ const s = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 10,
   },
-  botonOff: { backgroundColor: '#dfe3e6', borderColor: '#dfe3e6' },
-  botonTexto: { fontFamily: fuente.extra, fontSize: 16 },
+  botonOff: { backgroundColor: colores.linea, borderColor: colores.linea },
+  botonTexto: { ...tipo.entrada, fontFamily: fuente.extra },
 
-  campo: { marginBottom: 14 },
-  etiqueta: { fontFamily: fuente.negrita, fontSize: 14, color: colores.texto, marginBottom: 6 },
+  campo: { marginBottom: espacio.m + 2 },
+  etiqueta: { ...tipo.cuerpoFuerte, color: colores.texto, marginBottom: 6 },
   caja: {
     minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colores.tarjeta,
     borderWidth: 1.5,
     borderColor: colores.bordeCampo,
     borderRadius: radio.medio,
     paddingHorizontal: 14,
   },
   // El ancho del borde es el mismo en reposo, foco y error: solo cambia el color (sin saltos de 0.5px).
-  cajaRelleno: { minHeight: 50, borderRadius: 14, borderWidth: 1.5, borderColor: colores.bordeCampo, backgroundColor: '#f1f5f7' },
-  etiquetaRelleno: { fontSize: 12.5 },
+  cajaRelleno: { minHeight: 50, borderRadius: radio.grande, borderWidth: 1.5, borderColor: colores.bordeCampo, backgroundColor: colores.campoRelleno },
+  etiquetaRelleno: { ...tipo.etiqueta },
   cajaFoco: { borderColor: colores.primario },
   cajaError: { borderColor: colores.peligro },
-  cajaBloqueada: { backgroundColor: '#eceff1' },
-  input: { flex: 1, fontFamily: fuente.media, fontSize: 16, color: colores.texto, paddingVertical: 12, ...web },
-  ayuda: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 6 },
-  error: { fontFamily: fuente.negrita, fontSize: 13, color: colores.peligro, marginTop: 6 },
+  cajaBloqueada: { backgroundColor: colores.relleno },
+  input: { flex: 1, ...tipo.entrada, color: colores.texto, paddingVertical: 12, ...web },
+  ayuda: { ...tipo.apoyo, color: colores.tenue, marginTop: 6 },
+  error: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.peligro, marginTop: 6 },
 
   insignia: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 8,
-    paddingVertical: 4,
+    borderRadius: radio.chico,
+    paddingVertical: espacio.xs,
     paddingLeft: 6,
     paddingRight: 10,
   },
-  insigniaIcono: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  insigniaTexto: { color: '#fff', fontFamily: fuente.negrita, fontSize: 13 },
+  insigniaIcono: { width: 16, height: 16, borderRadius: 8, backgroundColor: colores.blanco, alignItems: 'center', justifyContent: 'center' },
+  insigniaTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.blanco },
 
-  numeroPedido: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
+  numeroPedido: { ...tipo.entrada, fontFamily: fuente.negrita, color: colores.texto },
 
-  titulo: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto },
+  titulo: { fontFamily: tipo.titulo.fontFamily, fontSize: tipo.titulo.fontSize, color: colores.texto }, // sin lineHeight: las pantallas lo achican a 18
 
-  fila: { flexDirection: 'row', gap: 12, paddingVertical: 8 },
+  fila: { flexDirection: 'row', gap: espacio.m, paddingVertical: espacio.s },
   filaIcono: {
     width: 34,
     height: 34,
@@ -452,11 +468,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   filaCuerpo: { flex: 1 },
-  filaTitulo: { fontFamily: fuente.negrita, fontSize: 13, color: colores.suave },
+  filaTitulo: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.suave },
 
   aviso: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderWidth: 1, borderRadius: radio.medio, padding: 12 },
   avisoCuerpo: { flex: 1 },
-  avisoTexto: { fontFamily: fuente.media, fontSize: 14, lineHeight: 20 },
+  avisoTexto: { ...tipo.cuerpo },
 
   rayas: {
     position: 'absolute',
@@ -495,25 +511,25 @@ const s = StyleSheet.create({
   encargoPresionado: { backgroundColor: colores.primarioOscuro },
   encargoRayas: { right: 56 },
   encargoTextos: { flex: 1 },
-  encargoIcono: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
-  encargoTitulo: { fontFamily: fuente.extra, fontSize: 18, color: '#fff' },
-  encargoSubtitulo: { fontFamily: fuente.media, fontSize: 13, color: '#fff', marginTop: 2 },
-  encargoFlecha: { width: 48, height: 48, borderRadius: 15, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  encargoIcono: { width: 52, height: 52, borderRadius: radio.grande, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  encargoTitulo: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.blanco },
+  encargoSubtitulo: { ...tipo.apoyo, color: colores.blanco, marginTop: 2 },
+  encargoFlecha: { width: 48, height: 48, borderRadius: radio.grande, backgroundColor: colores.blanco, alignItems: 'center', justifyContent: 'center' },
 
   // Sin borde ni overflow:hidden: las muescas sobresalen a medias del borde de la tarjeta.
   boleta: {
     backgroundColor: colores.tarjeta,
     borderRadius: radio.grande,
     elevation: 1,
-    shadowColor: '#0b2530',
+    shadowColor: colores.sombra,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.12,
     shadowRadius: 3,
   },
-  boletaCuerpo: { padding: 16, paddingBottom: 14 },
-  boletaPie: { padding: 16, paddingTop: 12 },
+  boletaCuerpo: { padding: espacio.l, paddingBottom: 14 },
+  boletaPie: { padding: espacio.l, paddingTop: espacio.m },
   perforacion: { height: 20, justifyContent: 'center' },
   muesca: { position: 'absolute', width: 20, height: 20, borderRadius: 10, top: 0 },
   dashes: { flexDirection: 'row', justifyContent: 'space-between', overflow: 'hidden', marginHorizontal: 16 },
-  dash: { width: 5, height: 1.5, backgroundColor: '#c3ced5' },
+  dash: { width: 5, height: 1.5, backgroundColor: colores.trazo },
 });

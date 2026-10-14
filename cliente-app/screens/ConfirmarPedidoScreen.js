@@ -5,9 +5,10 @@ import api from '../services/api';
 import { invalidar } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, Boton, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const SIN_DIRECCIONES = [];
@@ -19,10 +20,10 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
 
   // Direcciones y perfil salen de la caché compartida (misma clave que Perfil y Mis direcciones) y se refrescan por detrás.
-  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: MAX_EDAD_MS });
   const direcciones = direccionesGuardadas ?? SIN_DIRECCIONES;
   const [destinoValor, setDestinoValor] = useState(null); // { direccion, referencia, lat, lng }
-  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const perfil = perfilGuardado ?? null;
   const [envio, setEnvio] = useState(null); // { sugerida, opciones: [{ sucursal, distancia_km, costo_envio }] }
   const [sucursalElegida, setSucursalElegida] = useState(null); // null = la más cercana (automática)
@@ -88,7 +89,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
+        contentContainerStyle={[styles.contenido, { paddingBottom: espacio.xl + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -245,11 +246,11 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16 },
-  titulo: { fontSize: 22, marginBottom: 14 },
-  subtitulo: { fontSize: 20, marginTop: 20, marginBottom: 10 },
+  contenido: { padding: espacio.l },
+  titulo: { fontSize: tipo.titulo.fontSize, marginBottom: 14 },
+  subtitulo: { fontSize: tipo.subtitulo.fontSize, marginTop: 20, marginBottom: 10 },
   carrito: { ...estiloTarjeta, padding: 6 },
-  itemFila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  itemFila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingHorizontal: espacio.m, paddingVertical: 10 },
   cantidad: {
     minWidth: 30,
     height: 30,
@@ -258,9 +259,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cantidadTexto: { fontFamily: fuente.extra, fontSize: 14, color: colores.primarioOscuro },
-  itemNombre: { flex: 1, fontFamily: fuente.media, fontSize: 16, color: colores.texto },
-  itemPrecio: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  cantidadTexto: { ...tipo.apoyo, fontFamily: fuente.extra, color: colores.primarioOscuro },
+  itemNombre: { ...tipo.cuerpo, flex: 1, color: colores.texto },
+  itemPrecio: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
   envioFila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -270,39 +271,39 @@ const styles = StyleSheet.create({
     padding: 14,
     margin: 6,
   },
-  envioIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  envioTexto: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
-  envioPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
-  envioPrecioTenue: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
+  envioIzquierda: { flexDirection: 'row', alignItems: 'center', gap: espacio.s, flexShrink: 1 },
+  envioTexto: { ...tipo.cuerpoFuerte, color: colores.texto },
+  envioPrecio: { ...tipo.precio, color: colores.primarioOscuro },
+  envioPrecioTenue: { ...tipo.apoyo, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
   totalFila: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
-  totalTexto: { fontFamily: fuente.extra, fontSize: 22, color: colores.texto },
-  nota: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
-  notaPrecios: { flex: 1, fontFamily: fuente.media, fontSize: 13, color: colores.tenue, lineHeight: 18 },
+  totalTexto: { ...tipo.titulo, color: colores.texto },
+  nota: { flexDirection: 'row', alignItems: 'flex-start', gap: espacio.s, paddingHorizontal: 14, paddingVertical: espacio.m },
+  notaPrecios: { ...tipo.apoyo, flex: 1, color: colores.tenue, lineHeight: 18 },
 
-  seccionSucursal: { marginTop: 4 },
-  ayuda: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginBottom: 10 },
-  unica: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  unicaTexto: { flex: 1, fontFamily: fuente.media, fontSize: 15, color: colores.texto },
+  seccionSucursal: { marginTop: espacio.xs },
+  ayuda: { ...tipo.apoyo, color: colores.tenue, marginBottom: 10 },
+  unica: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: espacio.m, padding: 14 },
+  unicaTexto: { ...tipo.cuerpo, flex: 1, color: colores.texto },
   sucursales: { gap: 10 },
   sucursal: {
     ...estiloTarjeta,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: espacio.m,
     padding: 14,
     borderWidth: 2,
     borderColor: colores.borde,
   },
-  sucursalSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
+  sucursalSeleccionada: { borderColor: colores.primario, backgroundColor: colores.acentoPalido },
   presionada: { opacity: 0.9 },
   sucursalCuerpo: { flex: 1 },
-  sucursalFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  sucursalNombre: { flexShrink: 1, fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
+  sucursalFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.s },
+  sucursalNombre: { ...tipo.cuerpo, fontFamily: fuente.extra, flexShrink: 1, color: colores.texto },
   cercana: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -310,26 +311,26 @@ const styles = StyleSheet.create({
     backgroundColor: colores.acentoSuave,
     borderRadius: radio.pastilla,
     paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingHorizontal: espacio.s,
   },
-  cercanaTexto: { fontFamily: fuente.extra, fontSize: 12, color: colores.primarioOscuro },
-  sucursalDireccion: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
-  sucursalDetalle: { fontFamily: fuente.media, fontSize: 13, color: colores.texto, marginTop: 4 },
+  cercanaTexto: { ...tipo.etiqueta, fontFamily: fuente.extra, color: colores.primarioOscuro },
+  sucursalDireccion: { ...tipo.apoyo, color: colores.tenue, marginTop: 2 },
+  sucursalDetalle: { ...tipo.apoyo, color: colores.texto, marginTop: espacio.xs },
 
   avisoPerfil: {
     flexDirection: 'row',
-    gap: 12,
+    gap: espacio.m,
     alignItems: 'center',
-    backgroundColor: '#fff4e0',
+    backgroundColor: colores.alertaFondo,
     borderWidth: 1,
-    borderColor: '#f1cf9b',
+    borderColor: colores.alertaBorde,
     borderRadius: radio.medio,
     padding: 14,
-    marginTop: 16,
+    marginTop: espacio.l,
   },
   avisoCuerpo: { flex: 1 },
-  avisoPerfilTexto: { fontFamily: fuente.media, fontSize: 14, color: '#5c3300' },
-  avisoPerfilAccion: { fontFamily: fuente.extra, fontSize: 14, color: colores.naranja, marginTop: 6 },
+  avisoPerfilTexto: { ...tipo.cuerpo, color: colores.alertaTexto },
+  avisoPerfilAccion: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.naranja, marginTop: 6 },
   confirmar: { marginTop: 20 },
-  error: { marginTop: 12 },
+  error: { marginTop: espacio.m },
 });

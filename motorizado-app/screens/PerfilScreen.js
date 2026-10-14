@@ -5,7 +5,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
@@ -31,7 +31,7 @@ function PerfilEsqueleto({ lento }) {
     <View style={styles.container}>
       <View style={styles.contenido}>
         <AvisosCarga lento={lento} hayDatos={false} />
-        <View style={styles.esqueletoPerfil} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+        <View style={styles.esqueletoPerfil} accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
           <View style={styles.cabecera}>
             <Esqueleto ancho={72} alto={72} radio={36} />
             <View style={styles.cabeceraCuerpo}>
@@ -81,7 +81,7 @@ export default function PerfilScreen({ navigation }) {
   if (!perfil) {
     return (
       <View style={styles.centro}>
-        <Text style={styles.tenue} accessibilityLiveRegion="polite">No se pudo cargar tu perfil</Text>
+        <Text style={styles.tenue} accessibilityLiveRegion="polite">No pudimos cargar tu perfil. Revisa tu conexión.</Text>
         <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} estilo={styles.reintentar} />
       </View>
     );
@@ -101,7 +101,7 @@ export default function PerfilScreen({ navigation }) {
         <View style={styles.cabeceraCuerpo}>
           <Text accessibilityRole="header" style={styles.nombre} numberOfLines={2}>{nombreCompleto(perfil)}</Text>
           <View style={styles.chip}>
-            <Icono nombre="bicycle" tamano={16} color="#fff" />
+            <Icono nombre="bicycle" tamano={16} color={colores.blanco} />
             <Text style={styles.chipTexto}>Motorizado</Text>
           </View>
           <Text style={styles.desde}>Con Nelson Express desde {desdeCuando(perfil.date_joined)}</Text>
@@ -172,19 +172,19 @@ export default function PerfilScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, paddingBottom: 32, gap: 14 },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: 24 },
-  reintentar: { marginTop: 12 },
+  contenido: { padding: espacio.l, paddingBottom: 32, gap: 14 },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: espacio.xl },
+  reintentar: { marginTop: espacio.m },
   esqueletoPerfil: { gap: 14 },
   esqueletoSeccion: { marginBottom: 10 },
   esqueletoDesde: { marginTop: 2 },
   esqueletoFila: { marginVertical: 6 },
-  tenue: { fontFamily: fuente.media, color: colores.tenue, fontSize: 14 },
+  tenue: { ...tipo.apoyo, color: colores.tenue },
 
   cabecera: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: espacio.l,
     backgroundColor: colores.primario,
     borderRadius: radio.grande + 4,
     padding: 20,
@@ -194,47 +194,47 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarTexto: { fontFamily: fuente.extra, fontSize: 26, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1, gap: 6, alignItems: 'flex-start' },
-  nombre: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: '#fff' },
+  nombre: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: colores.blanco },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: 'rgba(0,0,0,0.28)',
     borderRadius: radio.chico,
-    paddingVertical: 4,
+    paddingVertical: espacio.xs,
     paddingHorizontal: 10,
   },
-  chipTexto: { fontFamily: fuente.extra, color: '#fff', fontSize: 13 },
-  desde: { fontFamily: fuente.media, color: '#fff', fontSize: 13 },
+  chipTexto: { ...tipo.apoyo, fontFamily: fuente.extra, color: colores.blanco },
+  desde: { ...tipo.apoyo, color: colores.blanco },
 
   estadisticas: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center' },
   estadistica: { flex: 1, alignItems: 'center' },
   estadisticaLinea: { width: 1, alignSelf: 'stretch', backgroundColor: colores.borde },
   estadisticaNumero: { fontFamily: fuente.extra, fontSize: 36, lineHeight: 44, color: colores.texto },
-  estadisticaTexto: { fontFamily: fuente.negrita, fontSize: 13, color: colores.tenue },
+  estadisticaTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   presionado: { opacity: 0.85 },
 
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 20, marginBottom: 10 },
-  fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
-  filaTexto: { fontFamily: fuente.media, fontSize: 16, color: colores.texto },
+  seccion: { fontSize: tipo.subtitulo.fontSize, marginBottom: 10 },
+  fila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingVertical: 6 },
+  filaTexto: { ...tipo.cuerpo, color: colores.texto },
   vehiculo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  vehiculoDatos: { flex: 1, paddingRight: 12 },
-  vehiculoModelo: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
+  vehiculoDatos: { flex: 1, paddingRight: espacio.m },
+  vehiculoModelo: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.texto },
   placa: {
     borderWidth: 2,
     borderColor: colores.texto,
-    borderRadius: 8,
-    backgroundColor: '#fff',
+    borderRadius: radio.chico,
+    backgroundColor: colores.blanco,
     paddingVertical: 3,
-    paddingHorizontal: 12,
+    paddingHorizontal: espacio.m,
   },
-  placaTexto: { fontFamily: fuente.extra, fontSize: 22, letterSpacing: 1, color: colores.texto },
+  placaTexto: { ...tipo.titulo, letterSpacing: 1, color: colores.texto },
   espacio: { marginTop: 2 },
 });

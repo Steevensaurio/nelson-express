@@ -7,8 +7,9 @@ import api from '../services/api';
 import { invalidar } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const PASOS = ['Recogida', 'Entrega'];
@@ -34,7 +35,7 @@ function Pasos({ paso }) {
             {i > 0 ? <View style={[styles.pasoLinea, paso > i && styles.pasoLineaHecha]} /> : null}
             <View style={[styles.pasoCirculo, (activo || hecho) && styles.pasoCirculoActivo]}>
               {hecho ? (
-                <Icono nombre="checkmark" tamano={18} color="#fff" />
+                <Icono nombre="checkmark" tamano={18} color={colores.blanco} />
               ) : (
                 <Text style={[styles.pasoNumero, activo && styles.pasoNumeroActivo]}>{numero}</Text>
               )}
@@ -96,9 +97,9 @@ export default function NuevoEncargoScreen({ navigation }) {
   const [pagar, setPagar] = useState(false);
   const [monto, setMonto] = useState('');
   // Direcciones y perfil salen de la caché compartida; al volver de "Mis direcciones" o "Mis datos" ya vienen actualizados.
-  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: MAX_EDAD_MS });
   const direcciones = direccionesGuardadas ?? SIN_DIRECCIONES;
-  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const perfil = perfilGuardado ?? null;
   const [envio, setEnvio] = useState(null);
   const [errorEnvio, setErrorEnvio] = useState(false);
@@ -175,7 +176,7 @@ export default function NuevoEncargoScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
+        contentContainerStyle={[styles.contenido, { paddingBottom: espacio.xl + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <Pasos paso={paso} />
@@ -248,8 +249,8 @@ export default function NuevoEncargoScreen({ navigation }) {
               <Switch
                 value={pagar}
                 onValueChange={setPagar}
-                trackColor={{ false: '#c4cbd0', true: colores.primario }}
-                thumbColor="#fff"
+                trackColor={{ false: colores.trazo, true: colores.primario }}
+                thumbColor={colores.blanco}
                 accessibilityLabel="El motorizado debe pagar algo al recoger"
               />
             </View>
@@ -317,32 +318,32 @@ export default function NuevoEncargoScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16 },
+  contenido: { padding: espacio.l },
 
   pasos: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 18 },
-  pasoGrupo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pasoLinea: { width: 36, height: 3, backgroundColor: '#dfe5e9', marginHorizontal: 6, borderRadius: 2 },
+  pasoGrupo: { flexDirection: 'row', alignItems: 'center', gap: espacio.s },
+  pasoLinea: { width: 36, height: 3, backgroundColor: colores.linea, marginHorizontal: 6, borderRadius: 2 },
   pasoLineaHecha: { backgroundColor: colores.primario },
   pasoCirculo: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#e8edf0',
+    borderRadius: radio.grande,
+    backgroundColor: colores.relleno,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pasoCirculoActivo: { backgroundColor: colores.primario },
-  pasoNumero: { fontFamily: fuente.extra, fontSize: 16, color: colores.tenue },
-  pasoNumeroActivo: { color: '#fff' },
-  pasoTexto: { fontFamily: fuente.negrita, fontSize: 15, color: colores.suave },
+  pasoNumero: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.tenue },
+  pasoNumeroActivo: { color: colores.blanco },
+  pasoTexto: { ...tipo.cuerpoFuerte, color: colores.suave },
   pasoTextoActivo: { color: colores.primarioOscuro },
 
   intro: { marginBottom: 6 },
-  seccion: { fontSize: 20, marginTop: 18, marginBottom: 10 },
+  seccion: { fontSize: tipo.subtitulo.fontSize, marginTop: 18, marginBottom: 10 },
   multilinea: { minHeight: 76, textAlignVertical: 'top' },
 
-  grupoContacto: { ...estiloTarjeta, marginTop: 16 },
-  grupoCabecera: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  grupoContacto: { ...estiloTarjeta, marginTop: espacio.l },
+  grupoCabecera: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, marginBottom: 14 },
   grupoIcono: {
     width: 40,
     height: 40,
@@ -352,8 +353,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   grupoTextos: { flex: 1 },
-  grupoTitulo: { fontSize: 17 },
-  grupoAyuda: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 2 },
+  grupoTitulo: { fontSize: tipo.subtitulo.fontSize },
+  grupoAyuda: { ...tipo.apoyo, color: colores.tenue, marginTop: 2 },
   ultimo: { marginBottom: 0 },
 
   filaSwitch: {
@@ -362,11 +363,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    paddingVertical: 12,
-    marginVertical: 16,
+    paddingVertical: espacio.m,
+    marginVertical: espacio.l,
   },
-  switchTexto: { flex: 1, fontFamily: fuente.negrita, fontSize: 15, color: colores.texto },
-  moneda: { fontFamily: fuente.negrita, fontSize: 18, color: colores.tenue },
+  switchTexto: { ...tipo.cuerpoFuerte, flex: 1, color: colores.texto },
+  moneda: { ...tipo.subtitulo, color: colores.tenue },
 
   resumen: {
     flexDirection: 'row',
@@ -374,33 +375,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colores.acentoSuave,
     borderRadius: radio.grande,
-    padding: 16,
-    marginTop: 4,
+    padding: espacio.l,
+    marginTop: espacio.xs,
   },
-  resumenIzquierda: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  resumenTexto: { fontFamily: fuente.negrita, fontSize: 16, color: colores.texto },
-  resumenPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
-  resumenPrecioTenue: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
+  resumenIzquierda: { flexDirection: 'row', alignItems: 'center', gap: espacio.s, flexShrink: 1 },
+  resumenTexto: { ...tipo.cuerpoFuerte, color: colores.texto },
+  resumenPrecio: { ...tipo.precio, color: colores.primarioOscuro },
+  resumenPrecioTenue: { ...tipo.apoyo, color: colores.tenue, textAlign: 'right', flexShrink: 1 },
 
   avisoPerfil: {
     flexDirection: 'row',
-    gap: 12,
+    gap: espacio.m,
     alignItems: 'center',
-    backgroundColor: '#fff4e0',
+    backgroundColor: colores.alertaFondo,
     borderWidth: 1,
-    borderColor: '#f1cf9b',
+    borderColor: colores.alertaBorde,
     borderRadius: radio.medio,
     padding: 14,
     marginTop: 14,
   },
   avisoCuerpo: { flex: 1 },
-  avisoPerfilTexto: { fontFamily: fuente.media, fontSize: 14, color: '#5c3300' },
-  avisoPerfilAccion: { fontFamily: fuente.extra, fontSize: 14, color: colores.naranja, marginTop: 6 },
+  avisoPerfilTexto: { ...tipo.cuerpo, color: colores.alertaTexto },
+  avisoPerfilAccion: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.naranja, marginTop: 6 },
 
   errorCaja: { marginTop: 14 },
 
   continuar: { marginTop: 20 },
-  filaBotones: { flexDirection: 'row', gap: 12, marginTop: 18 },
+  filaBotones: { flexDirection: 'row', gap: espacio.m, marginTop: 18 },
   botonAtras: { paddingHorizontal: 18 },
   botonPedir: { flex: 1 },
 });

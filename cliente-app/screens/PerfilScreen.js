@@ -1,8 +1,9 @@
 import { View, StyleSheet } from 'react-native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { useAuth } from '../context/AuthContext';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Rayas, Text, estiloTarjeta } from '../components/ui';
 
 const iniciales = (perfil) =>
@@ -35,7 +36,7 @@ export default function PerfilScreen({ navigation }) {
   const { logout } = useAuth();
   // El perfil se comparte con Negocios y "Mis datos" (misma clave): una sola petición cada 60 s sirve a todas.
   // Al guardar en "Mis datos" la caché se actualiza y esta pantalla lo toma al volver.
-  const { datos: perfil, error, lento, recargar } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfil, error, lento, recargar } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
 
   const nombre = perfil ? [perfil.first_name, perfil.last_name].filter(Boolean).join(' ') : '';
   const incompleto = perfil && !(perfil.first_name && perfil.telefono);
@@ -55,7 +56,7 @@ export default function PerfilScreen({ navigation }) {
             {perfil.telefono ? <Text style={styles.telefono}>{perfil.telefono}</Text> : null}
           </View>
         ) : (
-          <View style={styles.cabeceraCuerpo} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+          <View style={styles.cabeceraCuerpo} accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
             <Esqueleto ancho="65%" alto={26} />
             <Esqueleto ancho="40%" alto={16} estilo={styles.esqueletoTelefono} />
           </View>
@@ -65,7 +66,7 @@ export default function PerfilScreen({ navigation }) {
       <AvisosCarga lento={lento} error={error} hayDatos={Boolean(perfil)} />
       {error && !perfil ? (
         <View style={styles.errorCarga}>
-          <Aviso tipo="error">No se pudo cargar tu perfil. Revisa tu conexión.</Aviso>
+          <Aviso tipo="error">No pudimos cargar tu perfil. Revisa tu conexión.</Aviso>
           <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
         </View>
       ) : null}
@@ -86,11 +87,11 @@ export default function PerfilScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colores.fondo, padding: 16, gap: 14 },
+  container: { flex: 1, backgroundColor: colores.fondo, padding: espacio.l, gap: 14 },
   cabecera: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: espacio.l,
     backgroundColor: colores.primario,
     borderRadius: radio.grande,
     padding: 20,
@@ -101,23 +102,23 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
+  avatarTexto: { ...tipo.precio, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1 },
-  esqueletoTelefono: { marginTop: 8 },
-  errorCarga: { gap: 12 },
-  nombre: { fontFamily: fuente.extra, fontSize: 22, lineHeight: 28, color: '#fff' },
-  telefono: { fontFamily: fuente.media, fontSize: 15, color: '#fff', marginTop: 3 },
-  grupo: { ...estiloTarjeta, padding: 4 },
+  esqueletoTelefono: { marginTop: espacio.s },
+  errorCarga: { gap: espacio.m },
+  nombre: { ...tipo.titulo, lineHeight: 28, color: colores.blanco },
+  telefono: { ...tipo.cuerpo, color: colores.blanco, marginTop: 3 },
+  grupo: { ...estiloTarjeta, padding: espacio.xs },
   opcion: {
     minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: espacio.m,
     borderRadius: radio.medio,
   },
   opcionPresionada: { backgroundColor: colores.acentoSuave },
@@ -130,8 +131,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   opcionCuerpo: { flex: 1 },
-  opcionTexto: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
-  opcionDetalle: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 2 },
-  separador: { height: 1, backgroundColor: colores.borde, marginHorizontal: 12 },
+  opcionTexto: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.texto },
+  opcionDetalle: { ...tipo.apoyo, color: colores.tenue, marginTop: 2 },
+  separador: { height: 1, backgroundColor: colores.borde, marginHorizontal: espacio.m },
   salir: { marginTop: 6 },
 });

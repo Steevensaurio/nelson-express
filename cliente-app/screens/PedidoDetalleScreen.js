@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Animated, Platform, View, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
 import { FRASES, anchoLinea, colorPaso, haloPaso } from '../constants/seguimiento';
 import { Aviso, Boleta, FilaDato, Icono, Insignia, NumeroPedido, SALIDA, Text, Titulo, estiloTarjeta, movimientoReducido } from '../components/ui';
 
@@ -33,7 +33,9 @@ const PASO_DE_ESTADO = { PENDIENTE: 0, ACEPTADO: 0, RECOGIDO: 1, EN_CAMINO: 2, E
 // Círculo de un paso. Si se completa mientras se mira la pantalla da un pequeño «pop» (0.85 → 1, 200 ms, ease-out, hilo nativo);
 // al abrir la pantalla aparece tal cual. Su color cambia al instante.
 function CirculoPaso({ hecho, color, children }) {
-  const escala = useRef(new Animated.Value(1)).current;
+  const ref = useRef(null);
+  if (ref.current === null) ref.current = new Animated.Value(1);
+  const escala = ref.current;
   const hechoAntes = useRef(hecho);
   useLayoutEffect(() => {
     const recienHecho = hecho && !hechoAntes.current;
@@ -60,7 +62,11 @@ function Seguimiento({ estado }) {
   const color = colorPaso(estado);
   // La línea crece desde donde estaba hasta el nuevo paso (260 ms, ease-out) solo cuando el estado cambia con la pantalla abierta;
   // el estado inicial se pinta tal cual. El ancho es layout, no transform: va en el hilo de JS, pero es una barra pequeña sin hijos.
-  const avance = useRef(new Animated.Value(anchoLinea(actual, PASOS.length))).current;
+  const refAvance = useRef(null);
+  if (refAvance.current === null) refAvance.current = new Animated.Value(anchoLinea(actual, PASOS.length));
+  const avance = refAvance.current;
+  // La interpolación se crea una sola vez (no en cada render).
+  const anchoRelleno = useMemo(() => avance.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), [avance]);
   const pasoPrevio = useRef(actual);
   useEffect(() => {
     if (pasoPrevio.current === actual) return;
@@ -86,8 +92,7 @@ function Seguimiento({ estado }) {
     >
       <View style={[styles.pista, { left: `${50 / PASOS.length}%`, right: `${50 / PASOS.length}%` }]}>
         <Animated.View
-          testID="seguimiento-relleno"
-          style={[styles.relleno, { width: avance.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: color }]}
+          style={[styles.relleno, { width: anchoRelleno, backgroundColor: color }]}
         />
       </View>
       {PASOS.map((paso, i) => {
@@ -96,7 +101,7 @@ function Seguimiento({ estado }) {
           <View key={paso.etiqueta} style={styles.paso}>
             <View style={[styles.halo, i === actual && !completo && { borderColor: haloPaso(estado) }]}>
               <CirculoPaso hecho={hecho} color={color}>
-                <Icono nombre={hecho && (i < actual || completo) ? 'checkmark' : paso.icono} tamano={16} color={hecho ? '#fff' : colores.suave} />
+                <Icono nombre={hecho && (i < actual || completo) ? 'checkmark' : paso.icono} tamano={16} color={hecho ? colores.blanco : colores.suave} />
               </CirculoPaso>
             </View>
             <Text style={[styles.pasoTexto, hecho && styles.pasoTextoHecho]} numberOfLines={1}>{paso.etiqueta}</Text>
@@ -218,21 +223,21 @@ export default function PedidoDetalleScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, paddingBottom: 32, gap: 14 },
+  contenido: { padding: espacio.l, paddingBottom: 32, gap: 14 },
   card: { ...estiloTarjeta },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  fecha: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
-  frase: { marginTop: 12, fontFamily: fuente.extra, fontSize: 18, lineHeight: 24, color: colores.texto },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.s },
+  fecha: { ...tipo.apoyo, color: colores.tenue },
+  frase: { ...tipo.subtitulo, fontFamily: fuente.extra, marginTop: espacio.m, lineHeight: 24, color: colores.texto },
   cancelada: { color: colores.peligro },
-  seccion: { fontSize: 17, marginBottom: 6 },
-  separador: { height: 1, backgroundColor: colores.borde, marginVertical: 4 },
-  valor: { fontFamily: fuente.negrita, fontSize: 15, color: colores.texto, marginTop: 2 },
-  secundario: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
-  referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 4 },
+  seccion: { fontSize: tipo.subtitulo.fontSize, marginBottom: 6 },
+  separador: { height: 1, backgroundColor: colores.borde, marginVertical: espacio.xs },
+  valor: { ...tipo.cuerpoFuerte, color: colores.texto, marginTop: 2 },
+  secundario: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
+  referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: espacio.xs },
 
   // La pista va detrás de los círculos y llega solo hasta el centro del último: el relleno nunca lo pasa.
-  seguimiento: { flexDirection: 'row', marginTop: 16 },
-  pista: { position: 'absolute', top: 18, height: 4, borderRadius: 2, backgroundColor: '#dfe6ea' },
+  seguimiento: { flexDirection: 'row', marginTop: espacio.l },
+  pista: { position: 'absolute', top: 18, height: 4, borderRadius: 2, backgroundColor: colores.linea },
   relleno: { height: 4, borderRadius: 2 },
   paso: { flex: 1, alignItems: 'center' },
   // El halo es un anillo (borde de 4 px alrededor del círculo de 32): un fondo con esquinas redondeadas que
@@ -241,26 +246,26 @@ const styles = StyleSheet.create({
   pasoCirculo: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#dfe6ea',
+    borderRadius: radio.grande,
+    backgroundColor: colores.linea,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pasoTexto: { fontFamily: fuente.negrita, fontSize: 10.5, color: colores.suave, marginTop: 4 },
+  pasoTexto: { ...tipo.mini, color: colores.suave, marginTop: espacio.xs },
   pasoTextoHecho: { color: colores.texto },
 
   fila: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
-  filaNombre: { fontFamily: fuente.media, fontSize: 14.5, flex: 1, paddingRight: 8, color: colores.texto },
-  filaPrecio: { fontFamily: fuente.media, fontSize: 14.5, color: colores.tenue },
+  filaNombre: { ...tipo.cuerpo, flex: 1, paddingRight: espacio.s, color: colores.texto },
+  filaPrecio: { ...tipo.cuerpo, color: colores.tenue },
   filaTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     borderTopWidth: 1,
     borderTopColor: colores.borde,
-    marginTop: 8,
-    paddingTop: 12,
+    marginTop: espacio.s,
+    paddingTop: espacio.m,
   },
-  totalTexto: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto },
+  totalTexto: { ...tipo.titulo, color: colores.texto },
   nota: { marginTop: 10 },
 });

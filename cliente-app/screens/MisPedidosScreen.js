@@ -6,7 +6,7 @@ import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boleta, Boton, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Text } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
@@ -130,7 +130,7 @@ export default function MisPedidosScreen({ navigation }) {
         ListHeaderComponent={<AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} estilo={styles.avisoCarga} />}
         ListEmptyComponent={
           cargando ? (
-            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               {[0, 1].map((i) => <TicketEsqueleto key={i} />)}
             </View>
           ) : error && datos === undefined ? (
@@ -155,54 +155,54 @@ export default function MisPedidosScreen({ navigation }) {
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
   // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.
-  filtros: { flexDirection: 'row', margin: 16, marginBottom: 4, padding: 4, borderRadius: 12, backgroundColor: '#e6ecf0' },
+  filtros: { flexDirection: 'row', margin: espacio.l, marginBottom: espacio.xs, padding: espacio.xs, borderRadius: radio.medio, backgroundColor: colores.relleno },
   filtro: {
     flex: 1,
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: espacio.s,
     borderRadius: 9,
   },
   filtroActivo: {
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     elevation: 1,
-    shadowColor: '#002838',
+    shadowColor: colores.sombra,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
   },
-  filtroTexto: { fontFamily: fuente.negrita, fontSize: 13.5, color: '#4d5b64' },
+  filtroTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   filtroTextoActivo: { color: colores.primarioOscuro },
   contador: {
     minWidth: 22,
     height: 22,
     borderRadius: 11,
     paddingHorizontal: 6,
-    backgroundColor: '#d5dde2',
+    backgroundColor: colores.rellenoFuerte,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contadorActivo: { backgroundColor: colores.acentoSuave },
-  contadorTexto: { fontFamily: fuente.negrita, fontSize: 12, color: '#4d5b64' },
+  contadorTexto: { ...tipo.etiqueta, color: colores.tenue },
   contadorTextoActivo: { color: colores.primarioOscuro },
   container: { backgroundColor: colores.fondo },
-  lista: { padding: 16, paddingBottom: 24, flexGrow: 1 },
-  celda: { marginBottom: 12 },
+  lista: { padding: espacio.l, paddingBottom: espacio.xl, flexGrow: 1 },
+  celda: { marginBottom: espacio.m },
   presionada: { opacity: 0.9 },
   // Todos los tickets tienen la misma estructura (una línea de nombre, una de dirección, un pie) y por eso la misma altura.
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  nombre: { marginTop: 10, fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
-  destino: { marginTop: 3, fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
-  pie: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  envio: { flex: 1, fontFamily: fuente.extra, fontSize: 13.5, color: colores.texto },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.s },
+  nombre: { ...tipo.subtitulo, fontFamily: fuente.extra, marginTop: 10, color: colores.texto },
+  destino: { ...tipo.apoyo, marginTop: 3, color: colores.tenue },
+  pie: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.m },
+  envio: { ...tipo.apoyo, fontFamily: fuente.extra, flex: 1, color: colores.texto },
   verDetalle: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 2 },
-  verDetalleTexto: { fontFamily: fuente.negrita, fontSize: 13, color: colores.primarioOscuro },
-  avisoCarga: { marginBottom: 12 },
-  errorCarga: { gap: 12 },
+  verDetalleTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.primarioOscuro },
+  avisoCarga: { marginBottom: espacio.m },
+  errorCarga: { gap: espacio.m },
   esqueletoNombre: { marginTop: 10 },
   esqueletoDestino: { marginTop: 3 },
-  vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
-  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  vacio: { alignItems: 'center', gap: espacio.m, marginTop: 56, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: tipo.cuerpo.fontSize },
 });

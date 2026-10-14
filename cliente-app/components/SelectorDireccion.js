@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Switch, StyleSheet, Modal } from 'react-native';
 import api from '../services/api';
 import SelectorMapa from './SelectorMapa';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, Icono, Presionable, Text, estiloTarjeta } from './ui';
 
 // Una dirección elegible. Es una opción de un grupo (radio): lo seleccionado se ve por el ícono y el
@@ -160,8 +160,8 @@ export default function SelectorDireccion({ direcciones, valor, onCambiar, onNue
             <Switch
               value={guardarNueva}
               onValueChange={setGuardarNueva}
-              trackColor={{ false: '#c4cbd0', true: colores.primario }}
-              thumbColor="#fff"
+              trackColor={{ false: colores.trazo, true: colores.primario }}
+              thumbColor={colores.blanco}
               accessibilityLabel="Guardar esta dirección para la próxima vez"
             />
           </View>
@@ -207,19 +207,19 @@ const styles = StyleSheet.create({
     ...estiloTarjeta,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: espacio.m,
     padding: 14,
     borderWidth: 2,
     borderColor: colores.borde,
   },
-  cardSeleccionada: { borderColor: colores.primario, backgroundColor: '#f4fbfe' },
+  cardSeleccionada: { borderColor: colores.primario, backgroundColor: colores.acentoPalido },
   cardPresionada: { opacity: 0.9 },
   cardCuerpo: { flex: 1 },
-  etiqueta: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
-  texto: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
-  referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
+  etiqueta: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
+  texto: { ...tipo.apoyo, color: colores.tenue, marginTop: 2 },
+  referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
   otra: { marginTop: 10 },
-  formulario: { ...estiloTarjeta, marginTop: 12 },
+  formulario: { ...estiloTarjeta, marginTop: espacio.m },
   botonMapa: { marginBottom: 14 },
   filaSwitch: {
     flexDirection: 'row',
@@ -227,9 +227,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     minHeight: 52,
-    marginBottom: 12,
+    marginBottom: espacio.m,
   },
-  switchTexto: { flex: 1, fontFamily: fuente.negrita, fontSize: 15, color: colores.texto },
-  cancelar: { marginTop: 8 },
+  switchTexto: { ...tipo.cuerpoFuerte, flex: 1, color: colores.texto },
+  cancelar: { marginTop: espacio.s },
   error: { marginBottom: 10 },
 });

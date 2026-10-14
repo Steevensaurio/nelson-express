@@ -7,7 +7,7 @@ import { guardar as guardarEnCache, leer } from '../services/cache';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colorAccion, iconoEstado, siguienteEstado, textoAccion } from '../constants/estados';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, Boleta, Boton, Icono, Insignia, NumeroPedido, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
@@ -101,7 +101,7 @@ export default function EntregaDetalleScreen({ route }) {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.contenido, !proximoEstado && { paddingBottom: 24 + insets.bottom }]}>
+      <ScrollView contentContainerStyle={[styles.contenido, !proximoEstado && { paddingBottom: espacio.xl + insets.bottom }]}>
         {reasignada ? (
           <Aviso tipo="alerta" icono="swap-horizontal">
             El despachador reasignó esta entrega a otro motorizado. Ya no te corresponde.
@@ -229,7 +229,7 @@ export default function EntregaDetalleScreen({ route }) {
       </ScrollView>
 
       {proximoEstado ? (
-        <View style={[styles.barraInferior, { paddingBottom: 12 + insets.bottom }]}>
+        <View style={[styles.barraInferior, { paddingBottom: espacio.m + insets.bottom }]}>
           {error ? <Aviso tipo="error" estilo={styles.error}>{error}</Aviso> : null}
           <Boton
             titulo={actualizando ? 'Actualizando…' : textoAccion[proximoEstado]}
@@ -248,15 +248,15 @@ export default function EntregaDetalleScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, gap: 14 },
+  contenido: { padding: espacio.l, gap: 14 },
   card: { ...estiloTarjeta },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  fecha: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.s },
+  fecha: { ...tipo.apoyo, color: colores.tenue },
 
   carrera: { marginTop: 14 },
-  carreraRotulo: { fontFamily: fuente.negrita, fontSize: 14, color: colores.tenue },
+  carreraRotulo: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   carreraValor: { fontFamily: fuente.extra, fontSize: 40, lineHeight: 48, color: colores.verde },
-  carreraKm: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue },
+  carreraKm: { ...tipo.apoyo, color: colores.tenue },
 
   bloqueCabecera: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   bloqueIcono: {
@@ -267,24 +267,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: 20 },
-  valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
-  secundario: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 3 },
-  referencia: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 4 },
-  botonSecundario: { marginTop: 12, minHeight: 56 },
+  bloqueTitulo: { fontSize: tipo.subtitulo.fontSize },
+  valor: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
+  secundario: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
+  referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: espacio.xs },
+  botonSecundario: { marginTop: espacio.m, minHeight: 56 },
 
   contacto: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colores.borde },
-  contactoRotulo: { fontFamily: fuente.negrita, fontSize: 12, color: colores.tenue },
-  contactoNombre: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto, marginTop: 2 },
+  contactoRotulo: { ...tipo.etiqueta, color: colores.tenue },
+  contactoNombre: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto, marginTop: 2 },
 
-  producto: { fontFamily: fuente.media, fontSize: 15, paddingVertical: 3, color: colores.texto },
+  producto: { ...tipo.cuerpo, paddingVertical: 3, color: colores.texto },
 
   barraInferior: {
     backgroundColor: colores.tarjeta,
     borderTopWidth: 1,
     borderTopColor: colores.borde,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: espacio.l,
+    paddingTop: espacio.m,
   },
   botonAccion: { minHeight: 60 },
   error: { marginBottom: 10 },

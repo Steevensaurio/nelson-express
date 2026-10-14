@@ -5,7 +5,8 @@ import api from '../services/api';
 import { guardar as guardarEnCache } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
-import { colores } from '../constants/tema';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
+import { colores, tipo, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, Titulo, estiloTarjeta } from '../components/ui';
 
 const pedirPerfil = pedir('/perfil/');
@@ -16,7 +17,7 @@ const desdePerfil = (perfil) => Object.fromEntries(CAMPOS.map((c) => [c, perfil?
 export default function EditarPerfilScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   // Mismo perfil (y misma clave) que la pestaña Perfil: si ya está en caché el formulario sale lleno al instante.
-  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const [datos, setDatos] = useState(() => desdePerfil(perfil));
   const rellenado = useRef(Boolean(perfil));
   const [guardando, setGuardando] = useState(false);
@@ -66,7 +67,7 @@ export default function EditarPerfilScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        contentContainerStyle={[styles.contenido, { paddingBottom: 24 + insets.bottom }]}
+        contentContainerStyle={[styles.contenido, { paddingBottom: espacio.xl + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.tarjeta}>
@@ -132,7 +133,7 @@ export default function EditarPerfilScreen({ navigation }) {
           />
         </View>
 
-        {error || (errorCarga && !perfil) ? <Aviso tipo="error">{error || 'No se pudieron cargar tus datos'}</Aviso> : null}
+        {error || (errorCarga && !perfil) ? <Aviso tipo="error">{error || 'No pudimos cargar tus datos. Revisa tu conexión.'}</Aviso> : null}
 
         <Boton
           titulo={guardando ? 'Guardando…' : 'Guardar'}
@@ -149,8 +150,8 @@ export default function EditarPerfilScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, gap: 14 },
+  contenido: { padding: espacio.l, gap: 14 },
   tarjeta: { ...estiloTarjeta },
-  seccion: { fontSize: 20, marginBottom: 12 },
+  seccion: { fontSize: tipo.subtitulo.fontSize, marginBottom: espacio.m },
   ultimo: { marginBottom: 0 },
 });

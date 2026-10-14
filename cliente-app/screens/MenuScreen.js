@@ -3,8 +3,9 @@ import { FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { MOSTRAR_PRECIOS } from '../constants/config';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Text, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
@@ -43,7 +44,7 @@ export default function MenuScreen({ route, navigation }) {
   const { datos, cargando, error, lento, recargar } = useCargaRapida(
     `productos:${negocioId}`,
     pedir(`/negocios/${negocioId}/productos/`),
-    { maxEdad: 60000 },
+    { maxEdad: MAX_EDAD_MS },
   );
   const productos = datos ?? SIN_PRODUCTOS;
   const [cantidades, setCantidades] = useState({}); // el carrito: { productoId: cantidad }
@@ -90,7 +91,7 @@ export default function MenuScreen({ route, navigation }) {
         ListHeaderComponent={<AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} estilo={styles.avisoCarga} />}
         ListEmptyComponent={
           cargando ? (
-            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               {[0, 1, 2].map((i) => (
                 <View key={i} style={[styles.columnas, styles.filaEsqueleto]}>
                   <TarjetaEsqueleto />
@@ -137,7 +138,7 @@ export default function MenuScreen({ route, navigation }) {
       />
 
       {totalItems > 0 && (
-        <View style={[styles.barraConfirmar, { paddingBottom: 12 + insets.bottom }]}>
+        <View style={[styles.barraConfirmar, { paddingBottom: espacio.m + insets.bottom }]}>
           <Boton
             titulo={`Confirmar pedido (${totalItems})${MOSTRAR_PRECIOS ? ` · $${totalPrecio.toFixed(2)}` : ''}`}
             icono="bag-check-outline"
@@ -157,7 +158,7 @@ export default function MenuScreen({ route, navigation }) {
           {seleccionado ? (
             // Pressable interno: tocar la hoja no cierra el modal.
             <Pressable
-              style={[styles.hoja, { paddingBottom: 16 + insets.bottom }]}
+              style={[styles.hoja, { paddingBottom: espacio.l + insets.bottom }]}
               onPress={() => {}}
               accessible={false}
             >
@@ -239,16 +240,16 @@ export default function MenuScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  lista: { padding: 12, paddingBottom: 24 },
-  columnas: { gap: 12, marginBottom: 12 },
-  avisoCarga: { marginBottom: 12 },
-  errorCarga: { gap: 12 },
+  lista: { padding: espacio.m, paddingBottom: espacio.xl },
+  columnas: { gap: espacio.m, marginBottom: espacio.m },
+  avisoCarga: { marginBottom: espacio.m },
+  errorCarga: { gap: espacio.m },
   filaEsqueleto: { flexDirection: 'row' }, // FlatList lo hace sola con numColumns; aquí hay que pedirlo
   esqueletoFoto: { aspectRatio: 4 / 3 },
   esqueletoNombre: { minHeight: 42 },
   esqueletoLinea2: { marginTop: 5 },
-  esqueletoPrecio: { marginTop: 8 },
-  vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },
+  esqueletoPrecio: { marginTop: espacio.s },
+  vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: tipo.cuerpo.fontSize },
   card: {
     ...estiloTarjeta,
     flex: 1,
@@ -259,9 +260,9 @@ const styles = StyleSheet.create({
   cardPresionada: { opacity: 0.9 },
   foto: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colores.acentoSuave },
   fotoVacia: { alignItems: 'center', justifyContent: 'center' },
-  info: { padding: 12 },
-  nombre: { fontFamily: fuente.extra, fontSize: 16, lineHeight: 21, minHeight: 42, color: colores.texto },
-  precio: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto, marginTop: 2 },
+  info: { padding: espacio.m },
+  nombre: { ...tipo.cuerpo, fontFamily: fuente.extra, lineHeight: 21, minHeight: 42, color: colores.texto },
+  precio: { ...tipo.titulo, color: colores.texto, marginTop: 2 },
   insignia: {
     position: 'absolute',
     top: 8,
@@ -275,12 +276,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 3,
   },
-  insigniaMas: { backgroundColor: '#fff' },
-  insigniaTexto: { color: '#fff', fontFamily: fuente.extra, fontSize: 14 },
+  insigniaMas: { backgroundColor: colores.blanco },
+  insigniaTexto: { ...tipo.apoyo, fontFamily: fuente.extra, color: colores.blanco },
   barraConfirmar: {
     backgroundColor: colores.tarjeta,
     paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingTop: espacio.m,
     borderTopWidth: 1,
     borderTopColor: colores.borde,
   },
@@ -302,27 +303,27 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
   },
   hojaCuerpo: { padding: 18 },
-  hojaNombre: { fontFamily: fuente.extra, fontSize: 22, lineHeight: 28, color: colores.texto },
-  hojaPrecio: { fontFamily: fuente.extra, fontSize: 24, color: colores.texto, marginTop: 4 },
-  hojaDescripcion: { fontSize: 15, color: colores.tenue, marginTop: 8, lineHeight: 21 },
+  hojaNombre: { ...tipo.titulo, lineHeight: 28, color: colores.texto },
+  hojaPrecio: { ...tipo.precio, color: colores.texto, marginTop: espacio.xs },
+  hojaDescripcion: { fontSize: tipo.cuerpo.fontSize, color: colores.tenue, marginTop: espacio.s, lineHeight: 21 },
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: espacio.xl,
     marginVertical: 18,
   },
   selectorBoton: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#e8edf0',
+    backgroundColor: colores.relleno,
     alignItems: 'center',
     justifyContent: 'center',
   },

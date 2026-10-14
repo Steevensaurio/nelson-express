@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colores, radio } from '../constants/tema';
+import { colores, radio, tipo, espacio } from '../constants/tema';
 import { Boton, Campo, Icono, Text } from './ui';
 
 export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicial }) {
@@ -28,7 +28,7 @@ export default function SelectorMapa({ onConfirmar, onCancelar, coordenadaInicia
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colores.fondo, padding: 16 },
+  container: { flex: 1, backgroundColor: colores.fondo, padding: espacio.l },
   aviso: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
     backgroundColor: colores.acentoSuave,
     borderRadius: radio.medio,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: espacio.l,
   },
-  avisoTexto: { flex: 1, fontSize: 14, color: colores.texto, lineHeight: 20 },
+  avisoTexto: { flex: 1, fontSize: tipo.cuerpo.fontSize, color: colores.texto, lineHeight: 20 },
   cancelar: { marginTop: 10 },
 });

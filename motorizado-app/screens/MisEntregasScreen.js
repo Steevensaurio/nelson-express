@@ -5,9 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Text, Titulo } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
@@ -66,7 +67,7 @@ export default function MisEntregasScreen({ navigation }) {
   });
   const entregas = datos ?? SIN_ENTREGAS;
   // Mismo perfil (misma clave) que la pestaña Perfil: una petición cada 60 s sirve a las dos.
-  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: MAX_EDAD_MS });
   const nombre = perfil?.first_name ?? '';
   const [refrescando, setRefrescando] = useState(false);
   const insets = useSafeAreaInsets();
@@ -136,7 +137,7 @@ export default function MisEntregasScreen({ navigation }) {
         ListHeaderComponent={(datos === undefined ? lento : error) ? <AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} /> : null}
         ListEmptyComponent={
           cargando ? (
-            <View style={styles.esqueletos} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View style={styles.esqueletos} accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               {[0, 1].map((i) => <TicketEsqueleto key={i} />)}
             </View>
           ) : error && datos === undefined ? (
@@ -197,59 +198,59 @@ export default function MisEntregasScreen({ navigation }) {
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
   container: { backgroundColor: colores.fondo },
-  lista: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
+  lista: { paddingHorizontal: espacio.l, paddingTop: espacio.m, paddingBottom: espacio.xl, gap: espacio.m, flexGrow: 1 },
 
-  saludo: { fontSize: 22, lineHeight: 28, color: '#fff' },
+  saludo: { fontSize: tipo.titulo.fontSize, lineHeight: 28, color: colores.blanco },
   esqueletoResumen: { marginTop: 2 },
-  esqueletos: { gap: 12 },
+  esqueletos: { gap: espacio.m },
   esqueletoValor: { marginTop: 1 },
-  resumen: { marginTop: 2, fontFamily: fuente.media, fontSize: 14, color: '#fff' },
+  resumen: { ...tipo.apoyo, marginTop: 2, color: colores.blanco },
 
   // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.
-  filtros: { flexDirection: 'row', margin: 16, marginBottom: 4, padding: 4, borderRadius: 12, backgroundColor: '#e6ecf0' },
+  filtros: { flexDirection: 'row', margin: espacio.l, marginBottom: espacio.xs, padding: espacio.xs, borderRadius: radio.medio, backgroundColor: colores.relleno },
   filtro: {
     flex: 1,
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: espacio.s,
     borderRadius: 9,
   },
   filtroActivo: {
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     elevation: 1,
-    shadowColor: '#002838',
+    shadowColor: colores.sombra,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
   },
-  filtroTexto: { fontFamily: fuente.negrita, fontSize: 13.5, color: '#4d5b64' },
+  filtroTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   filtroTextoActivo: { color: colores.primarioOscuro },
   contador: {
     minWidth: 22,
     height: 22,
     borderRadius: 11,
     paddingHorizontal: 6,
-    backgroundColor: '#d5dde2',
+    backgroundColor: colores.rellenoFuerte,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contadorActivo: { backgroundColor: colores.acentoSuave },
-  contadorTexto: { fontFamily: fuente.negrita, fontSize: 12, color: '#4d5b64' },
+  contadorTexto: { ...tipo.etiqueta, color: colores.tenue },
   contadorTextoActivo: { color: colores.primarioOscuro },
 
   presionada: { opacity: 0.9 },
   // Todos los tickets tienen la misma estructura (dos tramos de una línea cada uno y un pie), así que miden lo mismo.
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  tramo: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.s },
+  tramo: { flexDirection: 'row', gap: espacio.m, marginTop: 10 },
   tramoIcono: { marginTop: 2 },
   tramoCuerpo: { flex: 1, minWidth: 0 },
-  rotulo: { fontFamily: fuente.negrita, fontSize: 12, color: colores.tenue },
-  valor: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto, marginTop: 1 },
-  pie: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pieRotulo: { flex: 1, fontFamily: fuente.negrita, fontSize: 14, color: colores.tenue },
+  rotulo: { ...tipo.etiqueta, color: colores.tenue },
+  valor: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto, marginTop: 1 },
+  pie: { flexDirection: 'row', alignItems: 'center', gap: espacio.s },
+  pieRotulo: { ...tipo.apoyo, fontFamily: fuente.negrita, flex: 1, color: colores.tenue },
   precio: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: colores.verde },
-  vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
-  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  vacio: { alignItems: 'center', gap: espacio.m, marginTop: 56, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: tipo.cuerpo.fontSize },
 });

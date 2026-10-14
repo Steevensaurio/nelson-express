@@ -3,8 +3,9 @@ import { View, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform } fro
 import api from '../services/api';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
+import { MAX_EDAD_MS } from '../services/cargaRapida';
 import SelectorMapa from '../components/SelectorMapa';
-import { colores, fuente } from '../constants/tema';
+import { colores, fuente, tipo, espacio } from '../constants/tema';
 import { Aviso, Boton, Campo, Esqueleto, Icono, Presionable, Text, estiloTarjeta } from '../components/ui';
 
 // Tarjeta de dirección mientras llega la lista.
@@ -26,7 +27,7 @@ const pedirDirecciones = pedir('/direcciones/');
 export default function MisDireccionesScreen() {
   // La lista vive también en la caché ('direcciones'): al crear, editar o borrar se actualiza ahí para que
   // Confirmar pedido y Nuevo encargo la vean sin otra petición.
-  const { datos, cargando, error: errorCarga, recargar, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const { datos, cargando, error: errorCarga, recargar, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: MAX_EDAD_MS });
   const direcciones = datos ?? SIN_DIRECCIONES;
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarMapa, setMostrarMapa] = useState(false);
@@ -184,7 +185,7 @@ export default function MisDireccionesScreen() {
         )}
         ListEmptyComponent={
           cargando ? (
-            <View style={styles.esqueletos} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View style={styles.esqueletos} accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               <TarjetaEsqueleto />
               <TarjetaEsqueleto />
             </View>
@@ -216,7 +217,7 @@ export default function MisDireccionesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
-  lista: { padding: 16, paddingBottom: 32, gap: 12 },
+  lista: { padding: espacio.l, paddingBottom: 32, gap: espacio.m },
   card: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
   cardPresionada: { opacity: 0.9 },
   cardEditando: { borderWidth: 2, borderColor: colores.primario },
@@ -229,18 +230,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardCuerpo: { flex: 1 },
-  etiqueta: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
-  direccion: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
-  referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
-  esqueletos: { gap: 12 },
+  etiqueta: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
+  direccion: { ...tipo.apoyo, color: colores.tenue, marginTop: 2 },
+  referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
+  esqueletos: { gap: espacio.m },
   esqueletoLinea: { marginTop: 6 },
-  vacio: { alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 16 },
-  vacioTexto: { textAlign: 'center', fontFamily: fuente.media, color: colores.tenue, fontSize: 15 },
-  formulario: { ...estiloTarjeta, marginTop: 4 },
-  formularioTitulo: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto, marginBottom: 14 },
-  etiquetaMapa: { fontFamily: fuente.negrita, fontSize: 14, color: colores.texto, marginBottom: 6 },
+  vacio: { alignItems: 'center', gap: espacio.m, marginTop: 32, marginBottom: espacio.l },
+  vacioTexto: { ...tipo.cuerpo, textAlign: 'center', color: colores.tenue },
+  formulario: { ...estiloTarjeta, marginTop: espacio.xs },
+  formularioTitulo: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.texto, marginBottom: 14 },
+  etiquetaMapa: { ...tipo.cuerpoFuerte, color: colores.texto, marginBottom: 6 },
   botonMapa: { marginBottom: 14 },
   espacio: { marginTop: 10 },
-  agregar: { marginTop: 4 },
+  agregar: { marginTop: espacio.xs },
   errorCaja: { marginBottom: 14 },
 });

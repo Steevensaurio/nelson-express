@@ -1,3 +1,6 @@
+// Cuánto dura «reciente» una carga guardada: dentro de este plazo al volver a una pantalla no se pide nada.
+export const MAX_EDAD_MS = 60000;
+
 // Qué hacer al entrar a una pantalla: con datos recientes no se pide nada, con datos viejos se muestran
 // y se refrescan por detrás, y sin datos se carga (con esqueleto). `maxEdad` 0 = siempre refresca.
 export const decidirCarga = ({ hayDatos, edadMs, maxEdad }) => {

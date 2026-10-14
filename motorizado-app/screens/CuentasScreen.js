@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
-import { colores, fuente, radio } from '../constants/tema';
+import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
 import { Aviso, AvisosCarga, Boleta, Esqueleto, Icono, Presionable, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const dosDigitos = (n) => String(n).padStart(2, '0');
@@ -81,7 +81,7 @@ export default function CuentasScreen() {
   return (
     <FlatList
       style={styles.container}
-      contentContainerStyle={[styles.contenido, { paddingBottom: 16 + insets.bottom }]}
+      contentContainerStyle={[styles.contenido, { paddingBottom: espacio.l + insets.bottom }]}
       refreshing={refrescando}
       onRefresh={refrescar}
       data={datos?.carreras ?? SIN_CARRERAS}
@@ -106,11 +106,11 @@ export default function CuentasScreen() {
             })}
           </View>
 
-          {error && !datos ? <Aviso tipo="error" estilo={styles.espacioAviso}>No se pudieron cargar tus cuentas</Aviso> : null}
+          {error && !datos ? <Aviso tipo="error" estilo={styles.espacioAviso}>No pudimos cargar tus cuentas. Revisa tu conexión.</Aviso> : null}
           <AvisosCarga lento={lento} error={error} hayDatos={Boolean(datos)} estilo={styles.espacioAviso} />
 
           {cargando ? (
-            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <View accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
               <View style={styles.liquidacion}>
                 <Boleta
                   pie={
@@ -205,9 +205,9 @@ export default function CuentasScreen() {
 
 const styles = StyleSheet.create({
   container: { backgroundColor: colores.fondo },
-  contenido: { padding: 16 },
+  contenido: { padding: espacio.l },
   // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.
-  atajos: { flexDirection: 'row', padding: 4, borderRadius: 12, backgroundColor: '#e6ecf0', marginBottom: 16 },
+  atajos: { flexDirection: 'row', padding: espacio.xs, borderRadius: radio.medio, backgroundColor: colores.relleno, marginBottom: espacio.l },
   atajo: {
     flex: 1,
     minHeight: 48,
@@ -216,23 +216,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   atajoActivo: {
-    backgroundColor: '#fff',
+    backgroundColor: colores.blanco,
     elevation: 1,
-    shadowColor: '#002838',
+    shadowColor: colores.sombra,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
   },
-  atajoTexto: { fontFamily: fuente.negrita, fontSize: 13.5, color: '#4d5b64' },
+  atajoTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   atajoTextoActivo: { color: colores.primarioOscuro },
 
   liquidacion: { marginBottom: 14 },
   liquidacionLinea: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingVertical: 6 },
-  lineaRotulo: { fontFamily: fuente.media, fontSize: 15, color: colores.tenue },
-  lineaValor: { fontFamily: fuente.extra, fontSize: 20, color: colores.texto },
+  lineaRotulo: { ...tipo.cuerpo, color: colores.tenue },
+  lineaValor: { ...tipo.titulo, color: colores.texto },
   lineaDebes: { color: colores.naranja },
-  liquidacionPie: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
-  netoRotulo: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
+  liquidacionPie: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: espacio.s },
+  netoRotulo: { ...tipo.subtitulo, fontFamily: fuente.extra, color: colores.texto },
   netoValor: { fontFamily: fuente.extra, fontSize: 40, lineHeight: 48, color: colores.verde },
   espacioAviso: { marginBottom: 14 },
   esqueletoDestino: { marginTop: 1 },
@@ -249,10 +249,10 @@ const styles = StyleSheet.create({
     borderRadius: radio.medio,
   },
   filaInfo: { flex: 1, paddingRight: 10 },
-  filaRecogida: { fontFamily: fuente.extra, fontSize: 15, color: colores.texto },
-  filaDestino: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 1 },
-  filaFecha: { fontFamily: fuente.media, fontSize: 12, color: colores.suave, marginTop: 3 },
-  filaValor: { fontFamily: fuente.extra, fontSize: 20, color: colores.verde },
-  vacio: { alignItems: 'center', gap: 12, marginTop: 40, paddingHorizontal: 32 },
-  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
+  filaRecogida: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
+  filaDestino: { ...tipo.apoyo, color: colores.tenue, marginTop: 1 },
+  filaFecha: { ...tipo.apoyo, color: colores.suave, marginTop: 3 },
+  filaValor: { ...tipo.titulo, color: colores.verde },
+  vacio: { alignItems: 'center', gap: espacio.m, marginTop: 40, paddingHorizontal: 32 },
+  vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: tipo.cuerpo.fontSize },
 });
