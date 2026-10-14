@@ -1541,11 +1541,33 @@ td strong {
   background: var(--tarjeta);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  padding: 16px 18px 18px;
+  padding: 14px;
+  margin: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   min-width: 0;
+}
+
+.formulario-encargo :is(input, textarea) {
+  width: 100%;
+  min-height: 48px;
+}
+
+.formulario-encargo input[type='checkbox'] {
+  width: 20px;
+  min-height: 0;
+}
+
+@media (min-width: 768px) {
+  .formulario-encargo fieldset {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 16px 18px 18px;
+  }
+
+  .formulario-encargo :is(input, textarea) {
+    min-height: 44px;
+  }
 }
 
 .formulario-encargo legend {
@@ -1587,11 +1609,16 @@ td strong {
   flex-direction: row !important;
   align-items: center;
   gap: 10px !important;
+  min-height: 44px;
+}
+
+.campo-check input {
+  flex: none;
 }
 
 .grupo-contacto {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   background: var(--marca-suave);
   border: 2px dashed var(--marca);
@@ -1604,6 +1631,30 @@ td strong {
   margin: 0 0 2px;
   color: var(--texto);
   font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .grupo-contacto {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Alto adaptable: ~40% de la pantalla en celular, nunca menos de 240 px ni más de 360 px. */
+.selector-mapa-lienzo {
+  /* Encierra los z-index de Leaflet (400–1000) para que el pie fijo del formulario pase por encima. */
+  isolation: isolate;
+  z-index: 0;
+  width: 100%;
+  height: clamp(240px, 40dvh, 360px);
+  border-radius: 10px;
+}
+
+/* Controles de zoom de 44 px (Leaflet los trae de 30). */
+.selector-mapa .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 22px;
 }
 
 .selector-mapa {
@@ -1626,33 +1677,96 @@ td strong {
   font-weight: 600;
 }
 
+/* Pie fijo abajo mientras se llena el formulario: envío, lo que falta y el botón siempre a la vista. */
 .encargo-pie {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   background: var(--marca-suave);
-  border-radius: var(--radio);
-  padding: 14px 18px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio) var(--radio) 0 0;
+  margin: 0 calc(-1 * max(14px, env(safe-area-inset-left, 0px)));
+  padding: 10px max(14px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -6px 16px rgb(0 0 0 / 0.08);
+}
+
+.encargo-pie-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .encargo-envio {
-  font-size: var(--t-titulo);
+  font-size: var(--t-subtitulo);
   font-weight: 800;
+  line-height: 1.25;
   color: var(--marca-oscura);
 }
 
-@media (max-width: 720px) {
-  .formulario-encargo fieldset,
-  .grupo-contacto {
-    grid-template-columns: 1fr;
+.encargo-envio.pendiente {
+  font-size: var(--t-apoyo);
+}
+
+.encargo-faltan {
+  margin: 0;
+  font-size: var(--t-etiqueta);
+  color: var(--tenue);
+}
+
+.encargo-faltan:empty {
+  display: none;
+}
+
+.encargo-pie .primario {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* Celular horizontal (poca altura): pie en una fila para que no tape media pantalla. */
+@media (max-height: 500px) and (min-width: 480px) {
+  .encargo-pie {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 8px;
   }
 
-  .barra,
-  .contenido {
-    padding-left: 14px;
-    padding-right: 14px;
+  .encargo-pie-texto {
+    flex: 1;
+  }
+
+  .encargo-pie .primario {
+    flex: none;
+    width: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .encargo-pie {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+    padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radio);
+  }
+
+  .encargo-envio {
+    font-size: var(--t-titulo);
+  }
+
+  .encargo-envio.pendiente {
+    font-size: var(--t-cuerpo);
+  }
+
+  .encargo-pie .primario {
+    flex: none;
+    width: auto;
   }
 }
 

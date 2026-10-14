@@ -158,7 +158,7 @@ export default function NuevoEncargo() {
   return (
     <div className="pagina">
       <Barra />
-      <main className="contenido" id="contenido">
+      <main className="contenido" id="contenido" tabIndex={-1}>
         <h1>Nuevo encargo</h1>
         <p className="tenue">
           Para clientes que piden por llamada o WhatsApp. Se crea a su nombre y queda Pendiente en el panel de despacho.
@@ -219,16 +219,17 @@ export default function NuevoEncargo() {
             </div>
           </fieldset>
 
-          <p className="tenue campo-ancho" id="faltan" role="status">
-            {completo ? '' : `Falta: ${faltan.join(', ')}.`}
-          </p>
-
           <div className="encargo-pie">
-            <span className="encargo-envio" role="status">
-              {envio
-                ? `Envío: $${Number(envio.costo_envio).toFixed(2)} (${Number(envio.distancia_km).toFixed(1)} km)`
-                : 'El envío se calcula al indicar la recogida y la entrega'}
-            </span>
+            <div className="encargo-pie-texto">
+              <span className={`encargo-envio ${envio ? '' : 'pendiente'}`} role="status">
+                {envio
+                  ? `Envío: $${Number(envio.costo_envio).toFixed(2)} (${Number(envio.distancia_km).toFixed(1)} km)`
+                  : 'El envío se calcula al indicar la recogida y la entrega'}
+              </span>
+              <p className="encargo-faltan" id="faltan" role="status">
+                {completo ? '' : `Falta: ${faltan.join(', ')}.`}
+              </p>
+            </div>
             <button type="submit" className="primario" disabled={!completo || !envio || enviando} aria-describedby="faltan">
               {enviando ? 'Creando…' : 'Crear encargo'}
             </button>

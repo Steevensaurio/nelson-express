@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMedia } from '../useMedia.js';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -48,6 +49,9 @@ export default function SelectorMapa({ value, onChange, etiqueta = 'Mapa' }) {
   const [texto, setTexto] = useState('');
   const [errorTexto, setErrorTexto] = useState('');
   const idError = `error-coordenadas-${etiqueta.replace(/\s+/g, '-').toLowerCase()}`;
+  // En pantallas táctiles un dedo desplaza la página y dos dedos mueven/acercan el mapa (TouchZoom de Leaflet
+  // también desplaza); así el mapa no atrapa el scroll. La rueda del ratón tampoco hace zoom: desplaza la página.
+  const tactil = useMedia('(pointer: coarse)');
 
   const elegir = async (lat, lng) => {
     onChange({ lat, lng, direccion: null });
@@ -78,7 +82,9 @@ export default function SelectorMapa({ value, onChange, etiqueta = 'Mapa' }) {
       <MapContainer
         center={value ?? CENTRO_SANTO_DOMINGO}
         zoom={value ? 16 : 13}
-        style={{ height: 220, width: '100%', borderRadius: 10 }}
+        className="selector-mapa-lienzo"
+        dragging={!tactil}
+        scrollWheelZoom={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -119,7 +125,7 @@ export default function SelectorMapa({ value, onChange, etiqueta = 'Mapa' }) {
           ? buscando
             ? 'Buscando la dirección…'
             : `Ubicación marcada: ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)} (arrástrala para ajustar)`
-          : 'Toca el mapa para marcar el punto.'}
+          : `Toca el mapa para marcar el punto.${tactil ? ' Usa dos dedos para mover el mapa.' : ''}`}
       </p>
     </div>
   );
