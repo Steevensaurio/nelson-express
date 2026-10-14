@@ -72,7 +72,7 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
       // Se invalidó la clave mientras iba en camino (la lista de antes ya no vale): no se guarda y, si la pantalla
       // sigue en esa clave, se repite la petición para que no quede sin datos hasta el próximo sondeo.
       if (marca(clave) !== marcaAlSalir) {
-        if (claveRef.current === clave) cargador.pedir({ forzar: true });
+        if (claveRef.current === clave) deEstaClave.pedir({ forzar: true });
         return;
       }
       if ('error' in resultado) {
@@ -85,8 +85,8 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
         setFallo({ clave, e: null });
       }
     };
-    const cargador = crearCargador({ cargar, alResultado });
-    return cargador;
+    const deEstaClave = crearCargador({ cargar, alResultado });
+    return deEstaClave;
   }, [clave]);
 
   const recargar = useCallback((opciones) => {

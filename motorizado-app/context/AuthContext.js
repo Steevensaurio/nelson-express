@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api, { registrarAlRenovar, registrarCierreDeSesion } from '../services/api';
 import { borrarSesion, guardarSesion, leerSesion } from '../services/sesion';
-import { guardar, limpiarCache } from '../services/cache';
+import { generacion, guardar, limpiarCache } from '../services/cache';
 import { debeCerrarSesion } from '../services/renovacion';
 
 const AuthContext = createContext(null);
@@ -38,11 +38,12 @@ export function AuthProvider({ children }) {
       const sesion = await leerSesion();
       if (sesion) {
         if (sesion.access) api.defaults.headers.common['Authorization'] = `Bearer ${sesion.access}`;
+        const vuelta = generacion();
         try {
           // Si el access venció, el interceptor lo renueva con el refresh antes de responder.
           const { data } = await api.get('/perfil/', { timeout: 8000 });
           if (!data.es_motorizado) logout();
-          else guardar('perfil', data); // las pantallas parten de esto y no lo vuelven a pedir al arrancar
+          else if (generacion() === vuelta) guardar('perfil', data); // las pantallas parten de esto y no lo vuelven a pedir al arrancar
         } catch (error) {
           // Solo un rechazo del servidor (400/401/403) invalida la sesión; sin red o con el servidor dormido se entra
           // con lo guardado y cada pantalla muestra su propio aviso. Con solo el refresh guardado y sin red no hay

@@ -31,8 +31,12 @@ export function RealtimeProvider({ children }) {
         if (estado) notificar({ type: 'reconectado' });
       },
     });
+    // iOS informa 'active' tras 'inactive' breves (centro de avisos, permisos) con el socket sano: solo se reconecta
+    // al volver de 'background' (en web, RN-web emite 'background'/'active' por visibilidad: sin cambios).
+    let anterior = AppState.currentState;
     const appState = AppState.addEventListener('change', (nuevo) => {
-      if (nuevo === 'active') conexion.reconectar();
+      if (nuevo === 'active' && anterior === 'background') conexion.reconectar();
+      anterior = nuevo;
     });
 
     return () => {
