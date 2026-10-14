@@ -77,7 +77,9 @@ a,
 button,
 select,
 label,
-input {
+input,
+textarea,
+summary {
   touch-action: manipulation;
 }
 
@@ -764,6 +766,7 @@ input[type='checkbox'] {
   }
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .barra {
     padding-left: max(24px, env(safe-area-inset-left, 0px));
@@ -854,6 +857,7 @@ input[type='checkbox'] {
   gap: 16px;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .contenido {
     padding: 24px max(24px, env(safe-area-inset-right, 0px)) 48px max(24px, env(safe-area-inset-left, 0px));
@@ -937,6 +941,7 @@ input[type='checkbox'] {
   transition: background-color 0.15s, color 0.15s, transform 120ms var(--salida);
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .resumen {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -994,6 +999,7 @@ button.resumen-tarjeta.activa:hover {
   padding: 14px;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .motorizados {
     padding: 16px 18px;
@@ -1079,6 +1085,7 @@ button.resumen-tarjeta.activa:hover {
   padding: 14px;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .tabla-encabezado {
     padding: 16px 18px;
@@ -1091,7 +1098,7 @@ button.resumen-tarjeta.activa:hover {
   position: relative;
 }
 
-/* Sin ancho mínimo fijo: la tabla solo se muestra donde cabe (Despacho ≥1280, Ganancias ≥768) y las columnas
+/* Sin ancho mínimo fijo: la tabla solo se muestra donde cabe (Despacho ≥BP.tablaDespacho, Ganancias ≥BP.tablet: mantener igual que BP en useMedia.js) y las columnas
    se reparten el ancho; los textos largos van en 2 líneas con el texto completo en title. El scroll queda de respaldo. */
 table {
   width: 100%;
@@ -1099,7 +1106,7 @@ table {
 }
 
 td {
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 td.derecha,
@@ -1146,8 +1153,7 @@ td {
 }
 
 /* Textos libres largos: máximo 2 líneas; el texto completo va en el atributo title. */
-.clamp,
-.clamp-1 {
+.clamp {
   max-width: 260px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1155,8 +1161,9 @@ td {
   overflow: hidden;
 }
 
-.clamp-1 {
-  -webkit-line-clamp: 1;
+/* El motivo de cancelación se lee entero (sin recorte), pero sin ensanchar la columna Estado. */
+.motivo {
+  max-width: 200px;
 }
 
 .clamp.ancho {
@@ -1206,6 +1213,7 @@ td strong {
   gap: 12px;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .tarjetas-pedidos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1328,6 +1336,7 @@ td strong {
 
 .insignia {
   --tono: var(--neutro);
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1410,6 +1419,7 @@ td strong {
 }
 
 /* Celular: hoja anclada abajo a todo el ancho, con los botones apilados. */
+/* 480: límite solo de CSS (celular chico); no está en BP */
 @media (max-width: 479px) {
   .fondo-modal {
     align-items: flex-end;
@@ -1508,6 +1518,7 @@ td strong {
   }
 }
 
+/* 1280: límite solo de CSS (filtros de Ganancias en una fila); no depende de BP */
 @media (min-width: 1280px) {
   .filtros-ganancias {
     display: flex;
@@ -1624,6 +1635,7 @@ td strong {
   min-height: 0;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .formulario-encargo fieldset {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1698,6 +1710,7 @@ td strong {
   font-weight: 700;
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
   .grupo-contacto {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1742,7 +1755,22 @@ td strong {
   font-weight: 600;
 }
 
-/* Pie fijo abajo mientras se llena el formulario: envío, lo que falta y el botón siempre a la vista. */
+/* Pie fijo abajo mientras se llena el formulario: envío, lo que falta y el botón siempre a la vista.
+   Celular (<768): compacto, "Envío" + "Faltan N datos" (la lista se despliega) y el botón; ~120 px.
+   --alto-pie reserva ese alto al llevar un campo a la vista (scroll-padding/scroll-margin), para que el
+   campo enfocado nunca quede debajo del pie. */
+.formulario-encargo {
+  --alto-pie: 136px;
+}
+
+html:has(.encargo-pie) {
+  scroll-padding-bottom: 136px;
+}
+
+.formulario-encargo :is(input, textarea, select, summary, .leaflet-container) {
+  scroll-margin-bottom: var(--alto-pie);
+}
+
 .encargo-pie {
   position: sticky;
   bottom: 0;
@@ -1750,41 +1778,85 @@ td strong {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   background: var(--marca-suave);
   border: 1px solid var(--borde);
   border-radius: var(--radio) var(--radio) 0 0;
   margin: 0 calc(-1 * max(14px, env(safe-area-inset-left, 0px)));
-  padding: 10px max(14px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 6px max(14px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -6px 16px rgb(0 0 0 / 0.08);
 }
 
 .encargo-pie-texto {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 12px;
   min-width: 0;
 }
 
 .encargo-envio {
-  font-size: var(--t-subtitulo);
+  font-size: var(--t-cuerpo);
   font-weight: 800;
   line-height: 1.25;
   color: var(--marca-oscura);
 }
 
-.encargo-envio.pendiente {
-  font-size: var(--t-apoyo);
-}
-
-.encargo-faltan {
-  margin: 0;
-  font-size: var(--t-etiqueta);
-  color: var(--tenue);
-}
-
-.encargo-faltan:empty {
+.pie-largo {
   display: none;
+}
+
+/* En celular el texto completo de "Falta" queda solo para lectores (sigue siendo la descripción del botón). */
+.encargo-faltan {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.encargo-faltan-detalle summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--marca-oscura);
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Flecha propia (display: flex quita el marcador nativo): apunta abajo cerrada y arriba abierta. */
+.encargo-faltan-detalle summary::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.encargo-faltan-detalle[open] summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.encargo-faltan-detalle[open] {
+  flex-basis: 100%;
+}
+
+.encargo-faltan-detalle[open] summary {
+  min-height: 36px;
+}
+
+.encargo-faltan-detalle p {
+  margin: 0 0 4px;
+  max-height: 30vh;
+  overflow-y: auto;
+  font-size: var(--t-etiqueta);
+  color: var(--texto);
 }
 
 .encargo-pie .primario {
@@ -1792,12 +1864,32 @@ td strong {
   min-height: 48px;
 }
 
-/* Celular horizontal (poca altura): pie en una fila para que no tape media pantalla. */
+/* Celular horizontal (poca altura): pie en una sola fila (~58 px), así un mapa de 240 px cabe entre la barra y el pie. */
 @media (max-height: 500px) and (min-width: 480px) {
+  .formulario-encargo {
+    --alto-pie: 62px;
+  }
+
+  /* 58 + 62: deja exactamente 240 px (el alto mínimo del mapa) en una pantalla de 360. */
+  html:has(.encargo-pie) {
+    scroll-padding-top: 58px;
+    scroll-padding-bottom: 62px;
+  }
+
+  /* El mapa (240 px) llena justo ese hueco: sin margen extra, que lo haría más alto que el hueco. */
+  .formulario-encargo .leaflet-container {
+    scroll-margin-bottom: 0;
+  }
+
   .encargo-pie {
     flex-direction: row;
     align-items: center;
-    padding-top: 8px;
+    padding-top: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .encargo-pie .primario {
+    min-height: 44px;
   }
 
   .encargo-pie-texto {
@@ -1810,7 +1902,16 @@ td strong {
   }
 }
 
+/* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
+  .formulario-encargo {
+    --alto-pie: 110px;
+  }
+
+  html:has(.encargo-pie) {
+    scroll-padding-bottom: 110px;
+  }
+
   .encargo-pie {
     flex-direction: row;
     align-items: center;
@@ -1821,12 +1922,43 @@ td strong {
     border-radius: var(--radio);
   }
 
+  .encargo-pie-texto {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
   .encargo-envio {
     font-size: var(--t-titulo);
   }
 
   .encargo-envio.pendiente {
     font-size: var(--t-cuerpo);
+  }
+
+  .pie-largo {
+    display: inline;
+  }
+
+  .pie-corto,
+  .encargo-faltan-detalle {
+    display: none;
+  }
+
+  .encargo-faltan {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    font-size: var(--t-etiqueta);
+    color: var(--tenue);
+  }
+
+  .encargo-faltan:empty {
+    display: none;
   }
 
   .encargo-pie .primario {

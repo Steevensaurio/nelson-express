@@ -80,6 +80,8 @@ export default function SelectorMapa({ value, onChange, etiqueta = 'Mapa' }) {
   return (
     <div className="selector-mapa campo-ancho" role="group" aria-label={etiqueta}>
       <MapContainer
+        // dragging solo se lee al crear el mapa: si cambia el tipo de puntero se vuelve a crear (el punto vive en value).
+        key={tactil ? 'tactil' : 'puntero'}
         center={value ?? CENTRO_SANTO_DOMINGO}
         zoom={value ? 16 : 13}
         className="selector-mapa-lienzo"

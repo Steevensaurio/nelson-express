@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
+import { BP, anchoMinimo } from '../useMedia.js';
 
 const SECCIONES = { '/': 'Despacho', '/encargo': 'Nuevo encargo', '/ganancias': 'Ganancias' };
 
@@ -20,9 +21,16 @@ export default function Barra() {
     if (devolverFoco) boton.current?.focus();
   };
 
+  // Al cambiar de ruta se cierra (además, cada página monta su propia barra).
+  useEffect(() => setAbierto(false), [pathname]);
+
   useEffect(() => {
     if (!abierto) return undefined;
     menu.current?.querySelector('a')?.focus();
+    // Al pasar a pantalla ancha el menú se muestra en línea: el panel deja de tener sentido.
+    const ancho = window.matchMedia(anchoMinimo(BP.tablet));
+    const alCambiarAncho = () => ancho.matches && setAbierto(false);
+    ancho.addEventListener('change', alCambiarAncho);
     const alTeclear = (e) => {
       if (e.key === 'Escape') cerrar(true);
     };
@@ -34,6 +42,7 @@ export default function Barra() {
     return () => {
       document.removeEventListener('keydown', alTeclear);
       document.removeEventListener('pointerdown', alTocar);
+      ancho.removeEventListener('change', alCambiarAncho);
     };
   }, [abierto]);
 
@@ -61,7 +70,8 @@ export default function Barra() {
         <span className="barra-icono-menu" aria-hidden="true" />
       </button>
       <div className="barra-menu" id="menu-principal" ref={menu}>
-        <nav className="barra-nav" aria-label="Principal">
+        {/* Tocar un enlace cierra el panel, también el de la página actual (que no cambia la ruta). */}
+        <nav className="barra-nav" aria-label="Principal" onClick={(e) => e.target.closest('a') && setAbierto(false)}>
           <NavLink to="/" end>Despacho</NavLink>
           <NavLink to="/encargo">Nuevo encargo</NavLink>
           <NavLink to="/ganancias">Ganancias</NavLink>

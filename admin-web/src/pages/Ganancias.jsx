@@ -3,7 +3,7 @@ import api from '../api';
 import Barra from '../components/Barra.jsx';
 import { useAuth } from '../auth.jsx';
 import { useTiempoReal } from '../useTiempoReal.js';
-import { useMedia } from '../useMedia.js';
+import { BP, anchoMinimo, useMedia } from '../useMedia.js';
 
 const dinero = (valor) => `$${Number(valor).toFixed(2)}`;
 
@@ -62,7 +62,7 @@ export default function Ganancias() {
     setHasta(fechaLocal(h));
   };
 
-  const enTabla = useMedia('(min-width: 768px)');
+  const enTabla = useMedia(anchoMinimo(BP.tablet));
   const resumen = datos?.resumen;
   const porcentaje = datos ? (datos.comision_porcentaje ? `${datos.comision_porcentaje}%` : 'según cada pedido') : '';
 

@@ -5,7 +5,7 @@ import { useTiempoReal } from '../useTiempoReal.js';
 import Barra from '../components/Barra.jsx';
 import Modal from '../components/Modal.jsx';
 import { MOSTRAR_PRECIOS } from '../config.js';
-import { useMedia } from '../useMedia.js';
+import { BP, anchoMinimo, useMedia } from '../useMedia.js';
 
 const INTERVALO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -57,7 +57,7 @@ const mensajeDeError = (err) => {
 };
 
 // La tabla de 8 columnas necesita ~1150 px para leerse sin apretar el selector; por debajo, tarjetas.
-const CONSULTA_TABLA = '(min-width: 1280px)';
+const CONSULTA_TABLA = anchoMinimo(BP.tablaDespacho);
 
 const Telefono = ({ numero, className = '' }) =>
   numero ? <a className={`telefono ${className}`} href={`tel:${numero}`}>{numero}</a> : null;
@@ -257,7 +257,7 @@ export default function Despacho() {
             <h2 id="titulo-pedidos">Pedidos</h2>
             <span className="tenue">
               <span className={`punto-vivo ${enVivo ? 'activo' : ''}`} aria-hidden="true" />
-              <span role="status">{enVivo ? 'En vivo' : `Sin tiempo real · cada ${INTERVALO_MS / 1000} s`}</span>
+              <span>{enVivo ? 'En vivo' : `Sin tiempo real · cada ${INTERVALO_MS / 1000} s`}</span>
               {actualizado ? ` · Actualizado ${actualizado.toLocaleTimeString()}` : ' · Cargando…'}
             </span>
           </div>
@@ -398,7 +398,7 @@ export default function Despacho() {
                         <td>
                           <Insignia estado={p.estado} />
                           {p.estado === 'CANCELADO' && p.motivo_cancelacion ? (
-                            <div className="tenue cursiva clamp" title={p.motivo_cancelacion}>{p.motivo_cancelacion}</div>
+                            <div className="tenue cursiva motivo">{p.motivo_cancelacion}</div>
                           ) : null}
                         </td>
                         <td>{selector(p, { 'aria-label': `Motorizado del pedido ${p.id}` })}</td>

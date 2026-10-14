@@ -155,6 +155,16 @@ export default function NuevoEncargo() {
     }
   };
 
+  // Si el campo enfocado queda en parte debajo del pie fijo (o de la barra), se trae a la vista: el navegador
+  // solo desplaza cuando el campo está fuera de pantalla. scrollIntoView respeta scroll-margin (--alto-pie).
+  const alEnfocar = (e) => {
+    const pie = e.currentTarget.querySelector('.encargo-pie');
+    if (!pie || pie.contains(e.target)) return;
+    const r = e.target.getBoundingClientRect();
+    const barra = document.querySelector('.barra')?.getBoundingClientRect().bottom ?? 0;
+    if (r.bottom > pie.getBoundingClientRect().top || r.top < barra) e.target.scrollIntoView({ block: 'nearest' });
+  };
+
   return (
     <div className="pagina">
       <Barra />
@@ -172,7 +182,7 @@ export default function NuevoEncargo() {
         ) : null}
         {error ? <p className="error-banner" role="alert">{error}</p> : null}
 
-        <form className="formulario-encargo" onSubmit={crear}>
+        <form className="formulario-encargo" onSubmit={crear} onFocus={alEnfocar}>
           <fieldset>
             <legend>Cliente</legend>
             <label>Nombre<input {...texto('clienteNombre')} /></label>
@@ -222,13 +232,26 @@ export default function NuevoEncargo() {
           <div className="encargo-pie">
             <div className="encargo-pie-texto">
               <span className={`encargo-envio ${envio ? '' : 'pendiente'}`} role="status">
-                {envio
-                  ? `Envío: $${Number(envio.costo_envio).toFixed(2)} (${Number(envio.distancia_km).toFixed(1)} km)`
-                  : 'El envío se calcula al indicar la recogida y la entrega'}
+                {envio ? (
+                  `Envío: $${Number(envio.costo_envio).toFixed(2)} (${Number(envio.distancia_km).toFixed(1)} km)`
+                ) : (
+                  <>
+                    <span className="pie-largo">El envío se calcula al indicar la recogida y la entrega</span>
+                    <span className="pie-corto">Envío: por calcular</span>
+                  </>
+                )}
               </span>
+              {/* Texto completo: visible en pantalla ancha; en celular solo para lectores (y para aria-describedby). */}
               <p className="encargo-faltan" id="faltan" role="status">
                 {completo ? '' : `Falta: ${faltan.join(', ')}.`}
               </p>
+              {/* Celular: el pie fijo muestra solo cuántos datos faltan; la lista se despliega a pedido. */}
+              {completo ? null : (
+                <details className="encargo-faltan-detalle">
+                  <summary>Faltan {faltan.length} {faltan.length === 1 ? 'dato' : 'datos'}</summary>
+                  <p>{faltan.join(', ')}.</p>
+                </details>
+              )}
             </div>
             <button type="submit" className="primario" disabled={!completo || !envio || enviando} aria-describedby="faltan">
               {enviando ? 'Creando…' : 'Crear encargo'}
