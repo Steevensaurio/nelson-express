@@ -556,43 +556,130 @@ input[type='checkbox'] {
 
 /* ---------- Barra superior ---------- */
 
+/* Celular (<768): logo chico + nombre de la sección + botón de menú; el menú es un panel bajo la barra.
+   ≥768: logo, enlaces y usuario en una sola fila; el botón de menú no existe. */
 .barra {
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--tarjeta);
   border-bottom: 1px solid var(--borde);
-  padding: 4px 24px;
+  padding: env(safe-area-inset-top, 0px) max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  min-height: 56px;
 }
 
 .barra-logo {
-  height: 52px;
-  vertical-align: middle;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
-.barra-izquierda {
+.barra-seccion {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-cuerpo);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra-boton-menu {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio);
+  background: none;
+  color: var(--texto);
+}
+
+.barra-boton-menu:active {
+  background: var(--marca-suave);
+}
+
+/* Tres rayas que se vuelven una X al abrir. */
+.barra-icono-menu,
+.barra-icono-menu::before,
+.barra-icono-menu::after {
+  display: block;
+  width: 22px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 160ms var(--salida), background-color 160ms;
+}
+
+.barra-icono-menu {
+  position: relative;
+}
+
+.barra-icono-menu::before,
+.barra-icono-menu::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.barra-icono-menu::before {
+  top: -7px;
+}
+
+.barra-icono-menu::after {
+  top: 7px;
+}
+
+.abierta .barra-icono-menu {
+  background: transparent;
+}
+
+.abierta .barra-icono-menu::before {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.abierta .barra-icono-menu::after {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.barra-menu {
+  display: none;
+}
+
+.abierta .barra-menu {
   display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: calc(100dvh - 100%);
+  overflow-y: auto;
+  padding: 8px max(14px, env(safe-area-inset-right, 0px)) 16px max(14px, env(safe-area-inset-left, 0px));
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--borde);
+  box-shadow: 0 12px 24px rgb(0 0 0 / 0.12);
+  animation: entra 0.2s var(--salida);
 }
 
 .barra-nav {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
 }
 
 .barra-nav a {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   min-height: 52px;
-  padding: 8px 14px;
-  border-bottom: 4px solid transparent;
+  padding: 8px 12px;
+  border-left: 4px solid transparent;
   color: var(--tenue);
   text-decoration: none;
   font-size: var(--t-cuerpo);
@@ -600,20 +687,120 @@ input[type='checkbox'] {
   transition: color 0.15s, border-color 0.15s;
 }
 
-.barra-nav a:hover {
-  color: var(--texto);
+.barra-nav a:active {
+  background: var(--marca-suave);
 }
 
 .barra-nav a.active {
   color: var(--marca-oscura);
-  border-bottom-color: var(--marca);
+  border-left-color: var(--marca);
 }
 
 .barra-usuario {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
+  margin-top: 8px;
+  padding: 12px 12px 0;
+  border-top: 1px solid var(--borde);
   font-weight: 600;
+}
+
+.barra-nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra-usuario .secundario {
+  flex: none;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .barra-nav a:hover {
+    color: var(--texto);
+  }
+}
+
+@media (min-width: 768px) {
+  .barra {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+    gap: 16px;
+  }
+
+  .barra-logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .barra-seccion,
+  .barra-boton-menu {
+    display: none;
+  }
+
+  .barra-menu,
+  .abierta .barra-menu {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .barra-nav {
+    flex-direction: row;
+    gap: 2px;
+  }
+
+  .barra-nav a {
+    min-height: 56px;
+    padding: 8px 12px;
+    border-left: 0;
+    border-bottom: 4px solid transparent;
+    white-space: nowrap;
+  }
+
+  .barra-nav a:active {
+    background: none;
+  }
+
+  .barra-nav a.active {
+    border-bottom-color: var(--marca);
+  }
+
+  .barra-usuario {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .barra-nombre {
+    max-width: 16ch;
+  }
+}
+
+@media (min-width: 1024px) {
+  .barra-nav {
+    gap: 6px;
+  }
+
+  .barra-nav a {
+    padding: 8px 14px;
+  }
 }
 
 /* ---------- Contenido ---------- */
@@ -621,10 +808,23 @@ input[type='checkbox'] {
 .contenido {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 24px 24px 48px;
+  padding: 16px max(14px, env(safe-area-inset-right, 0px)) calc(32px + env(safe-area-inset-bottom, 0px))
+    max(14px, env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .contenido {
+    padding: 24px max(24px, env(safe-area-inset-right, 0px)) 48px max(24px, env(safe-area-inset-left, 0px));
+    gap: 20px;
+  }
+}
+
+/* Contenedor de avisos en vivo: existe siempre para que el lector anuncie el cambio; vacío no deja hueco. */
+.contenido > .avisos:empty {
+  position: absolute;
 }
 
 .contenido > h1:not(.solo-lectores),
