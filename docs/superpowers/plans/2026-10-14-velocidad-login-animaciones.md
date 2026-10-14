@@ -1,0 +1,33 @@
+# Velocidad, login nuevo, animaciones y revisión de código — Spec + plan
+
+> Spec y plan en un solo documento (alcance acordado en la conversación del 2026-10-14). Ejecución: subagent-driven-development, una tarea a la vez, con revisión por tarea.
+
+**Goal:** Que las tres apps se sientan rápidas (sesión guardada, datos al instante, avisos cuando Render tarda), con un login nuevo (formulario del mockup A sobre el fondo del mockup C), animaciones cuidadas, escala tipográfica y paleta armonizadas, y una revisión de todo el código.
+
+**Spec visual aprobada por la persona:** login = **fondo de la opción C** (degradado radial profundo de la marca: `#0a9bd0` arriba-derecha → `#007cab` → `#004e6e`, marca "Nelson Express" con logo circular arriba, titular grande con palabra de acento `#a8e6ff`, franjas inclinadas translúcidas) + **formulario de la opción A** (hoja blanca con esquinas superiores de 30 px que sube desde abajo, título "Bienvenido de nuevo", campos rellenos `#f1f5f7` de 50 px con borde transparente que se vuelve `#007cab` al enfocar, botón azul `#007cab` de 54 px, esquinas 16, sombra celeste, texto 16.5 px/900). Mockups: `.superpowers/brainstorm/1961-1791988808/content/login-opciones.html`.
+
+## Global Constraints
+- Marca: primario `#007cab`, primarioOscuro `#005f84`, acento `#00b2ec`, acentoSuave `#e0f5fd`, fondo `#f3f6f8`. Nunito como única fuente; `escalaTexto = 1.15` ya aplicado en `Text`. Sin franjas de color laterales, sin negro en barras/fondos.
+- WCAG 2.2 AA (contraste 4.5:1 texto, 3:1 controles), zonas táctiles ≥ 48 px, estados con color + ícono + palabra, `prefers-reduced-motion` / `AccessibilityInfo.isReduceMotionEnabled` respetado en toda animación.
+- Dependencias nuevas permitidas SOLO: `expo-linear-gradient`, `expo-secure-store` (ambas apps móviles; instalar con `npx expo install`). Ninguna más. Requieren nuevos APK (ya hacen falta por la fuente).
+- Tokens duplicados en cliente y motorizado (`constants/tema.js`, `components/ui.js`) deben quedar idénticos salvo `Boton.colorFondo/botonSobrio` en motorizado.
+- No cambiar lógica de negocio. Los cambios de backend se limitan a: duración del token de refresco, `GZipMiddleware`, consultas (`select_related/prefetch_related`) sin cambiar respuestas. **No** cambiar el algoritmo/costo de hash de contraseñas (decisión de seguridad que es de la persona).
+- No push. Commits locales en la rama `rediseno-amable` (estilo previo, trailer `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`). `.env` de las tres apps al final apuntando a `https://nelson-express.onrender.com/api`.
+- Verificación: playbook `.superpowers/sdd/2026-10-13-rediseno-amable/playbook.md` (servidores, tokens de prueba, axe, restaurar `.env`). Puertos 8081/8082/5173 pueden estar ocupados por servidores de la persona: NO matarlos; si 8081/8082 están ocupados, usar los que están corriendo con datos simulados por XHR o pedir otra vía.
+
+## Tareas
+1. **Sesión guardada + red tolerante** (cliente + motorizado + backend): `expo-secure-store`; `AuthContext` restaura la sesión al abrir (el splash espera); se guarda access+refresh; interceptor de axios que ante un 401 renueva con `/api/token/refresh/` y reintenta una vez (si falla, cierra sesión); `axios` con `timeout: 30000`; "calentar" el servidor con una petición ligera al abrir la app; `services/cache.js` (cache en memoria con `leer(clave)`, `guardar(clave, datos)`); backend `SIMPLE_JWT` `REFRESH_TOKEN_LIFETIME = 30 días`, `ACCESS_TOKEN_LIFETIME = 1 hora`? (decisión: mantener acceso 1 día y refresco 30 días) y `GZipMiddleware`. El logout borra los tokens guardados.
+2. **Login cliente y motorizado** con el diseño aprobado (`expo-linear-gradient`; titulares: cliente "Pide fácil, llega rápido", motorizado "Listo para rodar"); botón con spinner y bloqueo de toques repetidos; error con `Aviso`; teclado no tapa campos; animación de entrada única (hoja sube); respeta reduce-motion.
+3. **Panel web**: login nuevo (pantalla dividida en escritorio: izquierda fondo C con titular y marca, derecha hoja blanca con formulario A; en móvil igual que las apps), tamaño base 16 px, sesión con refresco silencioso (usar `localStorage` solo para el refresh token? NO: mantener `sessionStorage` y añadir renovación con refresh en la misma pestaña), timeout y aviso "El servidor está despertando…" tras 5 s sin respuesta.
+4. **Listas rápidas** (apps móviles + backend): stale-while-revalidate con `services/cache.js` y skeletons (`Esqueleto` en `ui.js`, pulso suave) en Negocios, Mis pedidos, Detalle, Menú (cliente) y Entregas, Cuentas, Perfil (motorizado): mostrar lo último conocido al instante y refrescar por detrás; evitar repetir `GET /perfil/` en cada foco (caché de 60 s); aviso "El servidor está despertando…" si una carga pasa de 5 s; backend: revisar vistas/serializadores de negocios, productos, pedidos y despacho y eliminar N+1 con `select_related/prefetch_related` verificando que las respuestas no cambian.
+5. **Animaciones y micro-interacciones** (skills `emil-design-eng`, `animate-expo`): feedback al presionar en botones y tarjetas (escala 0.97, 100–160 ms ease-out), el seguimiento anima el avance de la línea al cambiar de estado (200–300 ms, `Easing.bezier(0.23, 1, 0.32, 1)`), transición suave del contenido cuando llegan datos (fade), `Entrada` ya existente se conserva; nada decorativo repetitivo; todo con `useNativeDriver` en móvil y respetando reduce-motion.
+6. **Tipografía y paleta armonizadas** (skill `ui-ux-pro-max`): definir en `constants/tema.js` una escala (`tipo = { titulo, subtitulo, cuerpo, apoyo, etiqueta }` con tamaño, línea y peso) usada por los componentes compartidos; revisar contraste de todos los pares de color; unificar radios/espaciados; admin-web alineado (variables CSS equivalentes). No rediseñar pantallas: solo armonizar.
+7. **Revisión de código completa** (skills `code-review`, `receiving-code-review`): revisar backend (`backend/pedidos`, `config`), las dos apps y el panel; corregir lo Critical/Important; el resto queda anotado.
+8. **Cierre**: compilar todo, una ronda final de verificación (axe, desbordes, alturas), restaurar `.env`, actualizar memoria.
+
+## Review Focus
+1. Sesión: token vencido/refresh inválido → vuelve al login sin bucles; logout borra el almacenamiento; app abierta sin red.
+2. Login: error de credenciales, sin red, servidor dormido (timeout) → mensajes claros; doble toque no envía dos veces.
+3. Caché: datos viejos no deben mostrarse a otro usuario tras cerrar sesión (limpiar caché en logout).
+4. Animaciones con reduce-motion activado (sin movimiento).
+5. Backend: respuestas idénticas tras optimizar consultas; GZip no rompe WebSockets/estáticos.
