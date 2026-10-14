@@ -1,12 +1,13 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useLayoutEffect, useRef, useMemo } from 'react';
 import { View, Image, FlatList, Pressable, TextInput, StyleSheet, Platform } from 'react-native';
-import { useScrollToTop, useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { colores, fuente } from '../constants/tema';
 import { filtrarNegocios } from '../constants/negocios';
-import { Aviso, Boton, BotonEncargo, Cabecera, Entrada, Icono, Text, Titulo } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, BotonEncargo, Cabecera, Entrada, Esqueleto, Icono, Text, Titulo } from '../components/ui';
 
 // Abierto si al menos una sucursal lo está; el número es el de sucursales abiertas.
 const resumenSucursales = (sucursales) => {
@@ -27,12 +28,30 @@ function Logo({ negocio }) {
   );
 }
 
+// Lo que se ve mientras llegan los restaurantes: filas de la misma medida que las reales (76 px) para que nada salte.
+function FilaEsqueleto() {
+  return (
+    <View style={[styles.fila, styles.celda]}>
+      <Esqueleto ancho={54} alto={54} radio={14} />
+      <View style={styles.textos}>
+        <Esqueleto ancho="55%" alto={16} />
+        <Esqueleto ancho="35%" alto={13} estilo={styles.esqueletoLinea} />
+      </View>
+    </View>
+  );
+}
+
+const SIN_NEGOCIOS = [];
+const pedirNegocios = pedir('/negocios/');
+const pedirPerfil = pedir('/perfil/');
+
 export default function NegociosScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [negocios, setNegocios] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(false);
-  const [nombre, setNombre] = useState('');
+  // Lo último conocido se pinta al instante y se refresca por detrás (el perfil, que se comparte con otras pantallas, solo cada 60 s).
+  const { datos, cargando, error, lento, recargar } = useCargaRapida('negocios', pedirNegocios, { maxEdad: 60000 });
+  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const negocios = datos ?? SIN_NEGOCIOS;
+  const nombre = perfil?.first_name ?? '';
   const [busqueda, setBusqueda] = useState('');
   const [foco, setFoco] = useState(false);
   const lista = useRef(null);
@@ -43,24 +62,8 @@ export default function NegociosScreen({ navigation }) {
   // La cabecera celeste hace de encabezado de la pantalla.
   useLayoutEffect(() => { navigation.setOptions({ headerShown: false }); }, [navigation]);
 
-  const cargar = useCallback(() => {
-    setCargando(true);
-    setError(false);
-    api.get('/negocios/')
-      .then((response) => setNegocios(response.data))
-      .catch(() => setError(true))
-      .finally(() => setCargando(false));
-  }, []);
-
-  useEffect(cargar, [cargar]);
-
-  // Mismo origen del nombre que Perfil; se relee al volver por si lo cambió en "Mis datos".
-  useFocusEffect(useCallback(() => {
-    api.get('/perfil/').then((r) => setNombre(r.data.first_name ?? '')).catch(() => {});
-  }, []));
-
   const visibles = useMemo(() => filtrarNegocios(negocios, busqueda), [negocios, busqueda]);
-  const sinResultados = !cargando && !error && negocios.length > 0 && visibles.length === 0;
+  const sinResultados = negocios.length > 0 && visibles.length === 0;
 
   return (
     <View style={styles.container}>
@@ -96,23 +99,30 @@ export default function NegociosScreen({ navigation }) {
         keyboardShouldPersistTaps="handled"
         data={visibles}
         ListHeaderComponent={
-          <BotonEncargo
-            titulo="Pedir un encargo"
-            subtitulo="Lo que necesites, a tu puerta"
-            onPress={() => navigation.navigate('NuevoEncargo')}
-            estilo={styles.encargo}
-          />
+          <>
+            <BotonEncargo
+              titulo="Pedir un encargo"
+              subtitulo="Lo que necesites, a tu puerta"
+              onPress={() => navigation.navigate('NuevoEncargo')}
+              estilo={styles.encargo}
+            />
+            <AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} estilo={styles.avisoCarga} />
+          </>
         }
         ListEmptyComponent={
-          error ? (
+          cargando ? (
+            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              {[0, 1, 2, 3, 4, 5].map((i) => <FilaEsqueleto key={i} />)}
+            </View>
+          ) : error && datos === undefined ? (
             <View style={styles.aviso}>
               <Aviso tipo="error">No pudimos cargar los restaurantes. Revisa tu conexión.</Aviso>
-              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={cargar} />
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
             </View>
           ) : sinResultados ? (
             <Aviso estilo={styles.aviso}>No encontramos ese restaurante</Aviso>
           ) : (
-            <Text style={styles.vacio}>{cargando ? 'Cargando restaurantes…' : 'Todavía no hay restaurantes disponibles.'}</Text>
+            <Text style={styles.vacio}>Todavía no hay restaurantes disponibles.</Text>
           )
         }
         keyExtractor={(item) => item.id.toString()}
@@ -172,6 +182,7 @@ const styles = StyleSheet.create({
   buscaInput: { flex: 1, minHeight: 44, fontFamily: fuente.media, fontSize: 16, color: colores.texto, ...web },
 
   encargo: { marginBottom: 14 },
+  avisoCarga: { marginBottom: 14 },
 
   celda: { marginBottom: 10 },
   fila: {
@@ -207,6 +218,7 @@ const styles = StyleSheet.create({
   nombreCerrado: { color: colores.tenue },
   estado: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: colores.verde },
+  esqueletoLinea: { marginTop: 8 },
   estadoTexto: { flexShrink: 1, fontFamily: fuente.media, fontSize: 13, color: colores.tenue },
 
   vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },

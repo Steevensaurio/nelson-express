@@ -1,39 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
+import { guardar as guardarEnCache } from '../services/cache';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { colores } from '../constants/tema';
 import { Aviso, Boton, Campo, estiloTarjeta } from '../components/ui';
 
+const pedirPerfil = pedir('/perfil/');
+
 export default function MisDatosScreen({ navigation }) {
-  const [nombre, setNombre] = useState('');
-  const [apellido, setApellido] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [cargando, setCargando] = useState(true);
+  // Mismo perfil (y misma clave) que Negocios y Perfil: si ya está en caché el formulario sale lleno al instante.
+  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const [nombre, setNombre] = useState(perfil?.first_name ?? '');
+  const [apellido, setApellido] = useState(perfil?.last_name ?? '');
+  const [telefono, setTelefono] = useState(perfil?.telefono ?? '');
+  const rellenado = useRef(Boolean(perfil));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [errorTelefono, setErrorTelefono] = useState('');
 
+  // Si el perfil llega después de abrir la pantalla, se rellena una sola vez (nunca pisa lo que se está escribiendo).
   useEffect(() => {
-    api.get('/perfil/')
-      .then(response => {
-        setNombre(response.data.first_name);
-        setApellido(response.data.last_name);
-        setTelefono(response.data.telefono);
-      })
-      .catch(() => setError('No se pudieron cargar tus datos'))
-      .finally(() => setCargando(false));
-  }, []);
+    if (!perfil || rellenado.current) return;
+    rellenado.current = true;
+    setNombre(perfil.first_name);
+    setApellido(perfil.last_name);
+    setTelefono(perfil.telefono);
+  }, [perfil]);
 
   const guardar = async () => {
     setGuardando(true);
     setError('');
     setErrorTelefono('');
     try {
-      await api.patch('/perfil/', {
+      const response = await api.patch('/perfil/', {
         first_name: nombre.trim(),
         last_name: apellido.trim(),
         telefono: telefono.trim(),
       });
+      guardarEnCache('perfil', response.data); // Perfil y Negocios muestran lo nuevo al volver, sin otra petición
       navigation.goBack();
     } catch (err) {
       const data = err.response?.data;
@@ -83,8 +89,8 @@ export default function MisDatosScreen({ navigation }) {
           />
         </View>
 
-        {error ? (
-          <Aviso tipo="error">{error}</Aviso>
+        {error || (errorCarga && !perfil) ? (
+          <Aviso tipo="error">{error || 'No se pudieron cargar tus datos'}</Aviso>
         ) : null}
 
         <Boton

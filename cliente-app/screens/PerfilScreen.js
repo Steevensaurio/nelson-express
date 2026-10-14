@@ -1,10 +1,9 @@
-import { useState, useCallback } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useAuth } from '../context/AuthContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Icono, Rayas, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Rayas, Text, estiloTarjeta } from '../components/ui';
 
 const iniciales = (perfil) =>
   ((perfil.first_name?.[0] ?? '') + (perfil.last_name?.[0] ?? '') || perfil.username?.[0] || '?').toUpperCase();
@@ -30,16 +29,13 @@ function Opcion({ icono, titulo, detalle, onPress }) {
   );
 }
 
+const pedirPerfil = pedir('/perfil/');
+
 export default function PerfilScreen({ navigation }) {
   const { logout } = useAuth();
-  const [perfil, setPerfil] = useState(null);
-
-  // Se recarga al volver de "Mis datos" para reflejar lo que se acaba de guardar.
-  useFocusEffect(
-    useCallback(() => {
-      api.get('/perfil/').then((r) => setPerfil(r.data)).catch(() => {});
-    }, [])
-  );
+  // El perfil se comparte con Negocios y "Mis datos" (misma clave): una sola petición cada 60 s sirve a todas.
+  // Al guardar en "Mis datos" la caché se actualiza y esta pantalla lo toma al volver.
+  const { datos: perfil, error, lento, recargar } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
 
   const nombre = perfil ? [perfil.first_name, perfil.last_name].filter(Boolean).join(' ') : '';
   const incompleto = perfil && !(perfil.first_name && perfil.telefono);
@@ -51,13 +47,28 @@ export default function PerfilScreen({ navigation }) {
         <View style={styles.avatar} aria-hidden>
           <Text style={styles.avatarTexto}>{perfil ? iniciales(perfil) : ''}</Text>
         </View>
-        <View style={styles.cabeceraCuerpo}>
-          <Text accessibilityRole="header" style={styles.nombre} numberOfLines={1}>
-            {perfil ? nombre || perfil.username : 'Cargando…'}
-          </Text>
-          {perfil?.telefono ? <Text style={styles.telefono}>{perfil.telefono}</Text> : null}
-        </View>
+        {perfil ? (
+          <View style={styles.cabeceraCuerpo}>
+            <Text accessibilityRole="header" style={styles.nombre} numberOfLines={1}>
+              {nombre || perfil.username}
+            </Text>
+            {perfil.telefono ? <Text style={styles.telefono}>{perfil.telefono}</Text> : null}
+          </View>
+        ) : (
+          <View style={styles.cabeceraCuerpo} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+            <Esqueleto ancho="65%" alto={26} />
+            <Esqueleto ancho="40%" alto={16} estilo={styles.esqueletoTelefono} />
+          </View>
+        )}
       </View>
+
+      <AvisosCarga lento={lento} error={error} hayDatos={Boolean(perfil)} />
+      {error && !perfil ? (
+        <View style={styles.errorCarga}>
+          <Aviso tipo="error">No se pudo cargar tu perfil. Revisa tu conexión.</Aviso>
+          <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+        </View>
+      ) : null}
 
       {incompleto ? (
         <Aviso tipo="alerta">Completa tu nombre y teléfono para que el motorizado pueda contactarte.</Aviso>
@@ -96,6 +107,8 @@ const styles = StyleSheet.create({
   },
   avatarTexto: { fontFamily: fuente.extra, fontSize: 24, color: colores.primarioOscuro },
   cabeceraCuerpo: { flex: 1 },
+  esqueletoTelefono: { marginTop: 8 },
+  errorCarga: { gap: 12 },
   nombre: { fontFamily: fuente.extra, fontSize: 22, lineHeight: 28, color: '#fff' },
   telefono: { fontFamily: fuente.media, fontSize: 15, color: '#fff', marginTop: 3 },
   grupo: { ...estiloTarjeta, padding: 4 },

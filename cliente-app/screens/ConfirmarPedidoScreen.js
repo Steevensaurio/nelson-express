@@ -1,44 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
 import { Aviso, Boton, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
 
+const SIN_DIRECCIONES = [];
+const pedirDirecciones = pedir('/direcciones/');
+const pedirPerfil = pedir('/perfil/');
+
 export default function ConfirmarPedidoScreen({ route, navigation }) {
   const { negocioId, negocioNombre, carrito } = route.params;
   const insets = useSafeAreaInsets();
 
-  const [direcciones, setDirecciones] = useState([]);
+  // Direcciones y perfil salen de la caché compartida (misma clave que Perfil y Mis direcciones) y se refrescan por detrás.
+  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const direcciones = direccionesGuardadas ?? SIN_DIRECCIONES;
   const [destinoValor, setDestinoValor] = useState(null); // { direccion, referencia, lat, lng }
-  const [perfil, setPerfil] = useState(null);
+  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const perfil = perfilGuardado ?? null;
   const [envio, setEnvio] = useState(null); // { sugerida, opciones: [{ sucursal, distancia_km, costo_envio }] }
   const [sucursalElegida, setSucursalElegida] = useState(null); // null = la más cercana (automática)
   const [errorEnvio, setErrorEnvio] = useState('');
   const [error, setError] = useState('');
 
-  const cargarDirecciones = () => {
-    api.get('/direcciones/').then(response => {
-      setDirecciones(response.data);
-    });
-  };
-
-  const agregarDireccionGuardada = (direccion) => setDirecciones(prev => [...prev, direccion]);
-
-  useEffect(() => {
-    cargarDirecciones();
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      api.get('/perfil/')
-        .then(response => setPerfil(response.data))
-        .catch(() => {});
-    }, [])
-  );
+  const agregarDireccionGuardada = (direccion) => actualizarDirecciones(prev => [...(prev ?? []), direccion]);
 
   // Cada vez que cambia la dirección elegida se pide el envío al servidor (él es quien calcula el precio).
   useEffect(() => {

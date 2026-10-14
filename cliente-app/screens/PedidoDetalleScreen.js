@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Platform, View, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente } from '../constants/tema';
@@ -69,30 +70,14 @@ function Seguimiento({ estado }) {
 
 export default function PedidoDetalleScreen({ route }) {
   const { pedido: pedidoInicial } = route.params;
-  const [pedido, setPedido] = useState(pedidoInicial);
-
-  const cargar = useCallback(async () => {
-    try {
-      const response = await api.get(`/pedidos/${pedidoInicial.id}/`);
-      setPedido(response.data);
-    } catch (err) {
-      // un fallo puntual de red no debe romper la pantalla; el siguiente ciclo reintenta
-    }
-  }, [pedidoInicial.id]);
-
   const { suscribir, conectado } = useTiempoReal();
+  // Ya se tiene el pedido de la lista: se muestra al instante y se refresca por detrás (sondeo y avisos del servidor).
+  const { datos: pedido, recargar } = useCargaRapida(`pedido:${pedidoInicial.id}`, pedir(`/pedidos/${pedidoInicial.id}/`), {
+    inicial: pedidoInicial,
+    intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
+  });
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      const desuscribir = suscribir(cargar);
-      const id = setInterval(cargar, conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS);
-      return () => {
-        desuscribir();
-        clearInterval(id);
-      };
-    }, [cargar, suscribir, conectado])
-  );
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
   const subtotal = pedido.detalles.reduce(
     (suma, d) => suma + parseFloat(d.precio_unitario) * d.cantidad,

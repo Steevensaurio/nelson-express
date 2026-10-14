@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colorAccion, iconoEstado, siguienteEstado, textoAccion } from '../constants/estados';
 import { colores, fuente, radio } from '../constants/tema';
@@ -52,35 +53,30 @@ function Contacto({ rotulo, contacto }) {
 export default function EntregaDetalleScreen({ route }) {
   const { entrega: entregaInicial } = route.params;
   const insets = useSafeAreaInsets();
-  const [entrega, setEntrega] = useState(entregaInicial);
   const [actualizando, setActualizando] = useState(false);
   const [error, setError] = useState('');
   const [reasignada, setReasignada] = useState(false);
-
-  const cargar = useCallback(async () => {
-    try {
-      const response = await api.get(`/mis-entregas/${entregaInicial.id}/`);
-      setEntrega(response.data);
-      setReasignada(false);
-    } catch (err) {
-      // 404: el despachador se la asignó a otro motorizado. Otros fallos (red): el siguiente ciclo reintenta.
-      if (err.response?.status === 404) setReasignada(true);
-    }
-  }, [entregaInicial.id]);
-
   const { suscribir, conectado } = useTiempoReal();
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      const desuscribir = suscribir(cargar);
-      const id = setInterval(cargar, conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS);
-      return () => {
-        desuscribir();
-        clearInterval(id);
-      };
-    }, [cargar, suscribir, conectado])
-  );
+  // 404: el despachador se la asignó a otro motorizado. Otros fallos (red): el siguiente ciclo reintenta.
+  const pedirEntrega = async () => {
+    try {
+      const response = await api.get(`/mis-entregas/${entregaInicial.id}/`);
+      setReasignada(false);
+      return response.data;
+    } catch (err) {
+      if (err.response?.status === 404) setReasignada(true);
+      throw err;
+    }
+  };
+
+  // Ya se tiene la entrega de la lista: se muestra al instante y se refresca por detrás (sondeo y avisos del servidor).
+  const { datos: entrega, recargar, actualizar } = useCargaRapida(`entrega:${entregaInicial.id}`, pedirEntrega, {
+    inicial: entregaInicial,
+    intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
+  });
+
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
   const proximoEstado = reasignada ? undefined : siguienteEstado[entrega.estado];
   const esEncargo = entrega.tipo === 'ENCARGO';
@@ -90,11 +86,11 @@ export default function EntregaDetalleScreen({ route }) {
     setError('');
     try {
       const response = await api.patch(`/pedidos/${entrega.id}/estado/`, { estado: proximoEstado });
-      setEntrega(response.data);
+      actualizar(response.data);
     } catch (err) {
       // 400: el estado ya cambió (p. ej. el despachador lo movió); se muestra el motivo y se recarga.
       setError(err.response?.data?.estado?.[0] ?? 'No se pudo actualizar el estado');
-      cargar();
+      recargar();
     }
     setActualizando(false);
   };

@@ -3,11 +3,12 @@ import { View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { colores, fuente } from '../constants/tema';
-import { Boleta, Cabecera, Entrada, Icono, Insignia, NumeroPedido, Text, Titulo } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Text, Titulo } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -25,13 +26,50 @@ function Tramo({ icono, rotulo, valor }) {
   );
 }
 
+// Ticket de entrega mientras llegan los datos: misma boleta y mismos huecos que el real, para que nada salte.
+function TramoEsqueleto() {
+  return (
+    <View style={styles.tramo}>
+      <Esqueleto ancho={20} alto={20} radio={10} estilo={styles.tramoIcono} />
+      <View style={styles.tramoCuerpo}>
+        <Esqueleto ancho="30%" alto={19} />
+        <Esqueleto ancho="70%" alto={25} estilo={styles.esqueletoValor} />
+      </View>
+    </View>
+  );
+}
+
+function TicketEsqueleto() {
+  return (
+    <Boleta pie={<View style={styles.pie}><Esqueleto ancho="35%" alto={22} /><Esqueleto ancho={80} alto={37} /></View>}>
+      <View style={styles.encabezado}>
+        <Esqueleto ancho={110} alto={24} />
+        <Esqueleto ancho={84} alto={28} radio={14} />
+      </View>
+      <TramoEsqueleto />
+      <TramoEsqueleto />
+    </Boleta>
+  );
+}
+
+const SIN_ENTREGAS = [];
+const pedirEntregas = pedir('/mis-entregas/');
+const pedirPerfil = pedir('/perfil/');
+
 const resumenEnCurso = (n) => (n === 0 ? 'Sin entregas en curso' : `${n} ${n === 1 ? 'entrega' : 'entregas'} en curso`);
 
 export default function MisEntregasScreen({ navigation }) {
-  const [entregas, setEntregas] = useState([]);
+  const { suscribir, conectado } = useTiempoReal();
+  // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
+  const { datos, cargando, error, lento, recargar } = useCargaRapida('entregas', pedirEntregas, {
+    intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
+  });
+  const entregas = datos ?? SIN_ENTREGAS;
+  // Mismo perfil (misma clave) que la pestaña Perfil: una petición cada 60 s sirve a las dos.
+  const { datos: perfil } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const nombre = perfil?.first_name ?? '';
   const [refrescando, setRefrescando] = useState(false);
   const insets = useSafeAreaInsets();
-  const [nombre, setNombre] = useState('');
   const lista = useRef(null);
   const enfocada = useIsFocused(); // la barra de estado es clara solo mientras se ve esta cabecera celeste
   useScrollToTop(lista); // tocar de nuevo la pestaña activa vuelve al inicio de la lista
@@ -40,38 +78,12 @@ export default function MisEntregasScreen({ navigation }) {
   // La cabecera celeste hace de encabezado de la pantalla.
   useLayoutEffect(() => { navigation.setOptions({ headerShown: false }); }, [navigation]);
 
-  const cargar = useCallback(async () => {
-    try {
-      const response = await api.get('/mis-entregas/');
-      setEntregas(response.data);
-    } catch (err) {
-      // un fallo puntual de red no debe romper la pantalla; el siguiente ciclo reintenta
-    }
-  }, []);
-
-  const { suscribir, conectado } = useTiempoReal();
-
-  // Mismo origen del nombre que Perfil; se relee al volver por si lo cambió en "Editar perfil".
-  useFocusEffect(useCallback(() => {
-    api.get('/perfil/').then((r) => setNombre(r.data.first_name ?? '')).catch(() => {});
-  }, []));
-
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      const desuscribir = suscribir(cargar);
-      // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
-      const id = setInterval(cargar, conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS);
-      return () => {
-        desuscribir();
-        clearInterval(id);
-      };
-    }, [cargar, suscribir, conectado])
-  );
+  // Un aviso del servidor ("algo cambió") vuelve a pedir la lista.
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
   const refrescar = async () => {
     setRefrescando(true);
-    await cargar();
+    await recargar();
     setRefrescando(false);
   };
 
@@ -83,7 +95,11 @@ export default function MisEntregasScreen({ navigation }) {
       {enfocada ? <StatusBar style="light" /> : null}
       <Cabecera estilo={{ paddingTop: insets.top + 14 }}>
         <Titulo estilo={styles.saludo}>{nombre ? `Hola, ${nombre}` : 'Hola'}</Titulo>
-        <Text style={styles.resumen}>{resumenEnCurso(enCurso.length)}</Text>
+        {datos === undefined && !error ? (
+          <Esqueleto ancho={170} alto={20} estilo={styles.esqueletoResumen} />
+        ) : (
+          <Text style={styles.resumen}>{resumenEnCurso(enCurso.length)}</Text>
+        )}
       </Cabecera>
       <View style={styles.filtros} accessibilityRole="tablist">
         {[
@@ -116,13 +132,26 @@ export default function MisEntregasScreen({ navigation }) {
         refreshing={refrescando}
         onRefresh={refrescar}
         keyExtractor={(item) => item.id.toString()}
+        // Solo cuando hay aviso: la lista usa `gap` y un encabezado vacío sumaría un hueco de 12 px.
+        ListHeaderComponent={(datos === undefined ? lento : error) ? <AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} /> : null}
         ListEmptyComponent={
-          <View style={styles.vacio}>
-            <Icono nombre={verHistorial ? 'archive-outline' : 'bicycle'} tamano={44} color={colores.suave} />
-            <Text style={styles.vacioTexto}>
-              {verHistorial ? 'Aún no tienes entregas finalizadas' : 'No tienes entregas en curso'}
-            </Text>
-          </View>
+          cargando ? (
+            <View style={styles.esqueletos} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              {[0, 1].map((i) => <TicketEsqueleto key={i} />)}
+            </View>
+          ) : error && datos === undefined ? (
+            <View style={styles.esqueletos}>
+              <Aviso tipo="error">No pudimos cargar tus entregas. Revisa tu conexión.</Aviso>
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+            </View>
+          ) : (
+            <View style={styles.vacio}>
+              <Icono nombre={verHistorial ? 'archive-outline' : 'bicycle'} tamano={44} color={colores.suave} />
+              <Text style={styles.vacioTexto}>
+                {verHistorial ? 'Aún no tienes entregas finalizadas' : 'No tienes entregas en curso'}
+              </Text>
+            </View>
+          )
         }
         renderItem={({ item, index }) => {
           const valor = item.costo_envio != null ? `$${parseFloat(item.costo_envio).toFixed(2)}` : null;
@@ -171,6 +200,9 @@ const styles = StyleSheet.create({
   lista: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, gap: 12, flexGrow: 1 },
 
   saludo: { fontSize: 22, lineHeight: 28, color: '#fff' },
+  esqueletoResumen: { marginTop: 2 },
+  esqueletos: { gap: 12 },
+  esqueletoValor: { marginTop: 1 },
   resumen: { marginTop: 2, fontFamily: fuente.media, fontSize: 14, color: '#fff' },
 
   // Pestañas tipo interruptor: la activa es una pastilla blanca sobre el fondo gris.

@@ -1,50 +1,54 @@
 import { useState, useCallback, useRef } from 'react';
 import { View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente } from '../constants/tema';
-import { Boleta, Entrada, Icono, Insignia, NumeroPedido, Text } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Boton, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Text } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
 
+// Ticket de pedido mientras llegan los datos: la misma boleta y los mismos huecos que el real, para que nada salte.
+function TicketEsqueleto() {
+  return (
+    <View style={styles.celda}>
+      <Boleta pie={<Esqueleto ancho="45%" alto={21} />}>
+        <View style={styles.encabezado}>
+          <Esqueleto ancho={96} alto={24} />
+          <Esqueleto ancho={84} alto={28} radio={14} />
+        </View>
+        <Esqueleto ancho="60%" alto={27} estilo={styles.esqueletoNombre} />
+        <Esqueleto ancho="80%" alto={20} estilo={styles.esqueletoDestino} />
+      </Boleta>
+    </View>
+  );
+}
+
+const SIN_PEDIDOS = [];
+const pedirPedidos = pedir('/pedidos/');
+
 export default function MisPedidosScreen({ navigation }) {
-  const [pedidos, setPedidos] = useState([]);
+  const { suscribir, conectado } = useTiempoReal();
+  // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
+  const { datos, cargando, error, lento, recargar } = useCargaRapida('pedidos', pedirPedidos, {
+    intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
+  });
+  const pedidos = datos ?? SIN_PEDIDOS;
   const [refrescando, setRefrescando] = useState(false);
   const lista = useRef(null);
   useScrollToTop(lista); // tocar de nuevo la pestaña activa vuelve al inicio de la lista
   const [verHistorial, setVerHistorial] = useState(false);
 
-  const cargar = useCallback(async () => {
-    try {
-      const response = await api.get('/pedidos/');
-      setPedidos(response.data);
-    } catch (err) {
-      // un fallo puntual de red no debe romper la pantalla; el siguiente ciclo reintenta
-    }
-  }, []);
-
-  const { suscribir, conectado } = useTiempoReal();
-
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      const desuscribir = suscribir(cargar);
-      // Con el socket conectado el sondeo es solo un respaldo; sin él vuelve al ritmo rápido.
-      const id = setInterval(cargar, conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS);
-      return () => {
-        desuscribir();
-        clearInterval(id);
-      };
-    }, [cargar, suscribir, conectado])
-  );
+  // Un aviso del servidor ("algo cambió") vuelve a pedir la lista.
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
   const refrescar = async () => {
     setRefrescando(true);
-    await cargar();
+    await recargar();
     setRefrescando(false);
   };
 
@@ -123,13 +127,25 @@ export default function MisPedidosScreen({ navigation }) {
             </Entrada>
           );
         }}
+        ListHeaderComponent={<AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} estilo={styles.avisoCarga} />}
         ListEmptyComponent={
-          <View style={styles.vacio}>
-            <Icono nombre={verHistorial ? 'archive-outline' : 'receipt-outline'} tamano={44} color={colores.suave} />
-            <Text style={styles.vacioTexto}>
-              {verHistorial ? 'Aún no tienes pedidos entregados ni cancelados' : 'No tienes pedidos activos'}
-            </Text>
-          </View>
+          cargando ? (
+            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              {[0, 1].map((i) => <TicketEsqueleto key={i} />)}
+            </View>
+          ) : error && datos === undefined ? (
+            <View style={styles.errorCarga}>
+              <Aviso tipo="error">No pudimos cargar tus pedidos. Revisa tu conexión.</Aviso>
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+            </View>
+          ) : (
+            <View style={styles.vacio}>
+              <Icono nombre={verHistorial ? 'archive-outline' : 'receipt-outline'} tamano={44} color={colores.suave} />
+              <Text style={styles.vacioTexto}>
+                {verHistorial ? 'Aún no tienes pedidos entregados ni cancelados' : 'No tienes pedidos activos'}
+              </Text>
+            </View>
+          )
         }
       />
     </View>
@@ -183,6 +199,10 @@ const styles = StyleSheet.create({
   envio: { flex: 1, fontFamily: fuente.extra, fontSize: 13.5, color: colores.texto },
   verDetalle: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 2 },
   verDetalleTexto: { fontFamily: fuente.negrita, fontSize: 13, color: colores.primarioOscuro },
+  avisoCarga: { marginBottom: 12 },
+  errorCarga: { gap: 12 },
+  esqueletoNombre: { marginTop: 10 },
+  esqueletoDestino: { marginTop: 3 },
   vacio: { alignItems: 'center', gap: 12, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: 15 },
 });

@@ -1,12 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, FlatList, Pressable, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorMapa from '../components/SelectorMapa';
 import { colores, fuente } from '../constants/tema';
-import { Aviso, Boton, Campo, Icono, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, Boton, Campo, Esqueleto, Icono, Text, estiloTarjeta } from '../components/ui';
+
+// Tarjeta de dirección mientras llega la lista.
+function TarjetaEsqueleto() {
+  return (
+    <View style={styles.card}>
+      <Esqueleto ancho={42} alto={42} radio={21} />
+      <View style={styles.cardCuerpo}>
+        <Esqueleto ancho="40%" alto={18} />
+        <Esqueleto ancho="75%" alto={16} estilo={styles.esqueletoLinea} />
+      </View>
+    </View>
+  );
+}
+
+const SIN_DIRECCIONES = [];
+const pedirDirecciones = pedir('/direcciones/');
 
 export default function MisDireccionesScreen() {
-  const [direcciones, setDirecciones] = useState([]);
+  // La lista vive también en la caché ('direcciones'): al crear, editar o borrar se actualiza ahí para que
+  // Confirmar pedido y Nuevo encargo la vean sin otra petición.
+  const { datos, cargando, error: errorCarga, recargar, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const direcciones = datos ?? SIN_DIRECCIONES;
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarMapa, setMostrarMapa] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -17,12 +38,6 @@ export default function MisDireccionesScreen() {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    api.get('/direcciones/').then(response => {
-      setDirecciones(response.data);
-    });
-  }, []);
 
   const seleccionarUbicacion = (nuevaLat, nuevaLng, direccionSugerida) => {
     setLat(nuevaLat.toString());
@@ -65,10 +80,10 @@ export default function MisDireccionesScreen() {
     try {
       if (editandoId) {
         const response = await api.patch(`/direcciones/${editandoId}/`, { etiqueta, direccion, referencia, lat, lng });
-        setDirecciones(prev => prev.map(d => d.id === editandoId ? response.data : d));
+        actualizarDirecciones(prev => (prev ?? []).map(d => d.id === editandoId ? response.data : d));
       } else {
         const response = await api.post('/direcciones/', { etiqueta, direccion, referencia, lat, lng });
-        setDirecciones(prev => [...prev, response.data]);
+        actualizarDirecciones(prev => [...(prev ?? []), response.data]);
       }
       cancelar();
     } catch (err) {
@@ -79,7 +94,7 @@ export default function MisDireccionesScreen() {
 
   const eliminar = async () => {
     await api.delete(`/direcciones/${editandoId}/`);
-    setDirecciones(prev => prev.filter(d => d.id !== editandoId));
+    actualizarDirecciones(prev => (prev ?? []).filter(d => d.id !== editandoId));
     cancelar();
   };
 
@@ -168,10 +183,22 @@ export default function MisDireccionesScreen() {
           </Pressable>
         )}
         ListEmptyComponent={
-          <View style={styles.vacio}>
-            <Icono nombre="location-outline" tamano={44} color={colores.suave} />
-            <Text style={styles.vacioTexto}>Todavía no tienes direcciones guardadas</Text>
-          </View>
+          cargando ? (
+            <View style={styles.esqueletos} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              <TarjetaEsqueleto />
+              <TarjetaEsqueleto />
+            </View>
+          ) : errorCarga && datos === undefined ? (
+            <View style={styles.esqueletos}>
+              <Aviso tipo="error">No pudimos cargar tus direcciones. Revisa tu conexión.</Aviso>
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+            </View>
+          ) : (
+            <View style={styles.vacio}>
+              <Icono nombre="location-outline" tamano={44} color={colores.suave} />
+              <Text style={styles.vacioTexto}>Todavía no tienes direcciones guardadas</Text>
+            </View>
+          )
         }
         ListFooterComponent={formulario}
       />
@@ -205,6 +232,8 @@ const styles = StyleSheet.create({
   etiqueta: { fontFamily: fuente.extra, fontSize: 16, color: colores.texto },
   direccion: { fontFamily: fuente.media, fontSize: 14, color: colores.tenue, marginTop: 2 },
   referencia: { fontFamily: fuente.media, fontSize: 13, color: colores.tenue, marginTop: 3 },
+  esqueletos: { gap: 12 },
+  esqueletoLinea: { marginTop: 6 },
   vacio: { alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 16 },
   vacioTexto: { textAlign: 'center', fontFamily: fuente.media, color: colores.tenue, fontSize: 15 },
   formulario: { ...estiloTarjeta, marginTop: 4 },

@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useAuth } from '../context/AuthContext';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boton, Icono, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Rayas, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const nombreCompleto = (perfil) =>
   `${perfil.first_name} ${perfil.last_name}`.trim() || perfil.username;
@@ -24,35 +25,61 @@ const desdeCuando = (iso) => {
   return `${MESES[f.getMonth()]} de ${f.getFullYear()}`;
 };
 
+// Perfil mientras llegan los datos: mismos bloques (cabecera, estadísticas, tarjetas) para que nada salte.
+function PerfilEsqueleto() {
+  return (
+    <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+      <View style={styles.contenido}>
+        <View style={styles.cabecera}>
+          <Esqueleto ancho={72} alto={72} radio={36} />
+          <View style={styles.cabeceraCuerpo}>
+            <Esqueleto ancho="70%" alto={37} />
+            <Esqueleto ancho={110} alto={28} radio={14} />
+            <View>
+              <Esqueleto ancho="90%" alto={19} />
+              <Esqueleto ancho="60%" alto={19} estilo={styles.esqueletoDesde} />
+            </View>
+          </View>
+        </View>
+        <View style={styles.estadisticas}>
+          <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
+          <View style={styles.estadisticaLinea} />
+          <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
+        </View>
+        <View style={styles.tarjeta}>
+          <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
+          <Esqueleto ancho="60%" alto={25} estilo={styles.esqueletoFila} />
+          <Esqueleto ancho="45%" alto={25} estilo={styles.esqueletoFila} />
+        </View>
+        <View style={styles.tarjeta}>
+          <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
+          <Esqueleto ancho="50%" alto={49} />
+        </View>
+        <Esqueleto alto={52} radio={radio.medio} />
+        <Esqueleto alto={52} radio={radio.medio} />
+      </View>
+    </View>
+  );
+}
+
+const pedirPerfil = pedir('/perfil/');
+
 export default function PerfilScreen({ navigation }) {
   const { logout } = useAuth();
   const { suscribir } = useTiempoReal();
-  const [perfil, setPerfil] = useState(null);
-  const [error, setError] = useState('');
+  // Lo último conocido sale al instante; las estadísticas se refrescan al entrar y cuando cambia algún pedido.
+  // Misma clave que el saludo de Mis entregas y que "Editar perfil", que actualiza la caché al guardar.
+  const { datos: perfil, cargando, error, lento, recargar } = useCargaRapida('perfil', pedirPerfil);
 
-  const cargar = useCallback(async () => {
-    try {
-      const response = await api.get('/perfil/');
-      setPerfil(response.data);
-      setError('');
-    } catch (err) {
-      setError('No se pudo cargar tu perfil');
-    }
-  }, []);
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
-  // Se recarga al entrar (por si se editó) y cuando cambia algún pedido (para las estadísticas).
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      return suscribir(cargar);
-    }, [cargar, suscribir])
-  );
+  if (cargando) return <PerfilEsqueleto />;
 
   if (!perfil) {
     return (
       <View style={styles.centro}>
-        <Text style={styles.tenue} accessibilityLiveRegion="polite">{error || 'Cargando…'}</Text>
-        {error ? <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={cargar} estilo={styles.reintentar} /> : null}
+        <Text style={styles.tenue} accessibilityLiveRegion="polite">No se pudo cargar tu perfil</Text>
+        <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} estilo={styles.reintentar} />
       </View>
     );
   }
@@ -62,6 +89,7 @@ export default function PerfilScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contenido}>
+      <AvisosCarga lento={lento} error={error} hayDatos />
       <View style={styles.cabecera}>
         <Rayas />
         <View style={styles.avatar} aria-hidden>
@@ -144,6 +172,9 @@ const styles = StyleSheet.create({
   contenido: { padding: 16, paddingBottom: 32, gap: 14 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: 24 },
   reintentar: { marginTop: 12 },
+  esqueletoSeccion: { marginBottom: 10 },
+  esqueletoDesde: { marginTop: 2 },
+  esqueletoFila: { marginVertical: 6 },
   tenue: { fontFamily: fuente.media, color: colores.tenue, fontSize: 14 },
 
   cabecera: {

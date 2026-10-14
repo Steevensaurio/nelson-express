@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FlatList, View, Image, Modal, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente, radio } from '../constants/tema';
-import { Boton, Icono, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Text, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
 function FotoProducto({ producto, style }) {
@@ -18,20 +19,36 @@ function FotoProducto({ producto, style }) {
   );
 }
 
+// Tarjetas de producto mientras llegan los datos: mismas medidas que las reales, en filas de dos.
+function TarjetaEsqueleto() {
+  return (
+    <View style={styles.card}>
+      <Esqueleto alto="auto" radio={0} estilo={styles.esqueletoFoto} />
+      <View style={styles.info}>
+        <View style={styles.esqueletoNombre}>
+          <Esqueleto ancho="85%" alto={16} />
+          <Esqueleto ancho="55%" alto={16} estilo={styles.esqueletoLinea2} />
+        </View>
+        {MOSTRAR_PRECIOS ? <Esqueleto ancho="35%" alto={22} estilo={styles.esqueletoPrecio} /> : null}
+      </View>
+    </View>
+  );
+}
+
+const SIN_PRODUCTOS = [];
+
 export default function MenuScreen({ route, navigation }) {
   const { negocioId, negocioNombre } = route.params;
   const insets = useSafeAreaInsets();
-  const [productos, setProductos] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const { datos, cargando, error, lento, recargar } = useCargaRapida(
+    `productos:${negocioId}`,
+    pedir(`/negocios/${negocioId}/productos/`),
+    { maxEdad: 60000 },
+  );
+  const productos = datos ?? SIN_PRODUCTOS;
   const [cantidades, setCantidades] = useState({}); // el carrito: { productoId: cantidad }
   const [seleccionado, setSeleccionado] = useState(null); // producto abierto en la vista previa
   const [cantidadModal, setCantidadModal] = useState(1);
-
-  useEffect(() => {
-    api.get(`/negocios/${negocioId}/productos/`)
-      .then(response => setProductos(response.data))
-      .finally(() => setCargando(false));
-  }, []);
 
   const abrirProducto = (producto) => {
     setSeleccionado(producto);
@@ -70,10 +87,25 @@ export default function MenuScreen({ route, navigation }) {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.lista}
         columnWrapperStyle={styles.columnas}
+        ListHeaderComponent={<AvisosCarga lento={lento} error={error} hayDatos={datos !== undefined} estilo={styles.avisoCarga} />}
         ListEmptyComponent={
-          <Text style={styles.vacio}>
-            {cargando ? 'Cargando menú…' : 'Este restaurante aún no tiene productos.'}
-          </Text>
+          cargando ? (
+            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.columnas, styles.filaEsqueleto]}>
+                  <TarjetaEsqueleto />
+                  <TarjetaEsqueleto />
+                </View>
+              ))}
+            </View>
+          ) : error && datos === undefined ? (
+            <View style={styles.errorCarga}>
+              <Aviso tipo="error">No pudimos cargar el menú. Revisa tu conexión.</Aviso>
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+            </View>
+          ) : (
+            <Text style={styles.vacio}>Este restaurante aún no tiene productos.</Text>
+          )
         }
         renderItem={({ item }) => {
           const cantidad = cantidades[item.id] || 0;
@@ -209,6 +241,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colores.fondo },
   lista: { padding: 12, paddingBottom: 24 },
   columnas: { gap: 12, marginBottom: 12 },
+  avisoCarga: { marginBottom: 12 },
+  errorCarga: { gap: 12 },
+  filaEsqueleto: { flexDirection: 'row' }, // FlatList lo hace sola con numColumns; aquí hay que pedirlo
+  esqueletoFoto: { aspectRatio: 4 / 3 },
+  esqueletoNombre: { minHeight: 42 },
+  esqueletoLinea2: { marginTop: 5 },
+  esqueletoPrecio: { marginTop: 8 },
   vacio: { textAlign: 'center', color: colores.tenue, marginTop: 40, fontSize: 15 },
   card: {
     ...estiloTarjeta,

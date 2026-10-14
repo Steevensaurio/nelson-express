@@ -1,49 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { guardar as guardarEnCache } from '../services/cache';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { colores } from '../constants/tema';
 import { Aviso, Boton, Campo, Titulo, estiloTarjeta } from '../components/ui';
 
+const pedirPerfil = pedir('/perfil/');
+
+const CAMPOS = ['first_name', 'last_name', 'telefono', 'vehiculo_modelo', 'vehiculo_color', 'vehiculo_placa'];
+const desdePerfil = (perfil) => Object.fromEntries(CAMPOS.map((c) => [c, perfil?.[c] ?? '']));
+
 export default function EditarPerfilScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [datos, setDatos] = useState({
-    first_name: '',
-    last_name: '',
-    telefono: '',
-    vehiculo_modelo: '',
-    vehiculo_color: '',
-    vehiculo_placa: '',
-  });
-  const [cargando, setCargando] = useState(true);
+  // Mismo perfil (y misma clave) que la pestaña Perfil: si ya está en caché el formulario sale lleno al instante.
+  const { datos: perfil, cargando, error: errorCarga } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const [datos, setDatos] = useState(() => desdePerfil(perfil));
+  const rellenado = useRef(Boolean(perfil));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [errores, setErrores] = useState({});
 
   const cambiar = (campo) => (texto) => setDatos((prev) => ({ ...prev, [campo]: texto }));
 
+  // Si el perfil llega después de abrir la pantalla, se rellena una sola vez (nunca pisa lo que se está escribiendo).
   useEffect(() => {
-    api.get('/perfil/')
-      .then(({ data }) =>
-        setDatos({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          telefono: data.telefono,
-          vehiculo_modelo: data.vehiculo_modelo,
-          vehiculo_color: data.vehiculo_color,
-          vehiculo_placa: data.vehiculo_placa,
-        })
-      )
-      .catch(() => setError('No se pudieron cargar tus datos'))
-      .finally(() => setCargando(false));
-  }, []);
+    if (!perfil || rellenado.current) return;
+    rellenado.current = true;
+    setDatos(desdePerfil(perfil));
+  }, [perfil]);
 
   const guardar = async () => {
     setGuardando(true);
     setError('');
     setErrores({});
     try {
-      await api.patch('/perfil/', {
+      const response = await api.patch('/perfil/', {
         first_name: datos.first_name.trim(),
         last_name: datos.last_name.trim(),
         telefono: datos.telefono.trim(),
@@ -51,6 +45,7 @@ export default function EditarPerfilScreen({ navigation }) {
         vehiculo_color: datos.vehiculo_color.trim(),
         vehiculo_placa: datos.vehiculo_placa.trim(),
       });
+      guardarEnCache('perfil', response.data); // Perfil y Mis entregas muestran lo nuevo al volver
       navigation.goBack();
     } catch (err) {
       const data = err.response?.data;
@@ -137,7 +132,7 @@ export default function EditarPerfilScreen({ navigation }) {
           />
         </View>
 
-        {error ? <Aviso tipo="error">{error}</Aviso> : null}
+        {error || (errorCarga && !perfil) ? <Aviso tipo="error">{error || 'No se pudieron cargar tus datos'}</Aviso> : null}
 
         <Boton
           titulo={guardando ? 'Guardando…' : 'Guardar'}

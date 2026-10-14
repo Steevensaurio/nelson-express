@@ -3,9 +3,10 @@ import { View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colores, fuente, radio } from '../constants/tema';
-import { Aviso, Boleta, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Esqueleto, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const dosDigitos = (n) => String(n).padStart(2, '0');
 const aISO = (fecha) => `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
@@ -26,49 +27,52 @@ const ATAJOS = [
   { texto: 'Este mes', rango: () => [new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date()] },
 ];
 
+// Liquidación y filas mientras llegan los datos: mismas medidas que las reales, para que nada salte al cargar.
+function FilaLiquidacionEsqueleto() {
+  return (
+    <View style={styles.liquidacionLinea}>
+      <Esqueleto ancho="45%" alto={23} />
+      <Esqueleto ancho={56} alto={31} />
+    </View>
+  );
+}
+
+function FilaEsqueleto() {
+  return (
+    <View style={styles.fila}>
+      <View style={styles.filaInfo}>
+        <Esqueleto ancho="55%" alto={24} />
+        <Esqueleto ancho="75%" alto={20} estilo={styles.esqueletoDestino} />
+        <Esqueleto ancho="30%" alto={18} estilo={styles.esqueletoFecha} />
+      </View>
+      <Esqueleto ancho={52} alto={31} />
+    </View>
+  );
+}
+
+const SIN_CARRERAS = [];
+
 export default function CuentasScreen() {
   const insets = useSafeAreaInsets();
   const [atajo, setAtajo] = useState('Hoy');
-  const [datos, setDatos] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
   const [refrescando, setRefrescando] = useState(false);
-
-  const cargar = useCallback(async (nombreAtajo) => {
-    const elegido = ATAJOS.find((a) => a.texto === nombreAtajo) ?? ATAJOS.find((a) => a.texto === atajo);
-    const [desde, hasta] = elegido.rango();
-    try {
-      const { data } = await api.get('/mis-entregas/ganancias/', {
-        params: { desde: aISO(desde), hasta: aISO(hasta) },
-      });
-      setDatos(data);
-      setError('');
-    } catch (err) {
-      setError('No se pudieron cargar tus cuentas');
-    }
-    setCargando(false);
-    setRefrescando(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atajo]);
-
   const { suscribir } = useTiempoReal();
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-      return suscribir(cargar); // si se entrega un pedido mientras miras esta pantalla, se actualiza sola
-    }, [cargar, suscribir])
-  );
-
-  const elegirAtajo = (texto) => {
-    setAtajo(texto);
-    setCargando(true);
-    cargar(texto);
+  // Una clave por período: al cambiar de pestaña se ve al instante lo último de ese período y se refresca por detrás.
+  const pedirCuentas = async () => {
+    const [desde, hasta] = ATAJOS.find((a) => a.texto === atajo).rango();
+    const { data } = await api.get('/mis-entregas/ganancias/', { params: { desde: aISO(desde), hasta: aISO(hasta) } });
+    return data;
   };
+  const { datos, cargando, error, lento, recargar } = useCargaRapida(`cuentas:${atajo}`, pedirCuentas);
+
+  // Si se entrega un pedido mientras miras esta pantalla, se actualiza sola.
+  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
 
   const refrescar = async () => {
     setRefrescando(true);
-    await cargar();
+    await recargar();
+    setRefrescando(false);
   };
 
   const resumen = datos?.resumen;
@@ -80,7 +84,7 @@ export default function CuentasScreen() {
       contentContainerStyle={[styles.contenido, { paddingBottom: 16 + insets.bottom }]}
       refreshing={refrescando}
       onRefresh={refrescar}
-      data={datos?.carreras ?? []}
+      data={datos?.carreras ?? SIN_CARRERAS}
       keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={
         <>
@@ -94,7 +98,7 @@ export default function CuentasScreen() {
                   aria-selected={activo}
                   accessibilityLabel={a.texto}
                   style={[styles.atajo, activo && styles.atajoActivo]}
-                  onPress={() => elegirAtajo(a.texto)}
+                  onPress={() => setAtajo(a.texto)}
                 >
                   <Text style={[styles.atajoTexto, activo && styles.atajoTextoActivo]}>{a.texto}</Text>
                 </Pressable>
@@ -102,9 +106,32 @@ export default function CuentasScreen() {
             })}
           </View>
 
-          {error ? <Aviso tipo="error" estilo={styles.espacioAviso}>{error}</Aviso> : null}
+          {error && !datos ? <Aviso tipo="error" estilo={styles.espacioAviso}>No se pudieron cargar tus cuentas</Aviso> : null}
+          <AvisosCarga lento={lento} error={error} hayDatos={Boolean(datos)} estilo={styles.espacioAviso} />
 
-          {resumen && !cargando ? (
+          {cargando ? (
+            <View accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+              <View style={styles.liquidacion}>
+                <Boleta
+                  pie={
+                    <View style={styles.liquidacionPie}>
+                      <Esqueleto ancho="40%" alto={27} />
+                      <Esqueleto ancho={96} alto={55} />
+                    </View>
+                  }
+                >
+                  <FilaLiquidacionEsqueleto />
+                  <FilaLiquidacionEsqueleto />
+                  <FilaLiquidacionEsqueleto />
+                </Boleta>
+              </View>
+              <Esqueleto ancho={90} alto={24} estilo={styles.esqueletoSeccion} />
+              <FilaEsqueleto />
+              <FilaEsqueleto />
+            </View>
+          ) : null}
+
+          {resumen ? (
             <>
               {/* Liquidación del período, como una boleta: lo que te queda es lo que importa. */}
               <View testID="ticket-liquidacion" style={styles.liquidacion}>
@@ -165,7 +192,7 @@ export default function CuentasScreen() {
         </View>
       )}
       ListEmptyComponent={
-        !cargando ? (
+        datos ? (
           <View style={styles.vacio}>
             <Icono nombre="wallet-outline" tamano={44} color={colores.suave} />
             <Text style={styles.vacioTexto}>No tienes entregas completadas en este período.</Text>
@@ -208,6 +235,9 @@ const styles = StyleSheet.create({
   netoRotulo: { fontFamily: fuente.extra, fontSize: 17, color: colores.texto },
   netoValor: { fontFamily: fuente.extra, fontSize: 40, lineHeight: 48, color: colores.verde },
   espacioAviso: { marginBottom: 14 },
+  esqueletoDestino: { marginTop: 1 },
+  esqueletoFecha: { marginTop: 3 },
+  esqueletoSeccion: { marginTop: 6, marginBottom: 10 },
   seccion: { marginTop: 6, marginBottom: 10 },
   fila: {
     ...estiloTarjeta,

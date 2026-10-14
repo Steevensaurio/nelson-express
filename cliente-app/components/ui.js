@@ -182,6 +182,40 @@ export function Aviso({ tipo = 'info', icono, children, estilo }) {
   );
 }
 
+// Aviso de una carga rápida: el servidor tarda (y no hay nada que mostrar) o falló la actualización (y se muestra lo guardado).
+export function AvisosCarga({ lento, error, hayDatos, estilo }) {
+  if (!hayDatos && lento) {
+    return <Aviso tipo="info" estilo={estilo}>El servidor está despertando, puede tardar hasta un minuto…</Aviso>;
+  }
+  if (hayDatos && error) {
+    return <Aviso tipo="alerta" estilo={estilo}>No se pudo actualizar. Mostrando lo último guardado.</Aviso>;
+  }
+  return null;
+}
+
+// Bloque gris que pulsa suave mientras llegan los datos. Es decorativo (aria-hidden): quien lo contiene
+// anuncia "Cargando" una sola vez. Quieto si el usuario pidió reducir el movimiento.
+export function Esqueleto({ ancho = '100%', alto = 16, radio = 8, estilo }) {
+  const v = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    let vivo = true;
+    let pulso;
+    AccessibilityInfo.isReduceMotionEnabled().then((reducir) => {
+      if (!vivo || reducir) return;
+      const paso = (toValue) => Animated.timing(v, {
+        toValue,
+        duration: 900,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: Platform.OS !== 'web',
+      });
+      pulso = Animated.loop(Animated.sequence([paso(0.55), paso(1)]));
+      pulso.start();
+    });
+    return () => { vivo = false; pulso?.stop(); };
+  }, []);
+  return <Animated.View aria-hidden style={[{ width: ancho, height: alto, borderRadius: radio, backgroundColor: '#e3e8ec', opacity: v }, estilo]} />;
+}
+
 // Rayas de velocidad, tomadas de las barras del logo: tres franjas inclinadas. Se recortan en el contenedor.
 export function Rayas({ color = '#fff', opacidad = 0.16, estilo }) {
   return (

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Pressable, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { pedir } from '../services/consultas';
+import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
 import { colores, fuente, radio } from '../constants/tema';
 import { Aviso, Boton, Campo, Icono, Text, Titulo, estiloTarjeta } from '../components/ui';
@@ -77,6 +78,10 @@ function GrupoContacto({ titulo, ayuda, icono, nombre, onNombre, telefono, onTel
   );
 }
 
+const SIN_DIRECCIONES = [];
+const pedirDirecciones = pedir('/direcciones/');
+const pedirPerfil = pedir('/perfil/');
+
 export default function NuevoEncargoScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [paso, setPaso] = useState(1);
@@ -89,22 +94,17 @@ export default function NuevoEncargoScreen({ navigation }) {
   const [entregaContactoTelefono, setEntregaContactoTelefono] = useState('');
   const [pagar, setPagar] = useState(false);
   const [monto, setMonto] = useState('');
-  const [direcciones, setDirecciones] = useState([]);
-  const [perfil, setPerfil] = useState(null);
+  // Direcciones y perfil salen de la caché compartida; al volver de "Mis direcciones" o "Mis datos" ya vienen actualizados.
+  const { datos: direccionesGuardadas, actualizar: actualizarDirecciones } = useCargaRapida('direcciones', pedirDirecciones, { maxEdad: 60000 });
+  const direcciones = direccionesGuardadas ?? SIN_DIRECCIONES;
+  const { datos: perfilGuardado } = useCargaRapida('perfil', pedirPerfil, { maxEdad: 60000 });
+  const perfil = perfilGuardado ?? null;
   const [envio, setEnvio] = useState(null);
   const [errorEnvio, setErrorEnvio] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
 
-  // Al volver de "Mis direcciones" (donde puede agregar una) se recargan las direcciones y el perfil.
-  useFocusEffect(
-    useCallback(() => {
-      api.get('/direcciones/').then(r => setDirecciones(r.data)).catch(() => {});
-      api.get('/perfil/').then(r => setPerfil(r.data)).catch(() => {});
-    }, [])
-  );
-
-  const agregarDireccionGuardada = (direccion) => setDirecciones(prev => [...prev, direccion]);
+  const agregarDireccionGuardada = (direccion) => actualizarDirecciones(prev => [...(prev ?? []), direccion]);
 
   // El envío lo calcula el servidor cuando ya hay punto de recogida y de entrega.
   useEffect(() => {
