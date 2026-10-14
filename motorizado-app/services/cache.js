@@ -7,5 +7,6 @@ export const leer = (clave) => datos.get(clave)?.valor;
 export const guardar = (clave, valor) => { datos.set(clave, { valor, en: Date.now() }); };
 // Milisegundos desde que se guardó la clave (Infinity si no está).
 export const edad = (clave) => (datos.has(clave) ? Date.now() - datos.get(clave).en : Infinity);
+export const invalidar = (clave) => { datos.delete(clave); }; // p. ej. tras crear un pedido: la lista guardada ya no sirve
 export const generacion = () => vuelta;
 export const limpiarCache = () => { datos.clear(); vuelta += 1; };

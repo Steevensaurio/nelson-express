@@ -44,11 +44,11 @@ export default function MisPedidosScreen({ navigation }) {
   const [verHistorial, setVerHistorial] = useState(false);
 
   // Un aviso del servidor ("algo cambió") vuelve a pedir la lista.
-  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
+  useFocusEffect(useCallback(() => suscribir(() => recargar({ forzar: true })), [suscribir, recargar]));
 
   const refrescar = async () => {
     setRefrescando(true);
-    await recargar();
+    await recargar({ forzar: true, manual: true });
     setRefrescando(false);
   };
 
@@ -136,7 +136,7 @@ export default function MisPedidosScreen({ navigation }) {
           ) : error && datos === undefined ? (
             <View style={styles.errorCarga}>
               <Aviso tipo="error">No pudimos cargar tus pedidos. Revisa tu conexión.</Aviso>
-              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
             </View>
           ) : (
             <View style={styles.vacio}>

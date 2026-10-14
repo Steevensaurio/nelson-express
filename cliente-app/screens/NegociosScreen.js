@@ -117,7 +117,7 @@ export default function NegociosScreen({ navigation }) {
           ) : error && datos === undefined ? (
             <View style={styles.aviso}>
               <Aviso tipo="error">No pudimos cargar los restaurantes. Revisa tu conexión.</Aviso>
-              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
             </View>
           ) : sinResultados ? (
             <Aviso estilo={styles.aviso}>No encontramos ese restaurante</Aviso>

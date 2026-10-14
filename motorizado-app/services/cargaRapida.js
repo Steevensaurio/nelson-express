@@ -4,3 +4,42 @@ export const decidirCarga = ({ hayDatos, edadMs, maxEdad }) => {
   if (!hayDatos) return 'cargar';
   return edadMs < maxEdad ? 'mostrar-y-saltar' : 'mostrar-y-refrescar';
 };
+
+// Orden de las peticiones de una pantalla (una por clave):
+// - pedir(): si ya hay una en vuelo no empieza otra (el sondeo y el foco no se apilan).
+// - pedir({ forzar: true }): igual, pero si hay una en vuelo deja UNA repetición al terminar, porque algo cambió
+//   (aviso en tiempo real, error al avanzar un estado, tirar para refrescar) y esa respuesta pudo salir antes del cambio.
+// - invalidarRespuestasAnteriores(): lo que ya iba en camino se descarta (llega con `descartada: true`); se usa al
+//   cambiar los datos a mano para que una respuesta vieja no los pise.
+// `cargar()` devuelve una promesa; `alResultado({ valor | error, descartada })` se llama por cada petición terminada.
+// La promesa de pedir() nunca falla: termina cuando acaba la petición (y su repetición, si la hay).
+export const crearCargador = ({ cargar, alResultado }) => {
+  let actual = null;
+  let repetir = false;
+  let version = 0;
+
+  const pedir = ({ forzar = false } = {}) => {
+    if (actual) {
+      if (forzar) repetir = true;
+      return actual;
+    }
+    actual = (async () => {
+      do {
+        repetir = false;
+        const salio = version;
+        let resultado;
+        try {
+          resultado = { valor: await cargar() };
+        } catch (error) {
+          resultado = { error };
+        }
+        alResultado({ ...resultado, descartada: salio !== version });
+      } while (repetir);
+    })().finally(() => { actual = null; });
+    return actual;
+  };
+
+  const invalidarRespuestasAnteriores = () => { version += 1; };
+
+  return { pedir, invalidarRespuestasAnteriores };
+};

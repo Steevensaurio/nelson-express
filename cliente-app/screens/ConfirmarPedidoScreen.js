@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { invalidar } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
@@ -69,6 +70,7 @@ export default function ConfirmarPedidoScreen({ route, navigation }) {
         ...(opcionElegida ? { sucursal: opcionElegida.sucursal.id } : {}),
         detalles: carrito.map(item => ({ producto: item.producto, cantidad: item.cantidad })),
       });
+      invalidar('pedidos'); // la lista guardada ya no tiene este pedido: Mis pedidos la vuelve a pedir
       navigation.navigate('Main', { screen: 'Negocios' });
     } catch (err) {
       const datos = err.response?.data;

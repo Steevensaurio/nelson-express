@@ -67,11 +67,11 @@ export default function CuentasScreen() {
   const { datos, cargando, error, lento, recargar } = useCargaRapida(`cuentas:${atajo}`, pedirCuentas);
 
   // Si se entrega un pedido mientras miras esta pantalla, se actualiza sola.
-  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
+  useFocusEffect(useCallback(() => suscribir(() => recargar({ forzar: true })), [suscribir, recargar]));
 
   const refrescar = async () => {
     setRefrescando(true);
-    await recargar();
+    await recargar({ forzar: true, manual: true });
     setRefrescando(false);
   };
 

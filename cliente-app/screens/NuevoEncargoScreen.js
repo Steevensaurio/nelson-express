@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { invalidar } from '../services/cache';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import SelectorDireccion from '../components/SelectorDireccion';
@@ -153,6 +154,7 @@ export default function NuevoEncargoScreen({ navigation }) {
         destino_lat: entregaValor.lat,
         destino_lng: entregaValor.lng,
       });
+      invalidar('pedidos'); // la lista guardada ya no tiene este encargo: Mis pedidos la vuelve a pedir
       navigation.navigate('Main', { screen: 'MisPedidos' });
     } catch (err) {
       const d = err.response?.data;

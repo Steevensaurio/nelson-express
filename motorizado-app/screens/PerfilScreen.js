@@ -26,37 +26,40 @@ const desdeCuando = (iso) => {
 };
 
 // Perfil mientras llegan los datos: mismos bloques (cabecera, estadísticas, tarjetas) para que nada salte.
-function PerfilEsqueleto() {
+function PerfilEsqueleto({ lento }) {
   return (
-    <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+    <View style={styles.container}>
       <View style={styles.contenido}>
-        <View style={styles.cabecera}>
-          <Esqueleto ancho={72} alto={72} radio={36} />
-          <View style={styles.cabeceraCuerpo}>
-            <Esqueleto ancho="70%" alto={37} />
-            <Esqueleto ancho={110} alto={28} radio={14} />
-            <View>
-              <Esqueleto ancho="90%" alto={19} />
-              <Esqueleto ancho="60%" alto={19} estilo={styles.esqueletoDesde} />
+        <AvisosCarga lento={lento} hayDatos={false} />
+        <View style={styles.esqueletoPerfil} accessibilityRole="progressbar" accessibilityLabel="Cargando" aria-busy>
+          <View style={styles.cabecera}>
+            <Esqueleto ancho={72} alto={72} radio={36} />
+            <View style={styles.cabeceraCuerpo}>
+              <Esqueleto ancho="70%" alto={37} />
+              <Esqueleto ancho={110} alto={28} radio={14} />
+              <View>
+                <Esqueleto ancho="90%" alto={19} />
+                <Esqueleto ancho="60%" alto={19} estilo={styles.esqueletoDesde} />
+              </View>
             </View>
           </View>
+          <View style={styles.estadisticas}>
+            <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
+            <View style={styles.estadisticaLinea} />
+            <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
+          </View>
+          <View style={styles.tarjeta}>
+            <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
+            <Esqueleto ancho="60%" alto={25} estilo={styles.esqueletoFila} />
+            <Esqueleto ancho="45%" alto={25} estilo={styles.esqueletoFila} />
+          </View>
+          <View style={styles.tarjeta}>
+            <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
+            <Esqueleto ancho="50%" alto={49} />
+          </View>
+          <Esqueleto alto={52} radio={radio.medio} />
+          <Esqueleto alto={52} radio={radio.medio} />
         </View>
-        <View style={styles.estadisticas}>
-          <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
-          <View style={styles.estadisticaLinea} />
-          <View style={styles.estadistica}><Esqueleto ancho={48} alto={44} /><Esqueleto ancho={80} alto={25} estilo={styles.esqueletoDesde} /></View>
-        </View>
-        <View style={styles.tarjeta}>
-          <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
-          <Esqueleto ancho="60%" alto={25} estilo={styles.esqueletoFila} />
-          <Esqueleto ancho="45%" alto={25} estilo={styles.esqueletoFila} />
-        </View>
-        <View style={styles.tarjeta}>
-          <Esqueleto ancho="35%" alto={31} estilo={styles.esqueletoSeccion} />
-          <Esqueleto ancho="50%" alto={49} />
-        </View>
-        <Esqueleto alto={52} radio={radio.medio} />
-        <Esqueleto alto={52} radio={radio.medio} />
       </View>
     </View>
   );
@@ -71,15 +74,15 @@ export default function PerfilScreen({ navigation }) {
   // Misma clave que el saludo de Mis entregas y que "Editar perfil", que actualiza la caché al guardar.
   const { datos: perfil, cargando, error, lento, recargar } = useCargaRapida('perfil', pedirPerfil);
 
-  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
+  useFocusEffect(useCallback(() => suscribir(() => recargar({ forzar: true })), [suscribir, recargar]));
 
-  if (cargando) return <PerfilEsqueleto />;
+  if (cargando) return <PerfilEsqueleto lento={lento} />;
 
   if (!perfil) {
     return (
       <View style={styles.centro}>
         <Text style={styles.tenue} accessibilityLiveRegion="polite">No se pudo cargar tu perfil</Text>
-        <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} estilo={styles.reintentar} />
+        <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} estilo={styles.reintentar} />
       </View>
     );
   }
@@ -89,7 +92,7 @@ export default function PerfilScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contenido}>
-      <AvisosCarga lento={lento} error={error} hayDatos />
+      <AvisosCarga lento={lento} error={error} hayDatos={Boolean(perfil)} />
       <View style={styles.cabecera}>
         <Rayas />
         <View style={styles.avatar} aria-hidden>
@@ -172,6 +175,7 @@ const styles = StyleSheet.create({
   contenido: { padding: 16, paddingBottom: 32, gap: 14 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo, padding: 24 },
   reintentar: { marginTop: 12 },
+  esqueletoPerfil: { gap: 14 },
   esqueletoSeccion: { marginBottom: 10 },
   esqueletoDesde: { marginTop: 2 },
   esqueletoFila: { marginVertical: 6 },

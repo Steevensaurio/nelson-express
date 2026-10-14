@@ -101,7 +101,7 @@ export default function MenuScreen({ route, navigation }) {
           ) : error && datos === undefined ? (
             <View style={styles.errorCarga}>
               <Aviso tipo="error">No pudimos cargar el menú. Revisa tu conexión.</Aviso>
-              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
             </View>
           ) : (
             <Text style={styles.vacio}>Este restaurante aún no tiene productos.</Text>

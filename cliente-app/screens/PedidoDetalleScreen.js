@@ -77,7 +77,7 @@ export default function PedidoDetalleScreen({ route }) {
     intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
   });
 
-  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
+  useFocusEffect(useCallback(() => suscribir(() => recargar({ forzar: true })), [suscribir, recargar]));
 
   const subtotal = pedido.detalles.reduce(
     (suma, d) => suma + parseFloat(d.precio_unitario) * d.cantidad,

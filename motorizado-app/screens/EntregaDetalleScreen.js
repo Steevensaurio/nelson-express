@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { guardar as guardarEnCache, leer } from '../services/cache';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { colorAccion, iconoEstado, siguienteEstado, textoAccion } from '../constants/estados';
@@ -76,7 +77,7 @@ export default function EntregaDetalleScreen({ route }) {
     intervalo: conectado ? INTERVALO_RESPALDO_MS : INTERVALO_REFRESCO_MS,
   });
 
-  useFocusEffect(useCallback(() => suscribir(recargar), [suscribir, recargar]));
+  useFocusEffect(useCallback(() => suscribir(() => recargar({ forzar: true })), [suscribir, recargar]));
 
   const proximoEstado = reasignada ? undefined : siguienteEstado[entrega.estado];
   const esEncargo = entrega.tipo === 'ENCARGO';
@@ -87,10 +88,13 @@ export default function EntregaDetalleScreen({ route }) {
     try {
       const response = await api.patch(`/pedidos/${entrega.id}/estado/`, { estado: proximoEstado });
       actualizar(response.data);
+      // La lista de Mis entregas guardada también debe mostrar el estado nuevo al volver (misma forma de datos).
+      const lista = leer('entregas');
+      if (lista) guardarEnCache('entregas', lista.map((e) => (e.id === response.data.id ? response.data : e)));
     } catch (err) {
       // 400: el estado ya cambió (p. ej. el despachador lo movió); se muestra el motivo y se recarga.
       setError(err.response?.data?.estado?.[0] ?? 'No se pudo actualizar el estado');
-      recargar();
+      recargar({ forzar: true });
     }
     setActualizando(false);
   };

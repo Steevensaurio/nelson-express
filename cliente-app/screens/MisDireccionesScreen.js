@@ -191,7 +191,7 @@ export default function MisDireccionesScreen() {
           ) : errorCarga && datos === undefined ? (
             <View style={styles.esqueletos}>
               <Aviso tipo="error">No pudimos cargar tus direcciones. Revisa tu conexión.</Aviso>
-              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+              <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
             </View>
           ) : (
             <View style={styles.vacio}>

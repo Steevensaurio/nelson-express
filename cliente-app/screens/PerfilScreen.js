@@ -66,7 +66,7 @@ export default function PerfilScreen({ navigation }) {
       {error && !perfil ? (
         <View style={styles.errorCarga}>
           <Aviso tipo="error">No se pudo cargar tu perfil. Revisa tu conexión.</Aviso>
-          <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={recargar} />
+          <Boton titulo="Reintentar" variante="secundario" icono="refresh" onPress={() => recargar({ forzar: true, manual: true })} />
         </View>
       ) : null}
 
