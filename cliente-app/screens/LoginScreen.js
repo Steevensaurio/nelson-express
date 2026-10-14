@@ -11,6 +11,8 @@ import { Aviso, Boton, Campo, Entrada, Icono, Rayas, Text, Titulo } from '../com
 
 // Segundos tras los que se avisa que el servidor (Render gratis) está despertando.
 const ESPERA_LENTA_MS = 5000;
+// Cubre el "hasta un minuto" del aviso: mayor que el timeout global de la instancia de axios.
+const LOGIN_TIMEOUT_MS = 60000;
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
@@ -38,10 +40,11 @@ export default function LoginScreen({ onLoginSuccess }) {
     try {
       // Cualquier cuenta puede pedir comida, incluida la de un motorizado en su día libre o la del
       // despachador: esta app no filtra por rol, a diferencia de la del motorizado y el panel.
+      // Timeout de 60 s (no los 30 s globales): un arranque en frío de Render puede tardar casi un minuto.
       const { access, refresh } = (await api.post('/token/', {
         username: username.trim(),
         password,
-      })).data;
+      }, { timeout: LOGIN_TIMEOUT_MS })).data;
       onLoginSuccess(access, refresh);
     } catch (err) {
       setError(

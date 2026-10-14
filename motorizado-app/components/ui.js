@@ -81,7 +81,7 @@ export function Boton({ titulo, onPress, variante = 'primario', icono, deshabili
 }
 
 // Campo con etiqueta siempre visible (el placeholder solo ejemplifica), estado de foco y error anunciado.
-// `relleno`: variante del login (fondo gris claro, borde transparente que se marca al enfocar).
+// `relleno`: variante del login (fondo gris claro; borde de 1.5px con 3:1, que cambia de color al enfocar).
 export const Campo = forwardRef(function Campo(
   { etiqueta, ayuda, error, bloqueado, relleno, izquierda, derecha, estilo, estiloInput, onFocus, onBlur, ...props },
   ref
@@ -329,7 +329,8 @@ const s = StyleSheet.create({
     borderRadius: radio.medio,
     paddingHorizontal: 14,
   },
-  cajaRelleno: { minHeight: 50, borderRadius: 14, borderWidth: 2, borderColor: 'transparent', backgroundColor: '#f1f5f7' },
+  // El ancho del borde es el mismo en reposo, foco y error: solo cambia el color (sin saltos de 0.5px).
+  cajaRelleno: { minHeight: 50, borderRadius: 14, borderWidth: 1.5, borderColor: colores.bordeCampo, backgroundColor: '#f1f5f7' },
   etiquetaRelleno: { fontSize: 12.5 },
   cajaFoco: { borderColor: colores.primario },
   cajaError: { borderColor: colores.peligro },

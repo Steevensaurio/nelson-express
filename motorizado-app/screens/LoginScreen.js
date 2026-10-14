@@ -11,6 +11,8 @@ import { Aviso, Boton, Campo, Entrada, Icono, Rayas, Text, Titulo } from '../com
 
 // Segundos tras los que se avisa que el servidor (Render gratis) está despertando.
 const ESPERA_LENTA_MS = 5000;
+// Cubre el "hasta un minuto" del aviso: mayor que el timeout global de la instancia de axios.
+const LOGIN_TIMEOUT_MS = 60000;
 
 export default function LoginScreen({ onLoginSuccess }) {
   const insets = useSafeAreaInsets();
@@ -36,10 +38,11 @@ export default function LoginScreen({ onLoginSuccess }) {
     setEntrando(true);
     setError('');
     try {
-      const { access, refresh } = (await api.post('/token/', { username: username.trim(), password })).data;
+      // Timeout de 60 s (no los 30 s globales): un arranque en frío de Render puede tardar casi un minuto.
+      const { access, refresh } = (await api.post('/token/', { username: username.trim(), password }, { timeout: LOGIN_TIMEOUT_MS })).data;
       // El usuario y la contraseña son válidos, pero hace falta la capacidad de motorizado activada
       // (un cliente sin activar, o un despachador sin activar, no deben poder entrar aquí).
-      const { es_motorizado } = (await api.get('/perfil/', { headers: { Authorization: `Bearer ${access}` } })).data;
+      const { es_motorizado } = (await api.get('/perfil/', { headers: { Authorization: `Bearer ${access}` }, timeout: LOGIN_TIMEOUT_MS })).data;
       if (!es_motorizado) {
         setError('Esta cuenta no tiene acceso a la app de motorizados.');
         setEntrando(false);
