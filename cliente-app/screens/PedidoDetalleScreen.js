@@ -30,7 +30,7 @@ const enfocableWeb = Platform.OS === 'web' ? { tabIndex: 0 } : {};
 const PASO_DE_ESTADO = { PENDIENTE: 0, ACEPTADO: 0, RECOGIDO: 1, EN_CAMINO: 2, ENTREGADO: 3 };
 
 // Seguimiento en 4 pasos. Para lectores de pantalla se anuncia como una sola barra de progreso.
-// Lo recorrido (círculos y línea) toma el color del estado; el paso actual lleva un halo del mismo tono, en color sólido.
+// Lo recorrido (círculos y línea) toma el color del estado; el paso actual lleva un anillo (halo) del mismo tono, en color sólido.
 // La pista va del centro del primer círculo al del último (cada paso ocupa 1/4 del ancho), así que la línea no pasa del final.
 function Seguimiento({ estado }) {
   const actual = PASO_DE_ESTADO[estado];
@@ -54,7 +54,7 @@ function Seguimiento({ estado }) {
         const hecho = i <= actual;
         return (
           <View key={paso.etiqueta} style={styles.paso}>
-            <View style={[styles.halo, i === actual && !completo && { backgroundColor: haloPaso(estado) }]}>
+            <View style={[styles.halo, i === actual && !completo && { borderColor: haloPaso(estado) }]}>
               <View style={[styles.pasoCirculo, hecho && { backgroundColor: color }]}>
                 <Icono nombre={hecho && (i < actual || completo) ? 'checkmark' : paso.icono} tamano={16} color={hecho ? '#fff' : colores.suave} />
               </View>
@@ -211,7 +211,9 @@ const styles = StyleSheet.create({
   pista: { position: 'absolute', top: 18, height: 4, borderRadius: 2, backgroundColor: '#dfe6ea' },
   relleno: { height: 4, borderRadius: 2 },
   paso: { flex: 1, alignItems: 'center' },
-  halo: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  // El halo es un anillo (borde de 4 px alrededor del círculo de 32): un fondo con esquinas redondeadas que
+  // aparece o desaparece al cambiar de estado se dibujaba como cuadrado en algunos Android.
+  halo: { width: 40, height: 40, borderRadius: 20, borderWidth: 4, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   pasoCirculo: {
     width: 32,
     height: 32,
