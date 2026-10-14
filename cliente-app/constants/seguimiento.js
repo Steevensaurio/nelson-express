@@ -15,3 +15,14 @@ export const anchoLinea = (pasoActual, total) => (total > 1 ? pasoActual / (tota
 
 // Todo lo recorrido (círculos, línea y halo) toma el color del estado actual.
 export const colorPaso = (estado) => colorEstado[estado] ?? colorEstado.PENDIENTE;
+
+// Halo del paso actual: el mismo tono, ya mezclado con blanco (color sólido). Un fondo semitransparente con
+// borde redondeado se pinta como cuadrado en algunos teléfonos Android.
+const HALOS = {
+  PENDIENTE: '#dde1e4',
+  ACEPTADO: '#dde1e4',
+  RECOGIDO: '#f4dfc6',
+  EN_CAMINO: '#cfdcf3',
+  ENTREGADO: '#cfe6da',
+};
+export const haloPaso = (estado) => HALOS[estado] ?? HALOS.PENDIENTE;

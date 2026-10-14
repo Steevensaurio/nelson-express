@@ -5,7 +5,7 @@ import api from '../services/api';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { MOSTRAR_PRECIOS, NOTA_PRECIOS } from '../constants/config';
 import { colores, fuente } from '../constants/tema';
-import { FRASES, anchoLinea, colorPaso } from '../constants/seguimiento';
+import { FRASES, anchoLinea, colorPaso, haloPaso } from '../constants/seguimiento';
 import { Aviso, Boleta, FilaDato, Icono, Insignia, NumeroPedido, Text, Titulo, estiloTarjeta } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
@@ -30,7 +30,7 @@ const enfocableWeb = Platform.OS === 'web' ? { tabIndex: 0 } : {};
 const PASO_DE_ESTADO = { PENDIENTE: 0, ACEPTADO: 0, RECOGIDO: 1, EN_CAMINO: 2, ENTREGADO: 3 };
 
 // Seguimiento en 4 pasos. Para lectores de pantalla se anuncia como una sola barra de progreso.
-// Lo recorrido (círculos y línea) toma el color del estado; el paso actual lleva un halo del mismo color al 20%.
+// Lo recorrido (círculos y línea) toma el color del estado; el paso actual lleva un halo del mismo tono, en color sólido.
 // La pista va del centro del primer círculo al del último (cada paso ocupa 1/4 del ancho), así que la línea no pasa del final.
 function Seguimiento({ estado }) {
   const actual = PASO_DE_ESTADO[estado];
@@ -54,7 +54,7 @@ function Seguimiento({ estado }) {
         const hecho = i <= actual;
         return (
           <View key={paso.etiqueta} style={styles.paso}>
-            <View style={[styles.halo, i === actual && !completo && { backgroundColor: `${color}33` }]}>
+            <View style={[styles.halo, i === actual && !completo && { backgroundColor: haloPaso(estado) }]}>
               <View style={[styles.pasoCirculo, hecho && { backgroundColor: color }]}>
                 <Icono nombre={hecho && (i < actual || completo) ? 'checkmark' : paso.icono} tamano={16} color={hecho ? '#fff' : colores.suave} />
               </View>
