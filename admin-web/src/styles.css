@@ -875,7 +875,7 @@ input[type='checkbox'] {
 /* Filtros del despacho: una tira segmentada. La cifra grande es el dato; el filtro activo se rellena de marca. */
 .resumen {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   background: var(--borde);
   border: 1px solid var(--borde);
@@ -884,19 +884,34 @@ input[type='checkbox'] {
 }
 
 .resumen-tarjeta {
+  min-width: 0;
+  min-height: 72px;
   background: var(--tarjeta);
   border: 0;
-  padding: 14px 20px 16px;
+  padding: 12px 14px 14px;
   text-align: left;
   display: flex;
   flex-direction: column;
   gap: 2px;
   color: var(--texto);
+  overflow-wrap: anywhere;
   transition: background-color 0.15s, color 0.15s, transform 120ms var(--salida);
 }
 
-button.resumen-tarjeta:hover {
-  background: var(--marca-suave);
+@media (min-width: 768px) {
+  .resumen {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .resumen-tarjeta {
+    padding: 14px 20px 16px;
+  }
+}
+
+@media (hover: hover) {
+  button.resumen-tarjeta:hover {
+    background: var(--marca-suave);
+  }
 }
 
 button.resumen-tarjeta:active:not(:disabled) {
@@ -937,7 +952,13 @@ button.resumen-tarjeta.activa:hover {
   background: var(--tarjeta);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  padding: 16px 18px;
+  padding: 14px;
+}
+
+@media (min-width: 768px) {
+  .motorizados {
+    padding: 16px 18px;
+  }
 }
 
 .motorizados h2,
@@ -960,6 +981,10 @@ button.resumen-tarjeta.activa:hover {
   grid-template-columns: auto 1fr;
   column-gap: 10px;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  overflow-wrap: anywhere;
   padding: 8px 16px 8px 12px;
   border-radius: var(--radio-chico);
   border: 1px solid var(--borde);
@@ -1010,7 +1035,15 @@ button.resumen-tarjeta.activa:hover {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 16px 18px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 14px;
+}
+
+@media (min-width: 768px) {
+  .tabla-encabezado {
+    padding: 16px 18px;
+  }
 }
 
 .tabla-scroll {
@@ -1019,15 +1052,20 @@ button.resumen-tarjeta.activa:hover {
   position: relative;
 }
 
+/* Sin ancho mínimo fijo: la tabla solo se muestra donde cabe (Despacho ≥1280, Ganancias ≥768) y las columnas
+   se reparten el ancho; los textos largos van en 2 líneas con el texto completo en title. El scroll queda de respaldo. */
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 920px;
 }
 
-/* La tabla de Despacho tiene más columnas: necesita más ancho antes de desplazarse. */
-.tabla-despacho {
-  min-width: 1200px;
+td {
+  overflow-wrap: break-word;
+}
+
+td.derecha,
+td .peligro {
+  white-space: nowrap;
 }
 
 th {
@@ -1052,8 +1090,16 @@ td {
   transition: background-color 120ms;
 }
 
-tbody tr:hover td {
-  background: var(--acento-palido);
+@media (hover: hover) {
+  tbody tr:hover td {
+    background: var(--acento-palido);
+  }
+}
+
+.tabla-despacho select {
+  min-width: 180px;
+  width: 100%;
+  max-width: 220px;
 }
 
 .derecha {
@@ -1103,9 +1149,140 @@ td strong {
 }
 
 .vacio {
+  margin: 0;
   text-align: center;
   color: var(--tenue);
-  padding: 36px;
+  padding: 36px 16px;
+}
+
+/* ---------- Pedidos en tarjetas (<1280) ---------- */
+
+/* 1 columna en celular, 2 desde tablet. Misma información y acciones que la tabla, sin recortar textos. */
+.tarjetas-pedidos {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .tarjetas-pedidos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 18px 18px;
+    gap: 16px;
+  }
+}
+
+.tarjetas-pedidos > li {
+  display: flex;
+}
+
+.tarjeta-pedido {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--tarjeta);
+  overflow-wrap: anywhere;
+}
+
+/* Sin motorizado: fondo ámbar + el texto "Sin motorizado · hace X min" (nunca solo el color). */
+.tarjeta-pedido.atencion {
+  background: var(--alerta-fondo);
+  border-color: var(--alerta-borde);
+}
+
+.tarjeta-pedido p {
+  margin: 0;
+}
+
+.tarjeta-cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.tarjeta-cabeza h3 {
+  margin: 0;
+  font-size: var(--t-cuerpo);
+  font-weight: 800;
+}
+
+.tarjeta-aviso {
+  color: var(--alerta-texto);
+  font-size: var(--t-apoyo);
+  font-weight: 800;
+}
+
+.tarjeta-datos {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.tarjeta-datos > div {
+  display: grid;
+  gap: 2px;
+}
+
+.tarjeta-datos dt {
+  font-size: var(--t-etiqueta);
+  font-weight: 800;
+  color: var(--tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta-pedido.atencion .tarjeta-datos dt,
+.tarjeta-pedido.atencion .tenue {
+  color: var(--alerta-texto);
+}
+
+.tarjeta-datos dd {
+  margin: 0;
+}
+
+.tarjeta-acciones {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
+}
+
+.tarjeta-pedido.atencion .tarjeta-acciones {
+  border-top-color: var(--alerta-borde);
+}
+
+.tarjeta-acciones label {
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+}
+
+.tarjeta-acciones select,
+.tarjeta-acciones .peligro {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+}
+
+.telefono {
+  color: var(--marca-oscura);
+  font-weight: 700;
+}
+
+.telefono-grande {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 /* ---------- Estados ---------- */
@@ -1363,12 +1540,6 @@ td strong {
   font-size: var(--t-titulo);
   font-weight: 800;
   color: var(--marca-oscura);
-}
-
-@media (max-width: 900px) {
-  .resumen {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 720px) {

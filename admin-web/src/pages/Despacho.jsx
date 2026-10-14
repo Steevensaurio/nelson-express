@@ -5,6 +5,7 @@ import { useTiempoReal } from '../useTiempoReal.js';
 import Barra from '../components/Barra.jsx';
 import Modal from '../components/Modal.jsx';
 import { MOSTRAR_PRECIOS } from '../config.js';
+import { useMedia } from '../useMedia.js';
 
 const INTERVALO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -54,6 +55,58 @@ const mensajeDeError = (err) => {
   const datos = err.response?.data;
   return datos?.detail ?? datos?.motorizado?.[0] ?? 'No se pudo asignar el pedido.';
 };
+
+// La tabla de 8 columnas necesita ~1150 px para leerse sin apretar el selector; por debajo, tarjetas.
+const CONSULTA_TABLA = '(min-width: 1280px)';
+
+const Telefono = ({ numero, className = '' }) =>
+  numero ? <a className={`telefono ${className}`} href={`tel:${numero}`}>{numero}</a> : null;
+
+const Contacto = ({ prefijo, contacto }) => (
+  <div className="tenue">
+    {prefijo}: {contacto.nombre}
+    {contacto.telefono ? <> · <Telefono numero={contacto.telefono} /></> : null}
+  </div>
+);
+
+function Importe({ p }) {
+  if (MOSTRAR_PRECIOS) {
+    return (
+      <>
+        ${Number(p.total).toFixed(2)}
+        {p.costo_envio != null ? <div className="tenue">envío ${Number(p.costo_envio).toFixed(2)}</div> : null}
+      </>
+    );
+  }
+  return p.costo_envio != null ? `$${Number(p.costo_envio).toFixed(2)}` : '—';
+}
+
+const Insignia = ({ estado }) => (
+  <span className={`insignia ${estado}`}>
+    <span aria-hidden="true" className="insignia-icono">{ICONO_ESTADO[estado] ?? '•'}</span>
+    {ETIQUETA_ESTADO[estado]}
+  </span>
+);
+
+function SelectorMotorizado({ p, motorizados, asignando, onAsignar, ...props }) {
+  const asignadoFueraDeLista = p.motorizado && !motorizados.some((m) => m.id === p.motorizado.id);
+  return (
+    <select
+      value={p.motorizado?.id ?? ''}
+      disabled={esFinal(p) || asignando === p.id}
+      onChange={(e) => onAsignar(p, e.target.value)}
+      {...props}
+    >
+      <option value="">— Sin asignar —</option>
+      {asignadoFueraDeLista ? <option value={p.motorizado.id}>{p.motorizado.nombre}</option> : null}
+      {motorizados.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.nombre} · {m.entregas_activas === 0 ? 'libre' : `${m.entregas_activas} en curso`}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export default function Despacho() {
   const { token } = useAuth();
@@ -138,21 +191,38 @@ export default function Despacho() {
   };
 
   const visibles = pedidos.filter(FILTROS.find((f) => f.id === filtro).coincide);
+  const enTabla = useMedia(CONSULTA_TABLA);
+  const selector = (p, props) => (
+    <SelectorMotorizado p={p} motorizados={motorizados} asignando={asignando} onAsignar={asignar} {...props} />
+  );
+  const botonCancelar = (p) =>
+    esCancelable(p) ? (
+      <button className="peligro" aria-label={`Cancelar pedido ${p.id}`} onClick={() => abrirCancelacion(p)}>Cancelar</button>
+    ) : null;
+
+  // Antes de la primera respuesta no se sabe si hay pedidos: no se muestra "no hay" hasta tenerla.
+  const sinPedidos = actualizado
+    ? 'No hay pedidos en esta vista.'
+    : sinConexion
+      ? 'No se pudieron cargar los pedidos. Se reintenta solo.'
+      : 'Cargando pedidos…';
 
   return (
     <div className="pagina">
       <Barra />
 
-      <main className="contenido" id="contenido">
+      <main className="contenido" id="contenido" tabIndex={-1}>
         <h1 className="solo-lectores">Despacho</h1>
-        {sinConexion ? <p className="aviso" role="status">Sin conexión con el servidor. Reintentando…</p> : null}
+        <div className="avisos" role="status">
+          {sinConexion ? <p className="aviso">Sin conexión con el servidor. Reintentando…</p> : null}
+        </div>
         {error ? (
           <p className="error-banner" role="alert">
             {error} <button className="enlace" onClick={() => setError('')}>Cerrar</button>
           </p>
         ) : null}
 
-        <section className="resumen">
+        <section className="resumen" aria-label="Filtrar pedidos">
           {FILTROS.map((f) => {
             const cantidad = pedidos.filter(f.coincide).length;
             return (
@@ -182,125 +252,169 @@ export default function Despacho() {
           </ul>
         </section>
 
-        <section className="tabla-caja">
+        <section className="tabla-caja" aria-labelledby="titulo-pedidos">
           <div className="tabla-encabezado">
-            <h2>Pedidos</h2>
+            <h2 id="titulo-pedidos">Pedidos</h2>
             <span className="tenue">
               <span className={`punto-vivo ${enVivo ? 'activo' : ''}`} aria-hidden="true" />
-              {enVivo ? 'En vivo' : `Sin tiempo real · cada ${INTERVALO_MS / 1000} s`}
-              {actualizado ? ` · ${actualizado.toLocaleTimeString()}` : ' · Cargando…'}
+              <span role="status">{enVivo ? 'En vivo' : `Sin tiempo real · cada ${INTERVALO_MS / 1000} s`}</span>
+              {actualizado ? ` · Actualizado ${actualizado.toLocaleTimeString()}` : ' · Cargando…'}
             </span>
           </div>
 
-          <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Tabla de pedidos">
-            <table className="tabla-despacho">
-              <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Pedido</th>
-                  <th scope="col">Recogida</th>
-                  <th scope="col">Cliente</th>
-                  <th scope="col">Entrega</th>
-                  <th scope="col" className="derecha">{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Motorizado</th>
-                  <th scope="col"><span className="solo-lectores">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
+          {!enTabla ? (
+            visibles.length === 0 ? (
+              <p className="vacio">{sinPedidos}</p>
+            ) : (
+              <ul className="tarjetas-pedidos" aria-label="Pedidos, del más reciente al más antiguo">
                 {visibles.map((p) => {
                   const necesitaAtencion = !esFinal(p) && !p.motorizado;
-                  const asignadoFueraDeLista = p.motorizado && !motorizados.some((m) => m.id === p.motorizado.id);
+                  const encargo = p.tipo === 'ENCARGO';
                   return (
-                    <tr key={p.id} className={`${p.tipo === 'ENCARGO' ? 'fila-encargo' : 'fila-comida'} ${necesitaAtencion ? 'fila-atencion' : ''}`}>
-                      <td>
-                        <strong>Pedido #{p.id}</strong>
-                        <div className="tenue">{formatearFecha(p.creado_en)}</div>
-                        {necesitaAtencion ? <div className="hace">{haceTiempo(p.creado_en)}</div> : null}
-                      </td>
-                      <td>
-                        {p.recogida.nombre}
-                        {p.tipo === 'ENCARGO' ? (
-                          <>
-                            <div className="tenue clamp" title={p.descripcion}>{p.descripcion}</div>
-                            <div className="tenue">
-                              Entrega: {p.recogida_contacto.nombre} · {p.recogida_contacto.telefono}
-                            </div>
-                            <div className="tenue clamp" title={p.recogida.direccion}>{p.recogida.direccion}</div>
-                            {p.pagar_en_recogida ? (
-                              <div className="hace">Motorizado paga aprox. ${Number(p.monto_estimado).toFixed(2)}</div>
-                            ) : null}
-                          </>
-                        ) : (
-                          <div className="tenue clamp" title={productos(p)}>{productos(p)}</div>
-                        )}
-                      </td>
-                      <td>
-                        <div className="clamp-1" title={p.cliente.nombre}>{p.cliente.nombre}</div>
-                        <div className="tenue">{p.cliente.telefono || 'Sin teléfono'}</div>
-                      </td>
-                      <td>
-                        <div className="clamp" title={p.destino_direccion}>{p.destino_direccion}</div>
-                        {p.destino_referencia ? <div className="tenue cursiva clamp-1" title={p.destino_referencia}>{p.destino_referencia}</div> : null}
-                        {p.tipo === 'ENCARGO' ? (
-                          <div className="tenue">
-                            Recibe: {p.entrega_contacto.nombre} · {p.entrega_contacto.telefono}
+                    <li key={p.id}>
+                      <article className={`tarjeta-pedido ${necesitaAtencion ? 'atencion' : ''}`} aria-labelledby={`pedido-${p.id}`}>
+                        <div className="tarjeta-cabeza">
+                          <div>
+                            <h3 id={`pedido-${p.id}`}>Pedido #{p.id}</h3>
+                            <span className="tenue">{formatearFecha(p.creado_en)}</span>
                           </div>
+                          <Insignia estado={p.estado} />
+                        </div>
+                        {necesitaAtencion ? (
+                          <p className="tarjeta-aviso">Sin motorizado · {haceTiempo(p.creado_en)}</p>
                         ) : null}
-                      </td>
-                      <td className="derecha">
-                        {MOSTRAR_PRECIOS ? (
-                          <>
-                            ${Number(p.total).toFixed(2)}
-                            {p.costo_envio != null ? (
-                              <div className="tenue">envío ${Number(p.costo_envio).toFixed(2)}</div>
-                            ) : null}
-                          </>
-                        ) : (
-                          p.costo_envio != null ? `$${Number(p.costo_envio).toFixed(2)}` : '—'
-                        )}
-                      </td>
-                      <td>
-                        <span className={`insignia ${p.estado}`}>
-                          <span aria-hidden="true" className="insignia-icono">{ICONO_ESTADO[p.estado] ?? '•'}</span>
-                          {ETIQUETA_ESTADO[p.estado]}
-                        </span>
                         {p.estado === 'CANCELADO' && p.motivo_cancelacion ? (
-                          <div className="tenue cursiva clamp" title={p.motivo_cancelacion}>{p.motivo_cancelacion}</div>
+                          <p className="tenue cursiva">Motivo: {p.motivo_cancelacion}</p>
                         ) : null}
-                      </td>
-                      <td>
-                        <select
-                          aria-label={`Motorizado del pedido ${p.id}`}
-                          value={p.motorizado?.id ?? ''}
-                          disabled={esFinal(p) || asignando === p.id}
-                          onChange={(e) => asignar(p, e.target.value)}
-                        >
-                          <option value="">— Sin asignar —</option>
-                          {asignadoFueraDeLista ? <option value={p.motorizado.id}>{p.motorizado.nombre}</option> : null}
-                          {motorizados.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.nombre} · {m.entregas_activas === 0 ? 'libre' : `${m.entregas_activas} en curso`}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        {esCancelable(p) ? (
-                          <button className="peligro" aria-label={`Cancelar pedido ${p.id}`} onClick={() => abrirCancelacion(p)}>Cancelar</button>
-                        ) : null}
-                      </td>
-                    </tr>
+
+                        <dl className="tarjeta-datos">
+                          <div>
+                            <dt>Recogida</dt>
+                            <dd>
+                              <strong>{p.recogida.nombre}</strong>
+                              {encargo ? (
+                                <>
+                                  <div>{p.descripcion}</div>
+                                  <div className="tenue">{p.recogida.direccion}</div>
+                                  <Contacto prefijo="Entrega" contacto={p.recogida_contacto} />
+                                  {p.pagar_en_recogida ? (
+                                    <div className="hace">Motorizado paga aprox. ${Number(p.monto_estimado).toFixed(2)}</div>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <div className="tenue">{productos(p)}</div>
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Cliente</dt>
+                            <dd>
+                              <strong>{p.cliente.nombre}</strong>
+                              <div>
+                                {p.cliente.telefono
+                                  ? <Telefono numero={p.cliente.telefono} className="telefono-grande" />
+                                  : <span className="tenue">Sin teléfono</span>}
+                              </div>
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Entrega</dt>
+                            <dd>
+                              <div>{p.destino_direccion}</div>
+                              {p.destino_referencia ? <div className="tenue cursiva">{p.destino_referencia}</div> : null}
+                              {encargo ? <Contacto prefijo="Recibe" contacto={p.entrega_contacto} /> : null}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</dt>
+                            <dd><strong><Importe p={p} /></strong></dd>
+                          </div>
+                        </dl>
+
+                        <div className="tarjeta-acciones">
+                          <label htmlFor={`motorizado-${p.id}`}>Motorizado</label>
+                          {selector(p, { id: `motorizado-${p.id}` })}
+                          {botonCancelar(p)}
+                        </div>
+                      </article>
+                    </li>
                   );
                 })}
-                {visibles.length === 0 ? (
+              </ul>
+            )
+          ) : (
+            <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Tabla de pedidos">
+              <table className="tabla-despacho">
+                <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
+                <thead>
                   <tr>
-                    <td colSpan="8" className="vacio">No hay pedidos en esta vista.</td>
+                    <th scope="col">Pedido</th>
+                    <th scope="col">Recogida</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Entrega</th>
+                    <th scope="col" className="derecha">{MOSTRAR_PRECIOS ? 'Total' : 'Envío'}</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Motorizado</th>
+                    <th scope="col"><span className="solo-lectores">Acciones</span></th>
                   </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibles.map((p) => {
+                    const necesitaAtencion = !esFinal(p) && !p.motorizado;
+                    return (
+                      <tr key={p.id} className={`${p.tipo === 'ENCARGO' ? 'fila-encargo' : 'fila-comida'} ${necesitaAtencion ? 'fila-atencion' : ''}`}>
+                        <td>
+                          <strong>Pedido #{p.id}</strong>
+                          <div className="tenue">{formatearFecha(p.creado_en)}</div>
+                          {necesitaAtencion ? <div className="hace">{haceTiempo(p.creado_en)}</div> : null}
+                        </td>
+                        <td>
+                          {p.recogida.nombre}
+                          {p.tipo === 'ENCARGO' ? (
+                            <>
+                              <div className="tenue clamp" title={p.descripcion}>{p.descripcion}</div>
+                              <Contacto prefijo="Entrega" contacto={p.recogida_contacto} />
+                              <div className="tenue clamp" title={p.recogida.direccion}>{p.recogida.direccion}</div>
+                              {p.pagar_en_recogida ? (
+                                <div className="hace">Motorizado paga aprox. ${Number(p.monto_estimado).toFixed(2)}</div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <div className="tenue clamp" title={productos(p)}>{productos(p)}</div>
+                          )}
+                        </td>
+                        <td>
+                          <div className="clamp" title={p.cliente.nombre}>{p.cliente.nombre}</div>
+                          <div className="tenue">
+                            {p.cliente.telefono ? <Telefono numero={p.cliente.telefono} /> : 'Sin teléfono'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="clamp" title={p.destino_direccion}>{p.destino_direccion}</div>
+                          {p.destino_referencia ? <div className="tenue cursiva clamp" title={p.destino_referencia}>{p.destino_referencia}</div> : null}
+                          {p.tipo === 'ENCARGO' ? <Contacto prefijo="Recibe" contacto={p.entrega_contacto} /> : null}
+                        </td>
+                        <td className="derecha"><Importe p={p} /></td>
+                        <td>
+                          <Insignia estado={p.estado} />
+                          {p.estado === 'CANCELADO' && p.motivo_cancelacion ? (
+                            <div className="tenue cursiva clamp" title={p.motivo_cancelacion}>{p.motivo_cancelacion}</div>
+                          ) : null}
+                        </td>
+                        <td>{selector(p, { 'aria-label': `Motorizado del pedido ${p.id}` })}</td>
+                        <td>{botonCancelar(p)}</td>
+                      </tr>
+                    );
+                  })}
+                  {visibles.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="vacio">{sinPedidos}</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </main>
 
