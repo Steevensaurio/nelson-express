@@ -35,7 +35,8 @@
           "image": "./assets/logo-circular.png",
           "imageWidth": 180
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

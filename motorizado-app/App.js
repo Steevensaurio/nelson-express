@@ -15,9 +15,12 @@ import { useEffect } from 'react';
 import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { colores, fuente, opcionesCabecera } from './constants/tema';
+import { calentarServidor } from './services/api';
 
 // El splash se queda hasta que la tipografía de marca esté lista, para no mostrar un cambio de letra.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+// Despierta al servidor (Render duerme el plan gratis) mientras arranca la app.
+calentarServidor();
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -72,9 +75,10 @@ function AppNavigator() {
   );
 }
 
-export default function App() {
-  const [fuentesListas, errorFuentes] = useFonts({ Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold });
-  const lista = fuentesListas || Boolean(errorFuentes);
+// El splash espera a la tipografía y a saber si hay una sesión guardada, para entrar directo a la pantalla correcta.
+function Raiz({ fuentesListas }) {
+  const { restaurando } = useAuth();
+  const lista = fuentesListas && !restaurando;
 
   useEffect(() => {
     if (lista) SplashScreen.hideAsync().catch(() => {});
@@ -83,10 +87,18 @@ export default function App() {
   if (!lista) return null;
 
   return (
+    <RealtimeProvider>
+      <AppNavigator />
+    </RealtimeProvider>
+  );
+}
+
+export default function App() {
+  const [fuentesListas, errorFuentes] = useFonts({ Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold });
+
+  return (
     <AuthProvider>
-      <RealtimeProvider>
-        <AppNavigator />
-      </RealtimeProvider>
+      <Raiz fuentesListas={fuentesListas || Boolean(errorFuentes)} />
     </AuthProvider>
   );
 }

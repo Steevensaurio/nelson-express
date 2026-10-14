@@ -23,11 +23,11 @@ export default function LoginScreen({ onLoginSuccess }) {
     try {
       // Cualquier cuenta puede pedir comida, incluida la de un motorizado en su día libre o la del
       // despachador: esta app no filtra por rol, a diferencia de la del motorizado y el panel.
-      const { access } = (await api.post('/token/', {
+      const { access, refresh } = (await api.post('/token/', {
         username: username.trim(),
         password,
       })).data;
-      onLoginSuccess(access);
+      onLoginSuccess(access, refresh);
     } catch (err) {
       setError(
         err.response

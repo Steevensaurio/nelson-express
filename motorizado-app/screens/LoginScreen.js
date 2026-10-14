@@ -21,7 +21,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     setEntrando(true);
     setError('');
     try {
-      const { access } = (await api.post('/token/', { username: username.trim(), password })).data;
+      const { access, refresh } = (await api.post('/token/', { username: username.trim(), password })).data;
       // El usuario y la contraseña son válidos, pero hace falta la capacidad de motorizado activada
       // (un cliente sin activar, o un despachador sin activar, no deben poder entrar aquí).
       const { es_motorizado } = (await api.get('/perfil/', { headers: { Authorization: `Bearer ${access}` } })).data;
@@ -30,7 +30,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         setEntrando(false);
         return;
       }
-      onLoginSuccess(access);
+      onLoginSuccess(access, refresh);
     } catch (err) {
       setError(
         err.response
