@@ -28,6 +28,9 @@ export const colores = {
 
 // Tipografía única: Nunito. Cada peso es su propia familia (con una familia personalizada no se usa
 // fontWeight); `familiaPorPeso` traduce un fontWeight a su familia y lo usa el componente Text de ui.js.
+// Factor que agranda todo el texto de la app (se aplica en el componente Text de ui.js).
+export const escalaTexto = 1.15;
+
 export const fuente = {
   normal: 'Nunito_400Regular',
   media: 'Nunito_600SemiBold',

@@ -3,14 +3,16 @@ import {
   AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text as RNText, TextInput, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colores, familiaPorPeso, fuente, radio } from '../constants/tema';
+import { colores, escalaTexto, familiaPorPeso, fuente, radio } from '../constants/tema';
 import { colorEstado, etiquetaEstado, iconoEstado } from '../constants/estados';
 
 // Text de la app: con familias de Nunito cada peso es su propia fuente, así que traduce `fontWeight` a la
 // familia que toca (y lo quita, para que Android no lo combine). Todas las pantallas importan Text de aquí.
 export function Text({ style, ...props }) {
-  const { fontWeight, ...resto } = StyleSheet.flatten(style) ?? {};
-  return <RNText {...props} style={{ ...resto, fontFamily: resto.fontFamily ?? familiaPorPeso(fontWeight) }} />;
+  const { fontWeight, fontSize, lineHeight, ...resto } = StyleSheet.flatten(style) ?? {};
+  // `escalaTexto` agranda toda la tipografía de la app a la vez (además de la letra del sistema).
+  const tamano = fontSize ? { fontSize: fontSize * escalaTexto, ...(lineHeight ? { lineHeight: lineHeight * escalaTexto } : {}) } : {};
+  return <RNText {...props} style={{ ...resto, ...tamano, fontFamily: resto.fontFamily ?? familiaPorPeso(fontWeight) }} />;
 }
 
 // Los íconos van junto a texto visible, así que se ocultan al lector de pantalla.
@@ -217,13 +219,16 @@ export function BotonEncargo({ titulo, subtitulo, onPress, estilo }) {
       android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
       style={({ pressed }) => [s.encargo, pressed && s.encargoPresionado, estilo]}
     >
-      <Rayas estilo={s.encargoRayas} opacidad={0.14} />
+      <Rayas estilo={s.encargoRayas} opacidad={0.16} />
+      <View style={s.encargoIcono}>
+        <Icono nombre="cube-outline" tamano={28} color="#fff" />
+      </View>
       <View style={s.encargoTextos}>
         <Text style={s.encargoTitulo}>{titulo}</Text>
         <Text style={s.encargoSubtitulo}>{subtitulo}</Text>
       </View>
       <View style={s.encargoFlecha}>
-        <Icono nombre="arrow-forward" tamano={20} color={colores.primario} />
+        <Icono nombre="arrow-forward" tamano={24} color={colores.primario} />
       </View>
     </Pressable>
   );
@@ -381,23 +386,29 @@ const s = StyleSheet.create({
   },
 
   encargo: {
-    minHeight: 66,
-    borderRadius: 20,
+    minHeight: 96,
+    borderRadius: 22,
     backgroundColor: colores.primario,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 14,
     overflow: 'hidden',
+    elevation: 6,
+    shadowColor: colores.primario,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
   },
   encargoPresionado: { backgroundColor: colores.primarioOscuro },
   encargoRayas: { right: 56 },
   encargoTextos: { flex: 1 },
-  encargoTitulo: { fontFamily: fuente.extra, fontSize: 16, color: '#fff' },
-  encargoSubtitulo: { fontFamily: fuente.media, fontSize: 12.5, color: '#fff' },
-  encargoFlecha: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  encargoIcono: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  encargoTitulo: { fontFamily: fuente.extra, fontSize: 18, color: '#fff' },
+  encargoSubtitulo: { fontFamily: fuente.media, fontSize: 13, color: '#fff', marginTop: 2 },
+  encargoFlecha: { width: 48, height: 48, borderRadius: 15, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
 
   // Sin borde ni overflow:hidden: las muescas sobresalen a medias del borde de la tarjeta.
   boleta: {
