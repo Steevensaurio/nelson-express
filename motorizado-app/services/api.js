@@ -25,6 +25,8 @@ const renovar = crearRenovador({
       const sesion = await leerSesion();
       if (!sesion?.refresh) throw Object.assign(new Error('Sin sesión guardada'), { response: { status: 401 } });
       const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh: sesion.refresh }, { timeout: 30000 });
+      // Si mientras tanto se cerró la sesión (o entró otro usuario) no se escribe ni se avisa nada: sin `response`, no cierra nada.
+      if ((await leerSesion())?.refresh !== sesion.refresh) throw new Error('La sesión cambió durante la renovación');
       await guardarSesion({ access: data.access, refresh: data.refresh || sesion.refresh });
       api.defaults.headers.common.Authorization = `Bearer ${data.access}`;
       alRenovar(data.access);

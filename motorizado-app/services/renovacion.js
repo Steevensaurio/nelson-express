@@ -11,6 +11,6 @@ export function crearRenovador({ renovar }) {
   };
 }
 
-// ¿Esta falla de la renovación significa que la sesión ya no sirve? Solo si el servidor la rechazó
-// (4xx). Sin red o con el servidor despertando (502/503 de Render) la sesión se conserva.
-export const debeCerrarSesion = (error) => Boolean(error?.response) && error.response.status < 500;
+// ¿Esta falla de la renovación significa que la sesión ya no sirve? Solo si el servidor rechazó el refresh
+// (400/401/403). Sin red, con el servidor despertando (502/503 de Render), 408 o 429 la sesión se conserva.
+export const debeCerrarSesion = (error) => [400, 401, 403].includes(error?.response?.status);

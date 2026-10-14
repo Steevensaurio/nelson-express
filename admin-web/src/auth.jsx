@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api, { CLAVE_REFRESH, CLAVE_TOKEN, registrarAlRenovar, registrarCierreDeSesion } from './api';
+import { debeCerrarSesion } from './renovacion';
 
 const AuthContext = createContext(null);
 
@@ -36,7 +37,7 @@ export function AuthProvider({ children }) {
   // Al recargar la página, se recupera la sesión y se confirma que sigue teniendo la capacidad.
   // Si el access venció, el interceptor lo renueva con el refresh antes de responder.
   const restaurar = useCallback(async () => {
-    if (!haySesionGuardada()) return;
+    if (!haySesionGuardada()) { setCargando(false); return; }
     setSinConexion(false);
     setCargando(true);
     aplicarToken(sessionStorage.getItem(CLAVE_TOKEN));
@@ -48,8 +49,8 @@ export function AuthProvider({ children }) {
         setToken(sessionStorage.getItem(CLAVE_TOKEN));
       }
     } catch (error) {
-      // Solo una respuesta del servidor (401/403…) invalida la sesión; sin red o con el servidor dormido se espera.
-      if (!error.response || error.response.status >= 500) {
+      // Solo un rechazo del servidor (400/401/403) invalida la sesión; sin red, con el servidor dormido, 408 o 429 se espera.
+      if (!debeCerrarSesion(error)) {
         setSinConexion(true);
         return;
       }
@@ -71,6 +72,8 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem(CLAVE_REFRESH, tokens.refresh);
       setUsuario(perfil);
       setToken(tokens.access);
+      setSinConexion(false);
+      setCargando(false);
     } catch (err) {
       aplicarToken(null);
       throw err;

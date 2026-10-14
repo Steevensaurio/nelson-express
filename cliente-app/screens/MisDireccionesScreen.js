@@ -87,8 +87,7 @@ export default function MisDireccionesScreen() {
         actualizarDirecciones(prev => [...(prev ?? []), response.data]);
       }
       cancelar();
-    } catch (err) {
-      console.log('Error al guardar direccion:', JSON.stringify(err.response?.data));
+    } catch {
       setError('No se pudo guardar la dirección');
     }
   };

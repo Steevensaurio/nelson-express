@@ -112,6 +112,6 @@ export const sombraTarjeta = {
 export const opcionesCabecera = {
   headerStyle: { backgroundColor: colores.tarjeta },
   headerTintColor: colores.texto,
-  headerTitleStyle: { fontFamily: fuente.extra, fontSize: Math.round(tipo.subtitulo.fontSize * escalaTexto) }, // la cabecera nativa no pasa por Text
+  headerTitleStyle: { fontFamily: fuente.extra, fontSize: Math.round(tipo.seccion.fontSize * escalaTexto) }, // la cabecera nativa no pasa por Text
   headerShadowVisible: false,
 };

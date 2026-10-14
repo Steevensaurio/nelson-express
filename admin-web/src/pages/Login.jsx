@@ -32,8 +32,9 @@ export default function Login() {
       await login(username.trim(), password);
     } catch (err) {
       if (err.message === 'SIN_ACCESO') setError('Esta cuenta no tiene acceso al panel de despacho.');
-      else if (err.response?.status === 401) setError('Usuario o contraseña incorrectos.');
-      else setError('No se pudo conectar con el servidor.');
+      else if (!err.response) setError('No se pudo conectar con el servidor.');
+      else if (err.response.status === 400 || err.response.status === 401) setError('Usuario o contraseña incorrectos.');
+      else setError('El servidor no está disponible en este momento. Intenta de nuevo en un minuto.');
       setEnviando(false);
     } finally {
       enCurso.current = false;

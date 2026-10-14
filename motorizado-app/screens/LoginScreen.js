@@ -50,10 +50,14 @@ export default function LoginScreen({ onLoginSuccess }) {
       }
       onLoginSuccess(access, refresh);
     } catch (err) {
+      // Solo 400/401 son credenciales malas; 5xx, 429, etc. son del servidor (por ejemplo, despertando).
+      const status = err.response?.status;
       setError(
-        err.response
-          ? 'Usuario o contraseña incorrectos'
-          : 'No se pudo conectar con el servidor. Revisa tu conexión.'
+        !err.response
+          ? 'No se pudo conectar con el servidor. Revisa tu conexión.'
+          : status === 400 || status === 401
+            ? 'Usuario o contraseña incorrectos'
+            : 'El servidor no está disponible en este momento. Intenta de nuevo en un minuto.'
       );
       setEntrando(false);
     } finally {
@@ -220,7 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   formulario: { width: '100%', maxWidth: 420, alignSelf: 'center' },
-  hojaTitulo: { fontSize: tipo.subtitulo.fontSize, marginBottom: 14 },
+  hojaTitulo: { fontSize: tipo.seccion.fontSize, marginBottom: 14 },
   ojo: { padding: espacio.xs },
   aviso: { marginBottom: 14 },
   boton: { marginTop: 6, minHeight: 54, borderRadius: radio.grande },

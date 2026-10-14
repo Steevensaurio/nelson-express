@@ -17,7 +17,6 @@
   --marca: #007cab;
   --marca-oscura: #005f84;
   --marca-suave: #e0f5fd;
-  --sombra: 0 1px 3px rgb(11 37 48 / 0.07);
   --radio-chico: 8px;
   --radio: 12px;
   --radio-grande: 16px;
@@ -43,21 +42,15 @@
   --degradado-3: #004e6e;
   --acento-claro: #a8e6ff;
   --campo-relleno: #f1f5f7;
-  /* Escala tipográfica (misma que las apps, con los tamaños de escritorio): tamaño / interlineado. */
+  /* Escala tipográfica (misma que las apps, con los tamaños de escritorio). */
   --t-mini: 10px;
   --t-etiqueta: 13px;
-  --t-etiqueta-lh: 18px;
   --t-apoyo: 14px;
-  --t-apoyo-lh: 20px;
   --t-cuerpo: 16px;
-  --t-cuerpo-lh: 22px;
   --t-subtitulo: 20px;
-  --t-subtitulo-lh: 26px;
   --t-titulo: 24px;
-  --t-titulo-lh: 30px;
   --t-precio: 28px;
   --t-display: 32px;
-  --t-display-lh: 36px;
   --fuente: 'Nunito', system-ui, sans-serif;
   --salida: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;

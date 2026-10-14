@@ -46,3 +46,14 @@ export const crearCargador = ({ cargar, alResultado }) => {
 
   return { pedir, invalidarRespuestasAnteriores };
 };
+
+// Función de carga de un cargador: mientras su `clave` sea la de la pantalla usa (y recuerda) la más reciente;
+// cuando la pantalla ya cambió de clave sigue usando la última de la suya, para que una repetición pendiente
+// no pida los datos de la clave nueva y los guarde bajo la vieja.
+export const fnVigente = ({ clave, claveActual, fnActual }) => {
+  let ultima = fnActual();
+  return () => {
+    if (claveActual() === clave) ultima = fnActual();
+    return ultima;
+  };
+};

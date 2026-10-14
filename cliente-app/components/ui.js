@@ -399,7 +399,7 @@ const s = StyleSheet.create({
     borderRadius: radio.medio,
     borderWidth: 1.5,
     paddingHorizontal: 20,
-    paddingVertical: espacio.s + 2,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -415,7 +415,7 @@ const s = StyleSheet.create({
   botonOff: { backgroundColor: colores.linea, borderColor: colores.linea },
   botonTexto: { ...tipo.cuerpo, fontFamily: fuente.extra },
 
-  campo: { marginBottom: espacio.m + 2 },
+  campo: { marginBottom: 14 },
   etiqueta: { ...tipo.cuerpoFuerte, color: colores.texto, marginBottom: 6 },
   caja: {
     minHeight: 52,

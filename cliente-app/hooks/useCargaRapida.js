@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { crearCargador, decidirCarga } from '../services/cargaRapida';
-import { edad, generacion, guardar, leer } from '../services/cache';
+import { crearCargador, decidirCarga, fnVigente } from '../services/cargaRapida';
+import { edad, generacion, guardar, leer, marca } from '../services/cache';
 
 const LENTO_MS = 5000;
 
@@ -30,6 +30,8 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
 
   const fn = useRef(cargarFn);
   fn.current = cargarFn;
+  const claveRef = useRef(clave);
+  claveRef.current = clave;
   const datosRef = useRef(datos);
   datosRef.current = datos;
   const errorRef = useRef(error);
@@ -44,26 +46,35 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
   // Un cargador por clave: ordena las peticiones y descarta las respuestas viejas (ver services/cargaRapida.js).
   const cargador = useMemo(() => {
     let vuelta = 0;
+    let marcaAlSalir = 0;
+    const fnDeEstaClave = fnVigente({ clave, claveActual: () => claveRef.current, fnActual: () => fn.current });
     const cargar = async () => {
       vuelta = generacion();
+      marcaAlSalir = marca(clave);
       // `lento` solo cuenta la primera carga o una orden del usuario, no los reintentos de fondo tras un fallo.
       const primera = datosRef.current === undefined && (!errorRef.current || manualRef.current);
       manualRef.current = false;
       const reloj = primera ? setTimeout(() => { if (montado.current) setLento(true); }, LENTO_MS) : null;
       if (montado.current) setEnVuelo((n) => n + 1);
       try {
-        return await fn.current();
+        return await fnDeEstaClave()();
       } finally {
         clearTimeout(reloj);
         if (montado.current) {
           setEnVuelo((n) => n - 1);
-          setLento(false);
+          if (reloj) setLento(false); // solo el aviso de esta petición, no el de otra
         }
       }
     };
     const alResultado = (resultado) => {
       // Se descarta si salió antes de un cambio manual o si mientras tanto se cerró sesión (ya no es de este usuario).
       if (resultado.descartada || generacion() !== vuelta) return;
+      // Se invalidó la clave mientras iba en camino (la lista de antes ya no vale): no se guarda y, si la pantalla
+      // sigue en esa clave, se repite la petición para que no quede sin datos hasta el próximo sondeo.
+      if (marca(clave) !== marcaAlSalir) {
+        if (claveRef.current === clave) cargador.pedir({ forzar: true });
+        return;
+      }
       if ('error' in resultado) {
         if (montado.current) setFallo({ clave, e: resultado.error });
         return;
@@ -74,7 +85,8 @@ export function useCargaRapida(clave, cargarFn, { maxEdad = 0, intervalo = null,
         setFallo({ clave, e: null });
       }
     };
-    return crearCargador({ cargar, alResultado });
+    const cargador = crearCargador({ cargar, alResultado });
+    return cargador;
   }, [clave]);
 
   const recargar = useCallback((opciones) => {
