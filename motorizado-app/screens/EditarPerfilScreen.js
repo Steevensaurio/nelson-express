@@ -45,7 +45,7 @@ export default function EditarPerfilScreen({ navigation }) {
   const guardar = async () => {
     const telefonoNormalizado = normalizarTelefono(datos.telefono);
     if (!telefonoNormalizado) {
-      setErrores({ telefono: MENSAJE_TELEFONO });
+      setErrores((p) => ({ ...p, telefono: MENSAJE_TELEFONO }));
       telefonoRef.current?.focus();
       return;
     }

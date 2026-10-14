@@ -470,14 +470,14 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
         # Cualquier cuenta puede pedir (no solo las creadas como "cliente"): si ya existe alguien con
         # ese teléfono se reutiliza -aunque sea motorizado o despachador pidiendo para sí mismo-;
         # si no, se crea una cuenta nueva sin contraseña (no puede iniciar sesión por su cuenta).
-        cliente = Usuario.objects.filter(telefono=telefono).first()
+        cliente = Usuario.objects.filter(telefono=telefono).order_by('pk').first()
         if cliente is None:
-            # Filas anteriores a la validación pueden estar guardadas con espacios o +593.
-            # ponytail: recorre usuarios con teléfono; pocos hoy, indexar una columna normalizada si crecen.
-            for u in Usuario.objects.exclude(telefono=''):
-                if normalizar_telefono(u.telefono) == telefono:
-                    cliente = u
-                    break
+            # Filas anteriores a la validación pueden estar guardadas con espacios o +593; gana la de menor pk.
+            # ponytail: O(usuarios); upgrade: migración de datos que normalice los teléfonos guardados.
+            filas = Usuario.objects.exclude(telefono='').order_by('pk').values_list('pk', 'telefono').iterator()
+            pk = next((pk for pk, tel in filas if normalizar_telefono(tel) == telefono), None)
+            if pk is not None:
+                cliente = Usuario.objects.get(pk=pk)
         if cliente is None:
             cliente = Usuario(
                 username=f'tel_{re.sub(r"[^0-9]", "", telefono)}', rol=Usuario.Rol.CLIENTE,

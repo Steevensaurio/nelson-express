@@ -190,10 +190,17 @@ export default function NuevoEncargoScreen({ navigation }) {
       navigation.navigate('Main', { screen: 'MisPedidos' });
     } catch (err) {
       const d = err.response?.data;
-      setError(
-        d?.detail ?? d?.recogida_contacto_telefono?.[0] ?? d?.entrega_contacto_telefono?.[0] ??
-          d?.monto_estimado?.[0] ?? d?.descripcion?.[0] ?? 'No se pudo crear el encargo'
-      );
+      // Los errores de teléfono van junto a su campo (el de la recogida está en el paso 1); el resto, en el aviso general.
+      const eRec = d?.recogida_contacto_telefono?.[0];
+      const eEnt = d?.entrega_contacto_telefono?.[0];
+      if (eRec || eEnt) {
+        setErrorTelRecogida(eRec ?? '');
+        setErrorTelEntrega(eEnt ?? '');
+        if (eEnt) entregaTelRef.current?.focus();
+        else setPaso(1);
+      } else {
+        setError(d?.detail ?? d?.monto_estimado?.[0] ?? d?.descripcion?.[0] ?? 'No se pudo crear el encargo');
+      }
       setEnviando(false);
     }
   };

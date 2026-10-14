@@ -94,7 +94,7 @@ class TelefonoTests(TestCase):
         from rest_framework import serializers
         from .serializers import validar_telefono
         for malo in ['099123456', '09912345678', 'abc', '0891234567', '082345678', '092345678',
-                     '012345678', '+5938991234567', '+593 1 2345678', '991234567', '0991234567x']:
+                     '012345678', '+5938991234567', '+593 1 2345678', '991234567', '0991234567x', '０９９１２３４５６７', '٠٩٩١٢٣٤٥٦٧']:
             with self.assertRaises(serializers.ValidationError, msg=malo) as e:
                 validar_telefono(malo)
             self.assertEqual(e.exception.detail[0], self.MSG)
@@ -131,5 +131,26 @@ class TelefonoTests(TestCase):
         self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente_id, legado.id)
         r = c.post('/api/despacho/encargos/', self.encargo(
             cliente_telefono='0987654321', recogida_contacto_telefono='+59322345678'), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
         p = Pedido.objects.get(pk=r.data['id'])
         self.assertEqual((p.cliente.telefono, p.recogida_contacto_telefono), ('0987654321', '022345678'))
+
+    def test_despacho_filas_legado_duplicadas_reutiliza_la_de_menor_pk(self):
+        Tarifa.objects.create(pk=1)
+        primero = Usuario.objects.create_user('leg1', telefono='099 123 4567')
+        Usuario.objects.create_user('leg2', telefono='+593991234567')
+        desp = Usuario.objects.create_user('desp3', es_despachador=True)
+        c = APIClient()
+        c.force_authenticate(desp)
+        r = c.post('/api/despacho/encargos/', self.encargo(cliente_telefono='0991234567'), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente_id, primero.pk)
+
+    def test_encargo_cliente_rechaza_telefono_de_contacto_invalido(self):
+        c = APIClient()
+        c.force_authenticate(Usuario.objects.create_user('cli2', first_name='Ana', telefono='0999999999'))
+        base = {k: v for k, v in self.encargo().items() if k != 'cliente_nombre'}
+        for campo in ('recogida_contacto_telefono', 'entrega_contacto_telefono'):
+            r = c.post('/api/encargos/', {**base, campo: '12345'}, format='json')
+            self.assertEqual(r.status_code, 400)
+            self.assertEqual(r.data[campo][0], self.MSG)
