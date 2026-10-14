@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import Barra from '../components/Barra.jsx';
 import SelectorMapa from '../components/SelectorMapa.jsx';
+import { normalizarTelefono, MENSAJE_TELEFONO } from '../telefono.js';
 
 const VACIO = {
   clienteNombre: '', clienteTelefono: '', descripcion: '',
@@ -21,12 +22,53 @@ const errorDe = (err) => {
   return campo ? `${campo}: ${[].concat(mensajes)[0]}` : 'No se pudo crear el encargo.';
 };
 
+// Teléfono con el error junto al campo; el cliente es obligatorio y los de contacto, opcionales.
+const TELEFONOS = ['clienteTelefono', 'recogidaContactoTelefono', 'entregaContactoTelefono'];
+const CAMPO_SERVIDOR = {
+  cliente_telefono: 'clienteTelefono', recogida_contacto_telefono: 'recogidaContactoTelefono',
+  entrega_contacto_telefono: 'entregaContactoTelefono',
+};
+
+function CampoTelefono({ id, etiqueta, error, inputRef, ...props }) {
+  return (
+    <div className="campo-tel">
+      <label htmlFor={id}>{etiqueta}</label>
+      <input
+        id={id} ref={inputRef} type="tel" inputMode="tel" autoComplete="tel" maxLength={16}
+        placeholder="0991234567" aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? `${id}-error` : undefined} {...props}
+      />
+      {error ? <p className="error" id={`${id}-error`} role="alert">{error}</p> : null}
+    </div>
+  );
+}
+
 export default function NuevoEncargo() {
   const [f, setF] = useState(VACIO);
   const [envio, setEnvio] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [creado, setCreado] = useState(null);
+  const [erroresTel, setErroresTel] = useState({});
+  const refsTel = useRef({});
+
+  // Obligatorio solo el del cliente; los de contacto, vacíos valen. Tras mostrar el error se corrige en vivo.
+  const errorTel = (campo, valor) => {
+    if (!valor.trim()) return campo === 'clienteTelefono' ? MENSAJE_TELEFONO : '';
+    return normalizarTelefono(valor) ? '' : MENSAJE_TELEFONO;
+  };
+  const telefono = (campo, etiqueta) => (
+    <CampoTelefono
+      id={`tel-${campo}`} etiqueta={etiqueta} error={erroresTel[campo]}
+      inputRef={(el) => { refsTel.current[campo] = el; }}
+      value={f[campo]}
+      onChange={(e) => {
+        cambiar(campo)(e.target.value);
+        if (erroresTel[campo]) setErroresTel((prev) => ({ ...prev, [campo]: errorTel(campo, e.target.value) }));
+      }}
+      onBlur={() => setErroresTel((prev) => ({ ...prev, [campo]: f[campo].trim() ? errorTel(campo, f[campo]) : '' }))}
+    />
+  );
 
   const cambiar = (campo) => (valor) => setF((prev) => ({ ...prev, [campo]: valor }));
   const texto = (campo) => ({ value: f[campo], onChange: (e) => cambiar(campo)(e.target.value) });
@@ -70,21 +112,28 @@ export default function NuevoEncargo() {
 
   const crear = async (evento) => {
     evento.preventDefault();
+    const nuevos = Object.fromEntries(TELEFONOS.map((c) => [c, errorTel(c, f[c])]));
+    setErroresTel(nuevos);
+    const primero = TELEFONOS.find((c) => nuevos[c]);
+    if (primero) {
+      refsTel.current[primero]?.focus();
+      return;
+    }
     setEnviando(true);
     setError('');
     try {
       const { data } = await api.post('/despacho/encargos/', {
         cliente_nombre: f.clienteNombre.trim(),
-        cliente_telefono: f.clienteTelefono.trim(),
+        cliente_telefono: normalizarTelefono(f.clienteTelefono),
         descripcion: f.descripcion.trim(),
         recogida_direccion: f.recogidaDireccion.trim(),
         recogida_referencia: f.recogidaReferencia.trim(),
         recogida_lat: recogida.lat.toFixed(6),
         recogida_lng: recogida.lng.toFixed(6),
         recogida_contacto_nombre: f.recogidaContactoNombre.trim(),
-        recogida_contacto_telefono: f.recogidaContactoTelefono.trim(),
+        recogida_contacto_telefono: normalizarTelefono(f.recogidaContactoTelefono) ?? '',
         entrega_contacto_nombre: f.entregaContactoNombre.trim(),
-        entrega_contacto_telefono: f.entregaContactoTelefono.trim(),
+        entrega_contacto_telefono: normalizarTelefono(f.entregaContactoTelefono) ?? '',
         pagar_en_recogida: f.pagar,
         ...(f.pagar ? { monto_estimado: Number(f.monto).toFixed(2) } : {}),
         destino_direccion: f.destinoDireccion.trim(),
@@ -95,7 +144,12 @@ export default function NuevoEncargo() {
       setCreado(data);
       setF(VACIO);
     } catch (err) {
-      setError(errorDe(err));
+      const d = err.response?.data;
+      const deServidor = Object.fromEntries(
+        Object.entries(CAMPO_SERVIDOR).filter(([k]) => d?.[k]).map(([k, c]) => [c, [].concat(d[k])[0]])
+      );
+      if (Object.keys(deServidor).length) setErroresTel(deServidor);
+      else setError(errorDe(err));
     } finally {
       setEnviando(false);
     }
@@ -122,7 +176,7 @@ export default function NuevoEncargo() {
           <fieldset>
             <legend>Cliente</legend>
             <label>Nombre<input {...texto('clienteNombre')} /></label>
-            <label>Teléfono<input {...texto('clienteTelefono')} inputMode="tel" /></label>
+            {telefono('clienteTelefono', 'Teléfono')}
             <p className="tenue campo-ancho">Si ya existe un cliente con ese teléfono se reutiliza; si no, se crea uno nuevo.</p>
           </fieldset>
 
@@ -142,7 +196,7 @@ export default function NuevoEncargo() {
             <div className="grupo-contacto campo-ancho">
               <p className="tenue">¿Quién entrega ahí? Vacío si es el propio cliente.</p>
               <label>Nombre<input {...texto('recogidaContactoNombre')} /></label>
-              <label>Teléfono<input {...texto('recogidaContactoTelefono')} inputMode="tel" /></label>
+              {telefono('recogidaContactoTelefono', 'Teléfono')}
             </div>
             <label className="campo-check campo-ancho">
               <input type="checkbox" checked={f.pagar} onChange={(e) => cambiar('pagar')(e.target.checked)} />
@@ -161,7 +215,7 @@ export default function NuevoEncargo() {
             <div className="grupo-contacto campo-ancho">
               <p className="tenue">¿Quién recibe ahí? Vacío si es el propio cliente.</p>
               <label>Nombre<input {...texto('entregaContactoNombre')} /></label>
-              <label>Teléfono<input {...texto('entregaContactoTelefono')} inputMode="tel" /></label>
+              {telefono('entregaContactoTelefono', 'Teléfono')}
             </div>
           </fieldset>
 

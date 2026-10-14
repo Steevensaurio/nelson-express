@@ -6,6 +6,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { colores, espacio } from '../constants/tema';
+import { normalizarTelefono, MENSAJE_TELEFONO } from '../services/telefono';
 import { Aviso, Boton, Campo, estiloTarjeta } from '../components/ui';
 
 const pedirPerfil = pedir('/perfil/');
@@ -20,6 +21,13 @@ export default function MisDatosScreen({ navigation }) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [errorTelefono, setErrorTelefono] = useState('');
+  const telefonoRef = useRef(null);
+
+  const validarTelefono = (texto) => setErrorTelefono(texto.trim() && !normalizarTelefono(texto) ? MENSAJE_TELEFONO : '');
+  const cambiarTelefono = (texto) => {
+    setTelefono(texto);
+    if (errorTelefono) validarTelefono(texto); // ya mostró el error: se corrige en vivo
+  };
 
   // Si el perfil llega después de abrir la pantalla, se rellena una sola vez (nunca pisa lo que se está escribiendo).
   useEffect(() => {
@@ -31,6 +39,12 @@ export default function MisDatosScreen({ navigation }) {
   }, [perfil]);
 
   const guardar = async () => {
+    const telefonoNormalizado = normalizarTelefono(telefono);
+    if (!telefonoNormalizado) {
+      setErrorTelefono(MENSAJE_TELEFONO);
+      telefonoRef.current?.focus();
+      return;
+    }
     setGuardando(true);
     setError('');
     setErrorTelefono('');
@@ -38,7 +52,7 @@ export default function MisDatosScreen({ navigation }) {
       const response = await api.patch('/perfil/', {
         first_name: nombre.trim(),
         last_name: apellido.trim(),
-        telefono: telefono.trim(),
+        telefono: telefonoNormalizado,
       });
       guardarEnCache('perfil', response.data); // Perfil y Negocios muestran lo nuevo al volver, sin otra petición
       navigation.goBack();
@@ -79,9 +93,12 @@ export default function MisDatosScreen({ navigation }) {
           />
           <Campo
             etiqueta="Teléfono"
+            ref={telefonoRef}
             value={telefono}
-            onChangeText={setTelefono}
-            placeholder="Ej. 0991234567"
+            onChangeText={cambiarTelefono}
+            onBlur={() => validarTelefono(telefono)}
+            placeholder="0991234567"
+            maxLength={16}
             keyboardType="phone-pad"
             autoComplete="tel"
             textContentType="telephoneNumber"

@@ -7,6 +7,7 @@ import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { colores, tipo, espacio } from '../constants/tema';
+import { normalizarTelefono, MENSAJE_TELEFONO } from '../services/telefono';
 import { Aviso, Boton, Campo, Titulo, estiloTarjeta } from '../components/ui';
 
 const pedirPerfil = pedir('/perfil/');
@@ -24,7 +25,15 @@ export default function EditarPerfilScreen({ navigation }) {
   const [error, setError] = useState('');
   const [errores, setErrores] = useState({});
 
-  const cambiar = (campo) => (texto) => setDatos((prev) => ({ ...prev, [campo]: texto }));
+  const telefonoRef = useRef(null);
+
+  const validarTelefono = (texto) => setErrores((prev) => ({
+    ...prev, telefono: texto.trim() && !normalizarTelefono(texto) ? MENSAJE_TELEFONO : undefined,
+  }));
+  const cambiar = (campo) => (texto) => {
+    setDatos((prev) => ({ ...prev, [campo]: texto }));
+    if (campo === 'telefono' && errores.telefono) validarTelefono(texto); // ya mostró el error: se corrige en vivo
+  };
 
   // Si el perfil llega después de abrir la pantalla, se rellena una sola vez (nunca pisa lo que se está escribiendo).
   useEffect(() => {
@@ -34,6 +43,12 @@ export default function EditarPerfilScreen({ navigation }) {
   }, [perfil]);
 
   const guardar = async () => {
+    const telefonoNormalizado = normalizarTelefono(datos.telefono);
+    if (!telefonoNormalizado) {
+      setErrores({ telefono: MENSAJE_TELEFONO });
+      telefonoRef.current?.focus();
+      return;
+    }
     setGuardando(true);
     setError('');
     setErrores({});
@@ -41,7 +56,7 @@ export default function EditarPerfilScreen({ navigation }) {
       const response = await api.patch('/perfil/', {
         first_name: datos.first_name.trim(),
         last_name: datos.last_name.trim(),
-        telefono: datos.telefono.trim(),
+        telefono: telefonoNormalizado,
         vehiculo_modelo: datos.vehiculo_modelo.trim(),
         vehiculo_color: datos.vehiculo_color.trim(),
         vehiculo_placa: datos.vehiculo_placa.trim(),
@@ -93,9 +108,12 @@ export default function EditarPerfilScreen({ navigation }) {
           />
           <Campo
             etiqueta="Teléfono"
+            ref={telefonoRef}
             value={datos.telefono}
             onChangeText={cambiar('telefono')}
-            placeholder="Ej. 0991234567"
+            onBlur={() => validarTelefono(datos.telefono)}
+            placeholder="0991234567"
+            maxLength={16}
             keyboardType="phone-pad"
             autoComplete="tel"
             textContentType="telephoneNumber"

@@ -1087,6 +1087,20 @@ td strong {
   font-weight: 600;
 }
 
+.formulario-encargo .campo-tel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.formulario-encargo .campo-tel .error {
+  color: var(--rojo);
+  font-weight: 600;
+  grid-column: auto;
+}
+
 .campo-ancho {
   grid-column: 1 / -1;
 }

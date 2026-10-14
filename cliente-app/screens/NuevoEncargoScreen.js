@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, ScrollView, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { invalidar } from '../services/cache';
+import { normalizarTelefono, MENSAJE_TELEFONO } from '../services/telefono';
 import { pedir } from '../services/consultas';
 import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MAX_EDAD_MS } from '../services/cargaRapida';
@@ -49,7 +50,7 @@ function Pasos({ paso }) {
 }
 
 // Dos datos opcionales (nombre y teléfono) de quien entrega o recibe; vacío = el propio cliente.
-function GrupoContacto({ titulo, ayuda, icono, nombre, onNombre, telefono, onTelefono }) {
+function GrupoContacto({ titulo, ayuda, icono, nombre, onNombre, telefono, onTelefono, onBlurTelefono, errorTelefono, telefonoRef }) {
   return (
     <View style={styles.grupoContacto}>
       <View style={styles.grupoCabecera}>
@@ -70,10 +71,16 @@ function GrupoContacto({ titulo, ayuda, icono, nombre, onNombre, telefono, onTel
       />
       <Campo
         etiqueta="Teléfono (opcional)"
+        ref={telefonoRef}
         value={telefono}
         onChangeText={onTelefono}
-        placeholder="Ej. 0991234567"
+        onBlur={onBlurTelefono}
+        error={errorTelefono}
+        placeholder="0991234567"
+        maxLength={16}
         keyboardType="phone-pad"
+        autoComplete="tel"
+        textContentType="telephoneNumber"
         estilo={styles.ultimo}
       />
     </View>
@@ -126,6 +133,21 @@ export default function NuevoEncargoScreen({ navigation }) {
     return () => { vigente = false; };
   }, [recogidaValor?.lat, recogidaValor?.lng, entregaValor?.lat, entregaValor?.lng]);
 
+  const recogidaTelRef = useRef(null);
+  const entregaTelRef = useRef(null);
+  const [errorTelRecogida, setErrorTelRecogida] = useState('');
+  const [errorTelEntrega, setErrorTelEntrega] = useState('');
+  // Opcional: vacío vale; si hay algo, debe ser un teléfono de Ecuador. Tras mostrar el error se corrige en vivo.
+  const errorDe = (texto) => (texto.trim() && !normalizarTelefono(texto) ? MENSAJE_TELEFONO : '');
+  const cambiarTelRecogida = (t) => { setRecogidaContactoTelefono(t); if (errorTelRecogida) setErrorTelRecogida(errorDe(t)); };
+  const cambiarTelEntrega = (t) => { setEntregaContactoTelefono(t); if (errorTelEntrega) setErrorTelEntrega(errorDe(t)); };
+  const continuar = () => {
+    const e = errorDe(recogidaContactoTelefono);
+    setErrorTelRecogida(e);
+    if (e) recogidaTelRef.current?.focus();
+    else setPaso(2);
+  };
+
   const perfilIncompleto = perfil !== null && !(perfil.first_name && perfil.telefono);
 
   const puedePaso1 = Boolean(descripcion.trim() && recogidaValor?.direccion?.trim());
@@ -135,6 +157,15 @@ export default function NuevoEncargoScreen({ navigation }) {
   );
 
   const enviar = async () => {
+    const eRec = errorDe(recogidaContactoTelefono);
+    const eEnt = errorDe(entregaContactoTelefono);
+    setErrorTelRecogida(eRec);
+    setErrorTelEntrega(eEnt);
+    if (eRec || eEnt) {
+      if (eEnt) entregaTelRef.current?.focus();
+      else setPaso(1); // el error de la recogida se ve en el paso 1
+      return;
+    }
     setEnviando(true);
     setError('');
     try {
@@ -145,9 +176,9 @@ export default function NuevoEncargoScreen({ navigation }) {
         recogida_lat: recogidaValor.lat,
         recogida_lng: recogidaValor.lng,
         recogida_contacto_nombre: recogidaContactoNombre.trim(),
-        recogida_contacto_telefono: recogidaContactoTelefono.trim(),
+        recogida_contacto_telefono: normalizarTelefono(recogidaContactoTelefono) ?? '',
         entrega_contacto_nombre: entregaContactoNombre.trim(),
-        entrega_contacto_telefono: entregaContactoTelefono.trim(),
+        entrega_contacto_telefono: normalizarTelefono(entregaContactoTelefono) ?? '',
         pagar_en_recogida: pagar,
         ...(pagar ? { monto_estimado: parseFloat(monto).toFixed(2) } : {}),
         destino_direccion: entregaValor.direccion.trim(),
@@ -213,13 +244,16 @@ export default function NuevoEncargoScreen({ navigation }) {
               nombre={recogidaContactoNombre}
               onNombre={setRecogidaContactoNombre}
               telefono={recogidaContactoTelefono}
-              onTelefono={setRecogidaContactoTelefono}
+              onTelefono={cambiarTelRecogida}
+              onBlurTelefono={() => setErrorTelRecogida(errorDe(recogidaContactoTelefono))}
+              errorTelefono={errorTelRecogida}
+              telefonoRef={recogidaTelRef}
             />
 
             <Boton
               titulo="Continuar"
               icono="arrow-forward"
-              onPress={() => setPaso(2)}
+              onPress={continuar}
               deshabilitado={!puedePaso1}
               estilo={styles.continuar}
             />
@@ -241,7 +275,10 @@ export default function NuevoEncargoScreen({ navigation }) {
               nombre={entregaContactoNombre}
               onNombre={setEntregaContactoNombre}
               telefono={entregaContactoTelefono}
-              onTelefono={setEntregaContactoTelefono}
+              onTelefono={cambiarTelEntrega}
+              onBlurTelefono={() => setErrorTelEntrega(errorDe(entregaContactoTelefono))}
+              errorTelefono={errorTelEntrega}
+              telefonoRef={entregaTelRef}
             />
 
             <View style={styles.filaSwitch}>
