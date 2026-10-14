@@ -96,13 +96,13 @@ REST_FRAMEWORK = {
     ),
 }
 
-# En desarrollo, un token que dura solo 5 minutos (el default) es incómodo para probar.
-# En producción real, lo correcto es implementar refresco automático con el refresh token en vez de esto.
+# Access de 1 día y refresh de 30: las apps guardan la sesión y la renuevan solas con el refresh.
+# ROTATE_REFRESH_TOKENS no está activado, así que el refresh NO se alarga: los 30 días corren desde el
+# login y al vencer hay que volver a iniciar sesión.
 from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    # La app guarda la sesión en el móvil y la renueva con el refresh: así no pide contraseña cada vez.
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
 

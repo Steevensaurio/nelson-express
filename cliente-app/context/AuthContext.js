@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api, { registrarCierreDeSesion } from '../services/api';
+import api, { registrarAlRenovar, registrarCierreDeSesion } from '../services/api';
 import { borrarSesion, guardarSesion, leerSesion } from '../services/sesion';
 import { limpiarCache } from '../services/cache';
 
@@ -26,6 +26,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => { registrarCierreDeSesion(logout); }, [logout]);
+
+  // Tras una renovación el estado `token` se actualiza (el WebSocket se reconecta con el access nuevo).
+  // Solo si hay sesión abierta: durante la restauración o tras cerrar sesión se ignora.
+  useEffect(() => { registrarAlRenovar((access) => setToken((actual) => (actual ? access : actual))); }, []);
 
   useEffect(() => {
     let cancelado = false;

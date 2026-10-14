@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { crearRenovador } from './renovacion';
+import { crearRenovador, debeCerrarSesion } from './renovacion';
 import { guardarSesion, leerSesion } from './sesion';
 
 const baseURL = process.env.EXPO_PUBLIC_API_URL;
@@ -10,6 +10,10 @@ const api = axios.create({ baseURL, timeout: 30000 });
 let alCerrarSesion = () => {};
 export const registrarCierreDeSesion = (fn) => { alCerrarSesion = fn; };
 
+// AuthContext registra aquí cómo enterarse del access nuevo tras una renovación (para el WebSocket).
+let alRenovar = () => {};
+export const registrarAlRenovar = (fn) => { alRenovar = fn; };
+
 // Despierta al servidor (Render duerme el plan gratis) sin pasar por el interceptor: se ignora todo error.
 export const calentarServidor = () => { axios.get(`${baseURL}/`, { timeout: 60000 }).catch(() => {}); };
 
@@ -17,12 +21,19 @@ export const calentarServidor = () => { axios.get(`${baseURL}/`, { timeout: 6000
 // reentrar en el interceptor. Si el servidor responde con error, la sesión ya no sirve.
 const renovar = crearRenovador({
   renovar: async () => {
-    const sesion = await leerSesion();
-    if (!sesion?.refresh) throw Object.assign(new Error('Sin sesión guardada'), { response: { status: 401 } });
-    const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh: sesion.refresh }, { timeout: 30000 });
-    await guardarSesion({ access: data.access, refresh: data.refresh || sesion.refresh });
-    api.defaults.headers.common.Authorization = `Bearer ${data.access}`;
-    return data.access;
+    try {
+      const sesion = await leerSesion();
+      if (!sesion?.refresh) throw Object.assign(new Error('Sin sesión guardada'), { response: { status: 401 } });
+      const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh: sesion.refresh }, { timeout: 30000 });
+      await guardarSesion({ access: data.access, refresh: data.refresh || sesion.refresh });
+      api.defaults.headers.common.Authorization = `Bearer ${data.access}`;
+      alRenovar(data.access);
+      return data.access;
+    } catch (error) {
+      // Una sola vez por renovación fallida (no una por cada 401 concurrente).
+      if (debeCerrarSesion(error)) alCerrarSesion();
+      throw error;
+    }
   },
 });
 
@@ -39,9 +50,9 @@ api.interceptors.response.use(undefined, async (error) => {
     config.headers.Authorization = `Bearer ${access}`;
     return api(config);
   } catch (errorRenovar) {
-    // Solo se cierra la sesión si el servidor rechazó el refresh; un corte de red no debe sacar al usuario.
-    if (errorRenovar.response) alCerrarSesion();
-    return Promise.reject(errorRenovar.response ? error : errorRenovar);
+    // Si el servidor rechazó el refresh la sesión ya se cerró dentro de `renovar`. Si la falla fue de red o
+    // 5xx (servidor despertando) se devuelve ese error, no el 401, para que nadie lo confunda con sesión vencida.
+    return Promise.reject(debeCerrarSesion(errorRenovar) ? error : errorRenovar);
   }
 });
 
