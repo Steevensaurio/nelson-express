@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
     setCargando(true);
     aplicarToken(sessionStorage.getItem(CLAVE_TOKEN));
     try {
-      const { data } = await api.get('/perfil/');
+      const { data } = await api.get('/perfil/', { timeout: 60000 }); // arranque en frío de Render
       if (!data.es_despachador) logout();
       else {
         setUsuario(data);

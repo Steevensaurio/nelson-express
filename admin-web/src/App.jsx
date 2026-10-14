@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth.jsx';
 import Login from './pages/Login.jsx';
@@ -13,6 +13,20 @@ const TITULOS = {
   '/encargo': 'Nuevo encargo',
 };
 
+// Tras 5 s de espera se avisa que el servidor (Render gratis) está despertando, igual que en el login.
+function Cargando() {
+  const [lento, setLento] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setLento(true), 5000);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <p className="cargando" role="status">
+      {lento ? 'El servidor está despertando, puede tardar hasta un minuto…' : 'Cargando…'}
+    </p>
+  );
+}
+
 function RutaProtegida({ children }) {
   const { usuario, cargando, sinConexion, reintentar } = useAuth();
   if (cargando && sinConexion) {
@@ -23,7 +37,7 @@ function RutaProtegida({ children }) {
       </div>
     );
   }
-  if (cargando) return <p className="cargando" role="status">Cargando…</p>;
+  if (cargando) return <Cargando />;
   return usuario ? children : <Navigate to="/login" replace />;
 }
 

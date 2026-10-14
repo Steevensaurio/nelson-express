@@ -62,11 +62,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Comprime las respuestas (JSON de la API) para que carguen más rápido en datos móviles.
-    'django.middleware.gzip.GZipMiddleware',
     # Sirve los estáticos (CSS/JS del admin, incluida la piel de Jazzmin) directo desde la app: con
     # DEBUG=False Django deja de servirlos solo, y en Render no hay un servidor de estáticos aparte.
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # Comprime las respuestas (JSON de la API) para que carguen más rápido en datos móviles.
+    # Va después de WhiteNoise: así los estáticos (imágenes) no se recomprimen y conservan Content-Length/Range.
+    'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
