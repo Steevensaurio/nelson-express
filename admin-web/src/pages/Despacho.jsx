@@ -4,6 +4,7 @@ import { useAuth } from '../auth.jsx';
 import { useTiempoReal } from '../useTiempoReal.js';
 import Barra from '../components/Barra.jsx';
 import Modal from '../components/Modal.jsx';
+import { TarjetaMotorizado, ordenarMotorizados } from '../components/TarjetaMotorizado.jsx';
 import { MOSTRAR_PRECIOS } from '../config.js';
 import { BP, anchoMinimo, useMedia } from '../useMedia.js';
 
@@ -243,11 +244,8 @@ export default function Despacho() {
           <h2>Motorizados</h2>
           {motorizados.length === 0 ? <p className="tenue">No hay motorizados registrados.</p> : null}
           <ul>
-            {motorizados.map((m) => (
-              <li key={m.id} className={m.entregas_activas === 0 ? 'libre' : 'ocupado'}>
-                <strong>{m.nombre}</strong>
-                <span>{m.entregas_activas === 0 ? 'Libre' : `${m.entregas_activas} en curso`}</span>
-              </li>
+            {ordenarMotorizados(motorizados).map((m) => (
+              <li key={m.id}><TarjetaMotorizado m={m} /></li>
             ))}
           </ul>
         </section>

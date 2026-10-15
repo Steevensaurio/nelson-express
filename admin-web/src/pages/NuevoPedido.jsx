@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api';
 import Barra from '../components/Barra.jsx';
 import SelectorMapa from '../components/SelectorMapa.jsx';
+import { TarjetaMotorizado, TarjetaSkeleton, EstadoMotorizado, ordenarMotorizados } from '../components/TarjetaMotorizado.jsx';
 import { normalizarTelefono, MENSAJE_TELEFONO } from '../telefono.js';
 import { BP, anchoMinimo, useMedia } from '../useMedia.js';
 
@@ -87,12 +88,12 @@ function useRealce(valor) {
   return ref;
 }
 
-function Linea({ etiqueta, valor, className = '' }) {
+function Linea({ etiqueta, valor, extra = null, className = '' }) {
   const ref = useRealce(valor);
   return (
     <div className={`ticket-linea ${className}`} ref={ref}>
       <dt>{etiqueta}</dt>
-      <dd>{valor}</dd>
+      <dd>{valor}{extra}</dd>
     </div>
   );
 }
@@ -155,7 +156,7 @@ export default function NuevoPedido() {
   useEffect(cargarMotorizados, []);
   const listaMotos = Array.isArray(motorizados) ? motorizados : [];
   const motoElegida = listaMotos.find((m) => String(m.id) === f.motorizadoId);
-  const disponibilidad = (m) => (m.entregas_activas === 0 ? 'libre' : `${m.entregas_activas} en curso`);
+  const ordenadas = ordenarMotorizados(listaMotos);
 
   // Mismo endpoint y mismo mensaje de error que Despacho. Si falla, el pedido ya existe: solo se reintenta esto.
   const asignar = async (pedido, moto) => {
@@ -665,17 +666,23 @@ export default function NuevoPedido() {
 
               <fieldset>
                 <legend>Motorizado <span className="opcional">(opcional)</span></legend>
-                <div className="campo campo-ancho">
-                  <label htmlFor="campo-motorizado">Asignar a</label>
-                  <select
-                    id="campo-motorizado" value={f.motorizadoId} disabled={!listaMotos.length}
-                    onChange={(e) => cambiar('motorizadoId', e.target.value)}
-                  >
-                    <option value="">Sin asignar — asignar después</option>
-                    {listaMotos.map((m) => <option key={m.id} value={m.id}>{m.nombre} · {disponibilidad(m)}</option>)}
-                  </select>
+                <div className="campo-ancho moto-grupo" role="radiogroup" aria-label="Asignar a" aria-busy={motorizados === null}>
+                  {motorizados === null ? [0, 1, 2].map((i) => <TarjetaSkeleton key={i} />) : (
+                    <>
+                      <label className="moto-opcion">
+                        <input type="radio" name="motorizado" value="" checked={f.motorizadoId === ''} onChange={() => cambiar('motorizadoId', '')} />
+                        <TarjetaMotorizado seleccionable titulo="Sin asignar" apoyo="Asignar después" />
+                      </label>
+                      {ordenadas.map((m) => (
+                        <label className="moto-opcion" key={m.id}>
+                          <input type="radio" name="motorizado" value={m.id} checked={f.motorizadoId === String(m.id)} onChange={() => cambiar('motorizadoId', String(m.id))} />
+                          <TarjetaMotorizado m={m} seleccionable />
+                        </label>
+                      ))}
+                    </>
+                  )}
                 </div>
-                {motorizados === null ? <p className="tenue campo-ancho" role="status">Cargando motorizados…</p> : null}
+                {motorizados === null ? <p className="solo-lectores" role="status">Cargando motorizados…</p> : null}
                 {Array.isArray(motorizados) && !motorizados.length ? <p className="tenue campo-ancho">No hay motorizados registrados.</p> : null}
                 {motorizados === 'error' ? (
                   <p className="error campo-ancho" role="alert">
@@ -699,7 +706,7 @@ export default function NuevoPedido() {
                   />
                   <Linea etiqueta="Recogida" valor={(comida ? nombreLocal : f.recogidaDireccion.trim()) || '—'} />
                   <Linea etiqueta="Entrega" valor={f.destinoDireccion.trim() || '—'} />
-                  <Linea etiqueta="Motorizado" valor={motoElegida ? motoElegida.nombre : 'Sin asignar'} />
+                  <Linea etiqueta="Motorizado" valor={motoElegida ? motoElegida.nombre : 'Sin asignar'} extra={motoElegida ? <EstadoMotorizado m={motoElegida} /> : null} />
                 </dl>
                 {validas.length ? (
                   <ul className="ticket-items" aria-label="Ítems">
