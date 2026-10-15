@@ -2959,3 +2959,41 @@ a.secundario {
     animation: none !important;
   }
 }
+
+/* ---------- Precio de envío ---------- */
+
+.envio-sugerido {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--acento-palido);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  font-variant-numeric: tabular-nums;
+}
+
+.envio-sugerido .enlace {
+  min-height: 44px;
+}
+
+.formulario-pedido #campo-envio {
+  font-variant-numeric: tabular-nums;
+}
+
+.envio-editado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  align-self: end;
+  min-width: 0;
+}
+
+.envio-editado p {
+  margin: 0;
+}
+
+.envio-editado button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

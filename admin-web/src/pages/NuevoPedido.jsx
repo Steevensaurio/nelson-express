@@ -26,6 +26,7 @@ const vacio = (tipo) => ({
   items: [filaVacia()],
   motorizadoId: '', // opcional: se asigna con el endpoint de Despacho justo después de crear
   pagar: null, // null = automático: en comida se marca si hay precios (el motorizado paga la comida en el local)
+  envio: '', envioEditado: false, // sin editar sigue al sugerido; editado se manda como costo_envio
 });
 
 const TELEFONOS = ['clienteTelefono', 'recogidaContactoTelefono', 'entregaContactoTelefono'];
@@ -39,7 +40,7 @@ const CAMPO_SERVIDOR = {
   recogida_referencia: 'recogidaReferencia',
   destino_direccion: 'destinoDireccion', destino_lat: 'destinoDireccion', destino_lng: 'destinoDireccion',
   destino_referencia: 'destinoReferencia',
-  descripcion: 'items', monto_estimado: 'items',
+  descripcion: 'items', monto_estimado: 'items', costo_envio: 'envio',
 };
 
 const centavos = (n) => Math.round(n * 100);
@@ -68,7 +69,17 @@ function analizarItems(items) {
   });
 }
 
-const lineaDeItem = (f) => `${f.cantidad} x ${f.detalle}${f.precio !== null ? ` (${dinero(centavos(f.precio))})` : ''}`;
+// Envío escrito por el despachador: mismos límites que el servidor (0 a 50, hasta 2 decimales).
+function errorEnvio(texto) {
+  const t = texto.trim().replace(',', '.');
+  if (!t) return 'Escribe el envío.';
+  if (t.startsWith('-')) return 'El envío no puede ser negativo.';
+  if (!/^\d+(\.\d+)?$/.test(t)) return 'El envío debe ser un número, por ejemplo 2.50.';
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return 'El envío admite como máximo 2 decimales.';
+  return Number(t) > 50 ? 'El envío no puede pasar de $50.00.' : '';
+}
+
+const lineaDeItem =(f) => `${f.cantidad} x ${f.detalle}${f.precio !== null ? ` (${dinero(centavos(f.precio))})` : ''}`;
 
 // Realce breve de algo que acaba de cambiar (fila nueva, línea del ticket). Nada si se pide menos movimiento.
 function realzar(el) {
@@ -261,7 +272,8 @@ export default function NuevoPedido() {
   const puntoRecogida = comida ? (sucursal ? { lat: Number(sucursal.lat), lng: Number(sucursal.lng) } : null) : f.recogida;
   const { destino } = f;
 
-  // El envío lo cotiza el servidor en cuanto hay recogida y entrega.
+  // El envío lo cotiza el servidor en cuanto hay recogida y entrega. "Recalcular" sube `recotizar` y lo repite.
+  const [recotizar, setRecotizar] = useState(0);
   useEffect(() => {
     if (!puntoRecogida || !destino) {
       setEnvio(null);
@@ -276,7 +288,31 @@ export default function NuevoPedido() {
       .then(({ data }) => vigente && setEnvio(data))
       .catch(() => vigente && setEnvio('error'));
     return () => { vigente = false; };
-  }, [puntoRecogida?.lat, puntoRecogida?.lng, destino?.lat, destino?.lng]);
+  }, [puntoRecogida?.lat, puntoRecogida?.lng, destino?.lat, destino?.lng, recotizar]);
+
+  const envioListo = envio && typeof envio === 'object';
+  const sugerido = envioListo ? centavos(Number(envio.costo_envio)) : null;
+  // Sin editar, el campo sigue al sugerido (o se vacía si ya no hay puntos); editado, se respeta lo escrito.
+  useEffect(() => {
+    if (f.envioEditado) return;
+    if (sugerido !== null) setF((prev) => ({ ...prev, envio: (sugerido / 100).toFixed(2) }));
+    else if (envio === null) setF((prev) => ({ ...prev, envio: '' }));
+  }, [sugerido, envio, f.envioEditado]);
+  const errorCampoEnvio = f.envioEditado ? errorEnvio(f.envio) : '';
+  const envioCampo = errorCampoEnvio || !f.envio ? null : centavos(Number(f.envio.trim().replace(',', '.')));
+  const envioDistinto = f.envioEditado && envioCampo !== null && envioCampo !== sugerido;
+  const campoEnvio = useRef(null);
+  const realceSugerido = useRealce(sugerido);
+  const realceCampo = useRef(null);
+  useEffect(() => {
+    if (sugerido !== null && !f.envioEditado) realzar(realceCampo.current); // el campo se actualizó solo
+  }, [sugerido]);
+  const recalcular = () => {
+    setF((prev) => ({ ...prev, envioEditado: false }));
+    setErrores((prev) => ({ ...prev, envio: '' }));
+    setRecotizar((n) => n + 1);
+    campoEnvio.current?.focus(); // el botón desaparece: el foco queda en el campo
+  };
 
   // ---------- Ítems ----------
   const filas = analizarItems(f.items);
@@ -344,19 +380,21 @@ export default function NuevoPedido() {
         !telValido('entregaContactoTelefono') && 'un teléfono válido de quien recibe',
       ],
     },
+    { nombre: 'Envío', faltan: [(errorCampoEnvio || errores.envio) && 'un precio de envío válido'] },
   ].map((p) => ({ ...p, faltan: p.faltan.filter(Boolean) }));
   const faltantes = pasos.flatMap((p) => p.faltan.map((x) => `${p.nombre}: ${x}`));
   const completo = faltantes.length === 0;
-  const envioListo = envio && typeof envio === 'object';
   const puedeCrear = completo && envioListo && !enviando;
   const textoFaltan = completo
     ? (envioListo ? '' : envio === 'error' ? 'No se pudo calcular el envío.' : 'Calculando el envío…')
     : `Falta: ${faltantes.join('; ')}.`;
 
-  const textoEnvio = envioListo
-    ? `${dinero(centavos(Number(envio.costo_envio)))} (${Number(envio.distancia_km).toFixed(1)} km)`
-    : envio === 'cargando' ? 'Calculando…' : envio === 'error' ? 'No se pudo calcular' : 'Por calcular';
-  const cobrar = envioListo ? suma + centavos(Number(envio.costo_envio)) : null;
+  // El ticket usa lo que dice el campo "Envío", no el sugerido.
+  const km = envioListo ? `${Number(envio.distancia_km).toFixed(1)} km` : '';
+  const textoEnvio = envioListo && envioCampo !== null
+    ? `${dinero(envioCampo)} (${km})${envioDistinto ? ' (editado)' : ''}`
+    : envioListo ? 'Revisa el envío' : envio === 'cargando' ? 'Calculando…' : envio === 'error' ? 'No se pudo calcular' : 'Por calcular';
+  const cobrar = envioListo && envioCampo !== null ? suma + envioCampo : null;
 
   // ---------- Enviar ----------
   const crear = async (evento) => {
@@ -401,6 +439,8 @@ export default function NuevoPedido() {
         destino_referencia: f.destinoReferencia.trim(),
         destino_lat: destino.lat.toFixed(6),
         destino_lng: destino.lng.toFixed(6),
+        // Solo si el despachador lo cambió: si no, lo calcula el servidor.
+        ...(f.envioEditado ? { costo_envio: (envioCampo / 100).toFixed(2) } : {}),
       });
       setCreado(data);
       if (motoElegida) asignar(data, motoElegida);
@@ -499,7 +539,7 @@ export default function NuevoPedido() {
                 {[['COMIDA', 'Comida'], ['ENCARGO', 'Encargo']].map(([valor, etiqueta]) => (
                   <button
                     key={valor} type="button" aria-pressed={f.tipo === valor}
-                    onClick={() => setF((prev) => ({ ...prev, tipo: valor, pagar: null }))}
+                    onClick={() => setF((prev) => ({ ...prev, tipo: valor, pagar: null, envioEditado: false }))}
                   >
                     {etiqueta}
                   </button>
@@ -693,6 +733,49 @@ export default function NuevoPedido() {
                   />
                   {telefono('entregaContactoTelefono', 'Su teléfono', { opcional: true })}
                 </div>
+              </fieldset>
+
+              {/* Justo después de Entrega: el precio depende de los dos puntos que se acaban de marcar. */}
+              <fieldset className="envio-tarjeta">
+                <legend>Precio de envío</legend>
+                <div className="envio-sugerido campo-ancho" id="envio-sugerido" aria-live="polite" ref={realceSugerido}>
+                  {envioListo ? <span>{km} · <strong>Sugerido: {dinero(sugerido)}</strong></span>
+                    : envio === 'cargando' ? <span className="tenue">Calculando…</span>
+                    : envio === 'error' ? (
+                      <span className="error">
+                        No se pudo calcular el envío.{' '}
+                        <button type="button" className="enlace" onClick={() => setRecotizar((n) => n + 1)}>Reintentar</button>
+                      </span>
+                    ) : <span className="tenue">Marca recogida y entrega para calcular.</span>}
+                </div>
+                <div className="campo">
+                  <label htmlFor="campo-envio">Envío ($)</label>
+                  <div className="campo-precio" ref={realceCampo}>
+                    <span aria-hidden="true">$</span>
+                    <input
+                      id="campo-envio" ref={campoEnvio} inputMode="decimal" autoComplete="off" maxLength={9} placeholder="0.00"
+                      value={f.envio} disabled={!f.envioEditado && f.envio === ''}
+                      aria-invalid={errorCampoEnvio || errores.envio ? 'true' : undefined}
+                      aria-describedby={`envio-sugerido${f.envioEditado ? ' envio-nota' : ''}${errorCampoEnvio || errores.envio ? ' envio-error' : ''}`}
+                      onChange={(e) => {
+                        setF((prev) => ({ ...prev, envio: e.target.value, envioEditado: true }));
+                        if (errores.envio) setErrores((prev) => ({ ...prev, envio: '' }));
+                      }}
+                    />
+                  </div>
+                  {errorCampoEnvio || errores.envio
+                    ? <p className="error" id="envio-error" role="alert">{errorCampoEnvio || errores.envio}</p> : null}
+                </div>
+                {f.envioEditado ? (
+                  <div className="envio-editado">
+                    <p className="tenue" id="envio-nota">
+                      Editado{sugerido !== null ? ` (sugerido ${dinero(sugerido)})` : ''}
+                    </p>
+                    <button type="button" className="secundario" onClick={recalcular}>
+                      <span aria-hidden="true">↻</span> Recalcular
+                    </button>
+                  </div>
+                ) : null}
               </fieldset>
 
               <fieldset>
