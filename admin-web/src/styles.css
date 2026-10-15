@@ -1208,6 +1208,60 @@ button.resumen-tarjeta.activa:hover {
   }
 }
 
+/* Plegado en línea: la lista se recoge (filas 1fr -> 0fr) y aparece el resumen de la elegida. */
+.moto-colapsable {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 180ms ease-out, opacity 180ms ease-out, visibility 0s;
+}
+
+.moto-colapsable > * {
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px; /* deja ver el aro de foco dentro del recorte */
+  margin: -3px;
+}
+
+.moto-colapsable.plegada {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 180ms ease-out, opacity 180ms ease-out, visibility 0s 180ms;
+}
+
+.moto-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  animation: moto-entra 180ms ease-out;
+}
+
+.moto-resumen .tarjeta-moto {
+  flex: 1 1 240px;
+  height: auto;
+  background: var(--marca-suave);
+  border-color: var(--marca);
+}
+
+.moto-resumen .moto-check {
+  opacity: 1;
+  transform: none;
+}
+
+.moto-resumen .moto-avatar {
+  background: var(--marca);
+  color: var(--blanco);
+}
+
+@keyframes moto-entra {
+  from { opacity: 0; }
+}
+
+.moto-resumen + .moto-colapsable {
+  margin-top: -14px; /* la lista plegada no deja hueco */
+}
+
 .tarjeta-moto.esqueleto {
   animation: moto-pulso 1.2s ease-in-out infinite;
 }

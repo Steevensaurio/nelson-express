@@ -158,6 +158,35 @@ export default function NuevoPedido() {
   const motoElegida = listaMotos.find((m) => String(m.id) === f.motorizadoId);
   const ordenadas = ordenarMotorizados(listaMotos);
 
+  // Selector plegable: con una opción confirmada (clic, Enter o Espacio, o al salir del grupo con valor) solo se ve
+  // la elegida + "Cambiar". Las flechas solo mueven la selección: no pliegan.
+  const [motoPlegada, setMotoPlegada] = useState(false);
+  const [motoDecidida, setMotoDecidida] = useState(false);
+  const focoMoto = useRef(null); // 'cambiar' | 'radio' | null: a dónde llevar el foco tras el cambio
+  const botonCambiarMoto = useRef(null);
+  const grupoMoto = useRef(null);
+  const plegarMoto = (foco) => {
+    focoMoto.current = foco;
+    setMotoDecidida(true);
+    setMotoPlegada(true);
+  };
+  useEffect(() => {
+    if (focoMoto.current === 'cambiar' && motoPlegada) botonCambiarMoto.current?.focus();
+    if (focoMoto.current === 'radio' && !motoPlegada) grupoMoto.current?.querySelector('input:checked')?.focus();
+    focoMoto.current = null;
+  }, [motoPlegada]);
+  const plegada = motoPlegada && motorizados !== null;
+  const teclaMoto = (e, valor) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault(); // Enter no envía el formulario; Espacio no repite el clic al soltar
+      cambiar('motorizadoId', valor);
+      plegarMoto('cambiar');
+    } else if (e.key === 'Escape' && (motoDecidida || f.motorizadoId !== '')) {
+      e.preventDefault();
+      plegarMoto('cambiar');
+    }
+  };
+
   // Mismo endpoint y mismo mensaje de error que Despacho. Si falla, el pedido ya existe: solo se reintenta esto.
   const asignar = async (pedido, moto) => {
     setAsignacion({ estado: 'asignando', motorizado: moto });
@@ -403,6 +432,8 @@ export default function NuevoPedido() {
 
   const crearOtro = () => {
     setF(vacio(f.tipo));
+    setMotoPlegada(false);
+    setMotoDecidida(false);
     setErrores({});
     setTocados({});
     setErrorGeneral('');
@@ -666,21 +697,47 @@ export default function NuevoPedido() {
 
               <fieldset>
                 <legend>Motorizado <span className="opcional">(opcional)</span></legend>
-                <div className="campo-ancho moto-grupo" role="radiogroup" aria-label="Asignar a" aria-busy={motorizados === null}>
-                  {motorizados === null ? [0, 1, 2].map((i) => <TarjetaSkeleton key={i} />) : (
-                    <>
-                      <label className="moto-opcion">
-                        <input type="radio" name="motorizado" value="" checked={f.motorizadoId === ''} onChange={() => cambiar('motorizadoId', '')} />
-                        <TarjetaMotorizado seleccionable titulo="Sin asignar" apoyo="Asignar después" />
-                      </label>
-                      {ordenadas.map((m) => (
-                        <label className="moto-opcion" key={m.id}>
-                          <input type="radio" name="motorizado" value={m.id} checked={f.motorizadoId === String(m.id)} onChange={() => cambiar('motorizadoId', String(m.id))} />
-                          <TarjetaMotorizado m={m} seleccionable />
+                {plegada ? (
+                  <div className="campo-ancho moto-resumen">
+                    <TarjetaMotorizado m={motoElegida ?? null} seleccionable titulo="Sin asignar" apoyo="Asignar después" />
+                    <button
+                      type="button" className="secundario" ref={botonCambiarMoto} aria-expanded="false" aria-controls="lista-motorizados"
+                      onClick={() => { focoMoto.current = 'radio'; setMotoPlegada(false); }}
+                    >
+                      Cambiar motorizado
+                    </button>
+                  </div>
+                ) : null}
+                <div className={`campo-ancho moto-colapsable ${plegada ? 'plegada' : ''}`} inert={plegada}>
+                  <div
+                    id="lista-motorizados" ref={grupoMoto} className="moto-grupo" role="radiogroup" aria-label="Asignar a" aria-busy={motorizados === null}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget && (motoDecidida || f.motorizadoId !== '')) plegarMoto(null);
+                    }}
+                  >
+                    {motorizados === null ? [0, 1, 2].map((i) => <TarjetaSkeleton key={i} />) : (
+                      <>
+                        <label className="moto-opcion">
+                          <input
+                            type="radio" name="motorizado" value="" checked={f.motorizadoId === ''}
+                            onChange={() => cambiar('motorizadoId', '')} onKeyDown={(e) => teclaMoto(e, '')}
+                            onClick={(e) => { if (e.detail > 0) plegarMoto('cambiar'); }}
+                          />
+                          <TarjetaMotorizado seleccionable titulo="Sin asignar" apoyo="Asignar después" />
                         </label>
-                      ))}
-                    </>
-                  )}
+                        {ordenadas.map((m) => (
+                          <label className="moto-opcion" key={m.id}>
+                            <input
+                              type="radio" name="motorizado" value={m.id} checked={f.motorizadoId === String(m.id)}
+                              onChange={() => cambiar('motorizadoId', String(m.id))} onKeyDown={(e) => teclaMoto(e, String(m.id))}
+                              onClick={(e) => { if (e.detail > 0) plegarMoto('cambiar'); }}
+                            />
+                            <TarjetaMotorizado m={m} seleccionable />
+                          </label>
+                        ))}
+                      </>
+                    )}
+                  </div>
                 </div>
                 {motorizados === null ? <p className="solo-lectores" role="status">Cargando motorizados…</p> : null}
                 {Array.isArray(motorizados) && !motorizados.length ? <p className="tenue campo-ancho">No hay motorizados registrados.</p> : null}
