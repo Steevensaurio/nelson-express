@@ -451,7 +451,8 @@ class EncargoCreateSerializer(serializers.ModelSerializer):
 
 class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
     """Lo crea el despachador a nombre de un cliente que pidió por llamada o WhatsApp."""
-    cliente_nombre = serializers.CharField(max_length=150, write_only=True)
+    # Opcional: quien llama no siempre da su nombre; el teléfono basta para identificarlo.
+    cliente_nombre = serializers.CharField(max_length=150, write_only=True, required=False, allow_blank=True)
     cliente_telefono = serializers.CharField(max_length=20, write_only=True)
 
     class Meta(EncargoCreateSerializer.Meta):
@@ -465,7 +466,7 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
 
     @transaction.atomic
     def create(self, datos):
-        nombre = datos.pop('cliente_nombre').strip()
+        nombre = datos.pop('cliente_nombre', '').strip()
         telefono = datos.pop('cliente_telefono')
         # Cualquier cuenta puede pedir (no solo las creadas como "cliente"): si ya existe alguien con
         # ese teléfono se reutiliza -aunque sea motorizado o despachador pidiendo para sí mismo-;

@@ -154,3 +154,39 @@ class TelefonoTests(TestCase):
             r = c.post('/api/encargos/', {**base, campo: '12345'}, format='json')
             self.assertEqual(r.status_code, 400)
             self.assertEqual(r.data[campo][0], self.MSG)
+
+
+class DespachoClienteNombreOpcionalTests(TestCase):
+    """El despachador no siempre sabe el nombre de quien llama: solo el teléfono es obligatorio."""
+
+    def setUp(self):
+        Tarifa.objects.create(pk=1)
+        self.c = APIClient()
+        self.c.force_authenticate(Usuario.objects.create_user('desp4', es_despachador=True))
+
+    def crear(self, **extra):
+        base = TelefonoTests.encargo(None, cliente_telefono='0991112233')
+        base.pop('cliente_nombre')
+        return self.c.post('/api/despacho/encargos/', {**base, **extra}, format='json')
+
+    def test_sin_nombre_crea_cliente_sin_nombre(self):
+        r = self.crear()
+        self.assertEqual(r.status_code, 201, r.data)
+        cliente = Pedido.objects.get(pk=r.data['id']).cliente
+        self.assertEqual((cliente.first_name, cliente.telefono), ('', '0991112233'))
+        r = self.crear(cliente_nombre='', cliente_telefono='0991112244')
+        self.assertEqual(r.status_code, 201, r.data)
+
+    def test_con_nombre_lo_guarda_sin_espacios(self):
+        r = self.crear(cliente_nombre='  Luis  ')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente.first_name, 'Luis')
+
+    def test_telefono_existente_no_pisa_el_nombre(self):
+        existente = Usuario.objects.create_user('ana', first_name='Ana', telefono='0991112233')
+        for nombre in ('Otro', ''):
+            r = self.crear(cliente_nombre=nombre)
+            self.assertEqual(r.status_code, 201, r.data)
+            self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente_id, existente.pk)
+        existente.refresh_from_db()
+        self.assertEqual(existente.first_name, 'Ana')
