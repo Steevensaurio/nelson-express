@@ -26,16 +26,18 @@ const Check = () => (
 );
 
 // Cuerpo de la tarjeta. m = null -> opción "Sin asignar". seleccionable añade el check.
-export function TarjetaMotorizado({ m, seleccionable = false, titulo, apoyo }) {
+// nota reemplaza la línea de estado (p. ej. "Asignando…"). Es un <span> para poder ir dentro de un <button>.
+export function TarjetaMotorizado({ m, seleccionable = false, titulo, apoyo, nota }) {
   return (
-    <div className="tarjeta-moto">
+    <span className="tarjeta-moto">
       <span className={`moto-avatar ${m ? '' : 'sin-asignar'}`} aria-hidden="true">{m ? iniciales(m.nombre) : '–'}</span>
       <span className="moto-texto">
         <span className="moto-nombre">{m ? m.nombre : titulo}</span>
-        {m ? <EstadoMotorizado m={m} /> : <span className="moto-estado">{apoyo}</span>}
+        {nota != null ? <span className="moto-estado">{nota}</span>
+          : m ? <EstadoMotorizado m={m} /> : <span className="moto-estado">{apoyo}</span>}
       </span>
       {seleccionable ? <Check /> : null}
-    </div>
+    </span>
   );
 }
 
