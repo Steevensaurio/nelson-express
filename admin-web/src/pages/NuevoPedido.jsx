@@ -712,7 +712,12 @@ export default function NuevoPedido() {
                   <div
                     id="lista-motorizados" ref={grupoMoto} className="moto-grupo" role="radiogroup" aria-label="Asignar a" aria-busy={motorizados === null}
                     onBlur={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget && (motoDecidida || f.motorizadoId !== '')) plegarMoto(null);
+                      // Solo se pliega si el foco pasó a OTRO control (Tab fuera del grupo). Al presionar una tarjeta con el
+                      // ratón el foco cae un instante en <main> (enfocable por el enlace "saltar al contenido"): plegar ahí
+                      // movería la lista antes del clic y la selección no cambiaría.
+                      const destino = e.relatedTarget;
+                      const otroControl = destino?.matches?.('input, select, textarea, button, a[href]');
+                      if (otroControl && !e.currentTarget.contains(destino) && (motoDecidida || f.motorizadoId !== '')) plegarMoto(null);
                     }}
                   >
                     {motorizados === null ? [0, 1, 2].map((i) => <TarjetaSkeleton key={i} />) : (
