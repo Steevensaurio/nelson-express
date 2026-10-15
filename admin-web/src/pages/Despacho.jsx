@@ -103,21 +103,28 @@ const Chevron = ({ abajo = false }) => (
   </svg>
 );
 
-// Lo único de la recogida que va en la fila: "Encargo" o el nombre del negocio. Abre el detalle completo.
-function BotonRecogida({ p, onAbrir }) {
+// Lo único de la recogida que va en la fila: "Encargo" o el nombre del negocio. El resto, en el detalle.
+function Recogida({ p }) {
   const encargo = p.tipo === 'ENCARGO';
   return (
     <div className="recogida">
-      <button type="button" className="recogida-boton" aria-haspopup="dialog" onClick={() => onAbrir(p)}>
+      <span className="recogida-texto">
         {encargo ? <IconoCaja /> : null}
-        <span className="recogida-nombre">{encargo ? 'Encargo' : (p.negocio?.nombre ?? p.recogida.nombre)}</span>
-        <span className="solo-lectores">, ver detalle del pedido {p.id}</span>
-        <Chevron />
-      </button>
+        {encargo ? 'Encargo' : (p.negocio?.nombre ?? p.recogida.nombre)}
+      </span>
       {p.pagar_en_recogida ? <span className="etiqueta-paga">Paga en el local</span> : null}
     </div>
   );
 }
+
+const IconoBasura = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.8A.8.8 0 0 1 9.8 4h4.4a.8.8 0 0 1 .8.8V7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// Clic en la fila (o tarjeta) = abrir el detalle, salvo que venga de un control propio o de seleccionar texto.
+const DENTRO_DE_CONTROL = 'a, button, input, select, textarea, [role=listbox], .fondo-modal';
 
 // Selector de motorizado: botón con la tarjeta del asignado que abre una lista (listbox) de tarjetas.
 // En celular chico la lista va en una hoja inferior (Modal); si no, en un popover fijo que se voltea hacia
@@ -498,6 +505,23 @@ export default function Despacho() {
 
   const enDetalle = pedidos.find((p) => p.id === detalleId);
   const verDetalle = (p) => setDetalleId(p.id);
+  // El foco pasa antes al botón "#N" de la fila: el Modal lo toma como abridor y lo devuelve ahí al cerrar.
+  const alPulsarPedido = (p) => (e) => {
+    if (e.target.closest(DENTRO_DE_CONTROL) || window.getSelection()?.toString()) return;
+    e.currentTarget.querySelector('.numero-boton')?.focus({ preventScroll: true });
+    verDetalle(p);
+  };
+  const botonNumero = (p) => (
+    <button
+      type="button"
+      className="numero-boton"
+      aria-label={`Ver detalle del pedido ${p.id}`}
+      aria-haspopup="dialog"
+      onClick={() => verDetalle(p)}
+    >
+      #{p.id}
+    </button>
+  );
 
   const visibles = pedidos.filter(FILTROS.find((f) => f.id === filtro).coincide);
   const enTabla = useMedia(CONSULTA_TABLA);
@@ -506,7 +530,15 @@ export default function Despacho() {
   );
   const botonCancelar = (p) =>
     esCancelable(p) ? (
-      <button className="peligro" aria-label={`Cancelar pedido ${p.id}`} onClick={() => abrirCancelacion(p)}>Cancelar</button>
+      <button
+        type="button"
+        className="peligro boton-icono"
+        aria-label={`Cancelar pedido ${p.id}`}
+        title="Cancelar pedido"
+        onClick={() => abrirCancelacion(p)}
+      >
+        <IconoBasura />
+      </button>
     ) : null;
 
   // Antes de la primera respuesta no se sabe si hay pedidos: no se muestra "no hay" hasta tenerla.
@@ -579,10 +611,14 @@ export default function Despacho() {
                   const encargo = p.tipo === 'ENCARGO';
                   return (
                     <li key={p.id}>
-                      <article className={`tarjeta-pedido ${necesitaAtencion ? 'atencion' : ''}`} aria-labelledby={`pedido-${p.id}`}>
+                      <article
+                        className={`tarjeta-pedido ${necesitaAtencion ? 'atencion' : ''}`}
+                        aria-label={`Pedido ${p.id}`}
+                        onClick={alPulsarPedido(p)}
+                      >
                         <div className="tarjeta-cabeza">
                           <div>
-                            <h3 id={`pedido-${p.id}`}>Pedido #{p.id}</h3>
+                            <h3>{botonNumero(p)}</h3>
                             <span className="tenue">{formatearFecha(p.creado_en)}</span>
                           </div>
                           <Insignia estado={p.estado} />
@@ -594,7 +630,7 @@ export default function Despacho() {
                         <dl className="tarjeta-datos">
                           <div>
                             <dt>Recogida</dt>
-                            <dd><BotonRecogida p={p} onAbrir={verDetalle} /></dd>
+                            <dd><Recogida p={p} /></dd>
                           </div>
                           <div>
                             <dt>Cliente</dt>
@@ -636,9 +672,19 @@ export default function Despacho() {
             <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Tabla de pedidos">
               <table className="tabla-despacho">
                 <caption className="solo-lectores">Pedidos, del más reciente al más antiguo</caption>
+                <colgroup>
+                  <col className="col-numero" />
+                  <col className="col-recogida" />
+                  <col className="col-cliente" />
+                  <col />
+                  <col className="col-envio" />
+                  <col className="col-estado" />
+                  <col className="col-motorizado" />
+                  <col className="col-accion" />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th scope="col">Pedido</th>
+                    <th scope="col">N.º</th>
                     <th scope="col">Recogida</th>
                     <th scope="col">Cliente</th>
                     <th scope="col">Entrega</th>
@@ -652,13 +698,13 @@ export default function Despacho() {
                   {visibles.map((p) => {
                     const necesitaAtencion = !esFinal(p) && !p.motorizado;
                     return (
-                      <tr key={p.id} className={necesitaAtencion ? 'fila-atencion' : ''}>
+                      <tr key={p.id} className={`fila-pedido ${necesitaAtencion ? 'fila-atencion' : ''}`} onClick={alPulsarPedido(p)}>
                         <td>
-                          <strong>Pedido #{p.id}</strong>
+                          {botonNumero(p)}
                           <div className="tenue">{formatearFecha(p.creado_en)}</div>
                           {necesitaAtencion ? <div className="hace">{haceTiempo(p.creado_en)}</div> : null}
                         </td>
-                        <td><BotonRecogida p={p} onAbrir={verDetalle} /></td>
+                        <td><Recogida p={p} /></td>
                         <td>
                           <div className="clamp" title={p.cliente.nombre}>{p.cliente.nombre}</div>
                           <div className="tenue">
@@ -673,7 +719,7 @@ export default function Despacho() {
                         <td className="derecha"><Importe p={p} /></td>
                         <td><Insignia estado={p.estado} /></td>
                         <td>{selector(p)}</td>
-                        <td>{botonCancelar(p)}</td>
+                        <td className="celda-accion">{botonCancelar(p)}</td>
                       </tr>
                     );
                   })}

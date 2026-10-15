@@ -1372,9 +1372,38 @@ td {
   height: 100px;
 }
 
-.tabla-despacho th:nth-child(7),
-.tabla-despacho td:nth-child(7) {
-  width: 250px;
+/* Columnas fijas: los textos largos se parten en líneas en vez de empujar la tabla. */
+.tabla-despacho {
+  table-layout: fixed;
+}
+
+.tabla-despacho .col-numero { width: 96px; }
+.tabla-despacho .col-recogida { width: 16%; }
+.tabla-despacho .col-cliente { width: 14%; }
+.tabla-despacho .col-envio { width: 80px; }
+.tabla-despacho .col-estado { width: 128px; }
+.tabla-despacho .col-motorizado { width: 240px; }
+.tabla-despacho .col-accion { width: 64px; }
+
+.tabla-despacho .clamp {
+  max-width: none;
+}
+
+.tabla-despacho .celda-accion {
+  padding-inline: 10px;
+}
+
+/* La fila entera abre el detalle (el botón "#N" es el disparador de teclado). */
+.fila-pedido {
+  cursor: pointer;
+}
+
+.tabla-despacho .fila-pedido:active td {
+  background: var(--marca-suave);
+}
+
+.tabla-despacho .fila-atencion:active td {
+  background: var(--alerta-borde);
 }
 
 .derecha {
@@ -1443,6 +1472,8 @@ td strong {
 }
 
 .tarjeta-pedido {
+  cursor: pointer;
+  transition: border-color 120ms ease-out;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -1516,6 +1547,8 @@ td strong {
 .tarjeta-acciones {
   margin-top: auto;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--borde);
@@ -1526,15 +1559,20 @@ td strong {
 }
 
 .tarjeta-acciones-titulo {
+  grid-column: 1 / -1;
   font-size: var(--t-apoyo);
   font-weight: 700;
 }
 
-.tarjeta-acciones .selector-moto,
-.tarjeta-acciones .peligro {
+.tarjeta-acciones .selector-moto {
   width: 100%;
   min-width: 0;
   min-height: 48px;
+}
+
+.tarjeta-acciones .boton-icono {
+  width: 52px;
+  height: 52px;
 }
 
 .telefono {
@@ -1548,7 +1586,57 @@ td strong {
   min-height: 44px;
 }
 
-/* ---------- Recogida (abre el detalle) ---------- */
+/* ---------- Número del pedido (abre el detalle) y recogida ---------- */
+
+.numero-boton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  margin-left: -6px;
+  padding: 0 6px;
+  background: none;
+  border: 0;
+  border-radius: var(--radio-chico);
+  color: var(--marca-oscura);
+  font-size: var(--t-cuerpo);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease-out;
+}
+
+@media (hover: hover) {
+  .numero-boton:hover,
+  .fila-pedido:hover .numero-boton,
+  .tarjeta-pedido:hover .numero-boton {
+    text-decoration-color: currentColor;
+  }
+
+  .tarjeta-pedido:hover {
+    border-color: var(--marca);
+  }
+}
+
+.tarjeta-cabeza h3 .numero-boton {
+  font-size: var(--t-subtitulo);
+}
+
+/* Botón de solo icono (cancelar): 44×44, el nombre va en aria-label. */
+.boton-icono {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.boton-icono svg {
+  width: 22px;
+  height: 22px;
+}
+
 
 .recogida {
   display: flex;
@@ -1558,38 +1646,12 @@ td strong {
   min-width: 0;
 }
 
-.recogida-boton {
+.recogida-texto {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  min-height: 44px;
-  padding: 8px 10px 8px 12px;
-  background: var(--tarjeta);
-  color: var(--texto);
-  border: 1px solid var(--borde-campo);
-  border-radius: var(--radio-chico);
+  gap: 6px;
   font-weight: 700;
-  text-align: left;
-  transition: background-color 120ms ease-out, border-color 120ms ease-out, transform 120ms var(--salida);
-}
-
-.recogida-boton:active {
-  transform: scale(0.97);
-}
-
-@media (hover: hover) {
-  .recogida-boton:hover {
-    background: var(--marca-suave);
-    border-color: var(--marca);
-  }
-}
-
-.recogida-nombre {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .recogida-icono {
