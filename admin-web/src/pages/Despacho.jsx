@@ -150,11 +150,24 @@ function SelectorMotorizado({ p, motorizados, asignando, onAsignar }) {
     if (devolverFoco && !hoja) boton.current?.focus();
   };
 
-  useLayoutEffect(() => {
-    if (!abierto || hoja) return;
+  // Coloca el popover junto al botón: debajo, o encima si abajo no cabe. Devuelve false si el botón
+  // quedó del todo fuera de la parte visible de la vista o de su contenedor con scroll (tabla, modal).
+  const medir = () => {
     const r = boton.current.getBoundingClientRect();
     const anchoVista = document.documentElement.clientWidth;
     const altoVista = window.innerHeight;
+    let visible = { top: 0, bottom: altoVista, left: 0, right: anchoVista };
+    for (let el = boton.current.parentElement; el && el !== document.body; el = el.parentElement) {
+      const estilo = getComputedStyle(el);
+      if (/(auto|scroll|hidden)/.test(estilo.overflowX + estilo.overflowY)) {
+        const c = el.getBoundingClientRect();
+        visible = {
+          top: Math.max(visible.top, c.top), bottom: Math.min(visible.bottom, c.bottom),
+          left: Math.max(visible.left, c.left), right: Math.min(visible.right, c.right),
+        };
+      }
+    }
+    if (r.bottom <= visible.top || r.top >= visible.bottom || r.right <= visible.left || r.left >= visible.right) return false;
     const ancho = Math.min(Math.max(r.width, 300), anchoVista - 16);
     const left = Math.min(Math.max(8, r.left), anchoVista - ancho - 8);
     const abajo = altoVista - r.bottom - 14;
@@ -164,11 +177,16 @@ function SelectorMotorizado({ p, motorizados, asignando, onAsignar }) {
     setPos({
       left,
       width: ancho,
-      maxHeight: Math.min(alto, haciaArriba ? arriba : abajo),
+      maxHeight: Math.max(120, Math.min(alto, haciaArriba ? arriba : abajo)),
       ...(haciaArriba
         ? { bottom: altoVista - r.top + 6, transformOrigin: 'bottom' }
         : { top: r.bottom + 6, transformOrigin: 'top' }),
     });
+    return true;
+  };
+
+  useLayoutEffect(() => {
+    if (abierto && !hoja && !medir()) cerrar(false);
   }, [abierto, hoja]);
 
   // El foco entra a la lista cuando ya es visible (en el popover, tras medir su posición).
@@ -177,29 +195,30 @@ function SelectorMotorizado({ p, motorizados, asignando, onAsignar }) {
     if (visible) lista.current?.focus({ preventScroll: true });
   }, [visible]);
 
+  // Desplazar la página, la tabla o el modal no cierra la lista: la vuelve a colocar junto al botón,
+  // y solo la cierra si el botón salió del todo de la vista.
   useEffect(() => {
     if (!abierto || hoja) return undefined;
     const alPulsarFuera = (e) => { if (!caja.current.contains(e.target)) cerrar(false); };
-    const alDesplazar = (e) => { if (e.target !== lista.current) cerrar(false); };
-    const alRedimensionar = () => cerrar(false);
+    const recolocar = (e) => {
+      if (e?.target === lista.current) return;
+      if (!medir()) cerrar(false);
+    };
     document.addEventListener('pointerdown', alPulsarFuera);
-    window.addEventListener('scroll', alDesplazar, true);
-    window.addEventListener('resize', alRedimensionar);
+    window.addEventListener('scroll', recolocar, true);
+    window.addEventListener('resize', recolocar);
     return () => {
       document.removeEventListener('pointerdown', alPulsarFuera);
-      window.removeEventListener('scroll', alDesplazar, true);
-      window.removeEventListener('resize', alRedimensionar);
+      window.removeEventListener('scroll', recolocar, true);
+      window.removeEventListener('resize', recolocar);
     };
   }, [abierto, hoja]);
 
-  // Mantiene la opción activa a la vista dentro de la lista (sin scrollIntoView, que movería la página).
+  // Mantiene la opción activa a la vista dentro de la lista. La lista ya está entera en pantalla, así que
+  // 'nearest' solo desplaza la propia lista (y si moviera algo más, el popover se recoloca).
   useEffect(() => {
-    const l = lista.current;
-    const el = abierto && l ? document.getElementById(idOpcion(activo)) : null;
-    if (!el) return;
-    if (el.offsetTop < l.scrollTop) l.scrollTop = el.offsetTop;
-    else if (el.offsetTop + el.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = el.offsetTop + el.offsetHeight - l.clientHeight;
-  }, [abierto, activo, pos]);
+    if (abierto && (hoja || pos)) document.getElementById(idOpcion(activo))?.scrollIntoView({ block: 'nearest' });
+  }, [abierto, activo, pos != null]);
 
   if (esFinal(p)) {
     return asignado ? (
