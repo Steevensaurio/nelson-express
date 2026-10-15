@@ -454,9 +454,27 @@ class DespachoEncargoCreateSerializer(EncargoCreateSerializer):
     # Opcional: quien llama no siempre da su nombre; el teléfono basta para identificarlo.
     cliente_nombre = serializers.CharField(max_length=150, write_only=True, required=False, allow_blank=True)
     cliente_telefono = serializers.CharField(max_length=20, write_only=True)
+    # Opcional: el despachador puede ajustar el envío sugerido. Sin él, el servidor lo calcula como siempre.
+    costo_envio = serializers.DecimalField(
+        max_digits=None, decimal_places=2, min_value=0, max_value=50, write_only=True, required=False,
+        error_messages={
+            'invalid': 'Ingresa un número válido.',
+            'min_value': 'El envío no puede ser negativo.',
+            'max_value': 'El envío no puede pasar de $50.00.',
+            'max_decimal_places': 'El envío admite como máximo 2 decimales.',
+        },
+    )
 
     class Meta(EncargoCreateSerializer.Meta):
         fields = EncargoCreateSerializer.Meta.fields + ['cliente_nombre', 'cliente_telefono']
+
+    def validate(self, datos):
+        editado = datos.pop('costo_envio', None)
+        datos = super().validate(datos)
+        if editado is not None:
+            # La comisión se guarda como porcentaje, así que se aplica sobre este precio final.
+            datos['_envio']['costo_envio'] = editado
+        return datos
 
     def validate_cliente_telefono(self, valor):
         valor = validar_telefono(valor)

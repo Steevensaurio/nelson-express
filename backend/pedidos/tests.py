@@ -190,3 +190,58 @@ class DespachoClienteNombreOpcionalTests(TestCase):
             self.assertEqual(Pedido.objects.get(pk=r.data['id']).cliente_id, existente.pk)
         existente.refresh_from_db()
         self.assertEqual(existente.first_name, 'Ana')
+
+
+class DespachoCostoEnvioTests(TestCase):
+    """El despachador puede ajustar el envío sugerido; si no lo manda, el servidor lo calcula como siempre."""
+
+    def setUp(self):
+        Tarifa.objects.create(pk=1)
+        self.c = APIClient()
+        self.c.force_authenticate(Usuario.objects.create_user('desp5', es_despachador=True))
+
+    def crear(self, cliente=None, **extra):
+        c = self.c
+        if cliente is not None:
+            c = APIClient()
+            c.force_authenticate(cliente)
+        return c.post('/api/despacho/encargos/', {**TelefonoTests.encargo(None, cliente_telefono='0991112233'), **extra}, format='json')
+
+    def test_sin_costo_envio_lo_calcula_el_servidor(self):
+        from .tarifas import envio_entre
+        r = self.crear()
+        self.assertEqual(r.status_code, 201, r.data)
+        p = Pedido.objects.get(pk=r.data['id'])
+        self.assertEqual(p.costo_envio, Decimal(str(envio_entre(-0.25, -79.17, -0.26, -79.18)['costo_envio'])))
+
+    def test_costo_envio_editado_se_guarda_y_conserva_distancia_y_comision(self):
+        from .tarifas import envio_entre
+        r = self.crear(costo_envio='4.75')
+        self.assertEqual(r.status_code, 201, r.data)
+        p = Pedido.objects.get(pk=r.data['id'])
+        self.assertEqual(p.costo_envio, Decimal('4.75'))
+        self.assertEqual(Decimal(str(p.distancia_km)), Decimal(str(envio_entre(-0.25, -79.17, -0.26, -79.18)['distancia_km'])))
+        self.assertEqual(p.comision_porcentaje, Tarifa.actual().comision_porcentaje)
+        self.assertEqual(self.crear(costo_envio='0').status_code, 201)
+        self.assertEqual(self.crear(costo_envio='50.00').status_code, 201)
+
+    def test_costo_envio_invalido_se_rechaza_en_espanol(self):
+        for malo, msg in (('-1', 'El envío no puede ser negativo.'), ('50.01', 'El envío no puede pasar de $50.00.'),
+                          ('2.345', 'El envío admite como máximo 2 decimales.'), ('abc', 'Ingresa un número válido.')):
+            r = self.crear(costo_envio=malo)
+            self.assertEqual(r.status_code, 400, malo)
+            self.assertEqual(r.data['costo_envio'][0], msg, malo)
+
+    def test_solo_el_despachador_usa_el_endpoint(self):
+        cliente = Usuario.objects.create_user('cli5', first_name='Ana', telefono='0999999999')
+        self.assertEqual(self.crear(cliente=cliente, costo_envio='1.00').status_code, 403)
+
+    def test_encargo_del_cliente_ignora_costo_envio(self):
+        from .tarifas import envio_entre
+        c = APIClient()
+        c.force_authenticate(Usuario.objects.create_user('cli6', first_name='Ana', telefono='0999999998'))
+        base = {k: v for k, v in TelefonoTests.encargo(None).items() if k != 'cliente_nombre'}
+        r = c.post('/api/encargos/', {**base, 'costo_envio': '0.01'}, format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(Pedido.objects.get(pk=r.data['id']).costo_envio,
+                         Decimal(str(envio_entre(-0.25, -79.17, -0.26, -79.18)['costo_envio'])))
