@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { BP, anchoMinimo } from '../useMedia.js';
 
-const SECCIONES = { '/': 'Despacho', '/encargo': 'Nuevo encargo', '/ganancias': 'Ganancias' };
+const SECCIONES = { '/': 'Despacho', '/pedido': 'Nuevo pedido', '/ganancias': 'Ganancias' };
 
 // En pantallas chicas (<768px) la navegación se pliega en un menú: el botón abre un panel con los enlaces y
 // "Cerrar sesión". Se cierra con Esc, al tocar fuera, al salir el foco del menú y al navegar (cada página monta
@@ -73,7 +73,7 @@ export default function Barra() {
         {/* Tocar un enlace cierra el panel, también el de la página actual (que no cambia la ruta). */}
         <nav className="barra-nav" aria-label="Principal" onClick={(e) => e.target.closest('a') && setAbierto(false)}>
           <NavLink to="/" end>Despacho</NavLink>
-          <NavLink to="/encargo">Nuevo encargo</NavLink>
+          <NavLink to="/pedido">Nuevo pedido</NavLink>
           <NavLink to="/ganancias">Ganancias</NavLink>
         </nav>
         <div className="barra-usuario">

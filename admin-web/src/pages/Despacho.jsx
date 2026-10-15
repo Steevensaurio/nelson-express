@@ -294,7 +294,7 @@ export default function Despacho() {
                               <strong>{p.recogida.nombre}</strong>
                               {encargo ? (
                                 <>
-                                  <div>{p.descripcion}</div>
+                                  <div className="texto-pedido">{p.descripcion}</div>
                                   <div className="tenue">{p.recogida.direccion}</div>
                                   <Contacto prefijo="Entrega" contacto={p.recogida_contacto} />
                                   {p.pagar_en_recogida ? (
@@ -372,7 +372,7 @@ export default function Despacho() {
                           {p.recogida.nombre}
                           {p.tipo === 'ENCARGO' ? (
                             <>
-                              <div className="tenue clamp" title={p.descripcion}>{p.descripcion}</div>
+                              <div className="tenue clamp texto-pedido" title={p.descripcion}>{p.descripcion}</div>
                               <Contacto prefijo="Entrega" contacto={p.recogida_contacto} />
                               <div className="tenue clamp" title={p.recogida.direccion}>{p.recogida.direccion}</div>
                               {p.pagar_en_recogida ? (

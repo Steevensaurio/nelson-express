@@ -4,13 +4,13 @@ import { useAuth } from './auth.jsx';
 import Login from './pages/Login.jsx';
 import Despacho from './pages/Despacho.jsx';
 import Ganancias from './pages/Ganancias.jsx';
-import NuevoEncargo from './pages/NuevoEncargo.jsx';
+import NuevoPedido from './pages/NuevoPedido.jsx';
 
 const TITULOS = {
   '/': 'Despacho',
   '/login': 'Ingresar',
   '/ganancias': 'Ganancias',
-  '/encargo': 'Nuevo encargo',
+  '/pedido': 'Nuevo pedido',
 };
 
 // Tras 5 s de espera se avisa que el servidor (Render gratis) está despertando, igual que en el login.
@@ -57,7 +57,9 @@ export default function App() {
         <Route path="/login" element={usuario ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/" element={<RutaProtegida><Despacho /></RutaProtegida>} />
         <Route path="/ganancias" element={<RutaProtegida><Ganancias /></RutaProtegida>} />
-        <Route path="/encargo" element={<RutaProtegida><NuevoEncargo /></RutaProtegida>} />
+        <Route path="/pedido" element={<RutaProtegida><NuevoPedido /></RutaProtegida>} />
+        {/* Dirección anterior (enlaces guardados): la página de encargos ahora es la de pedidos. */}
+        <Route path="/encargo" element={<Navigate to="/pedido" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

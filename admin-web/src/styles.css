@@ -1604,16 +1604,27 @@ td strong {
   color: var(--blanco);
 }
 
-/* ---------- Nuevo encargo ---------- */
+/* ---------- Nuevo pedido ---------- */
 
-.formulario-encargo {
+.formulario-pedido,
+.pedido-campos {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 820px;
+  min-width: 0;
 }
 
-.formulario-encargo fieldset {
+/* Desde 1024: formulario a la izquierda y ticket fijo a la derecha. Mantener igual que BP.pedido en useMedia.js */
+@media (min-width: 1024px) {
+  .formulario-pedido {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.formulario-pedido fieldset {
   background: var(--tarjeta);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
@@ -1625,29 +1636,30 @@ td strong {
   min-width: 0;
 }
 
-.formulario-encargo :is(input, textarea) {
+.formulario-pedido :is(input, textarea, select) {
   width: 100%;
+  min-width: 0;
   min-height: 48px;
 }
 
-.formulario-encargo input[type='checkbox'] {
+.formulario-pedido input[type='checkbox'] {
   width: 20px;
   min-height: 0;
 }
 
 /* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
-  .formulario-encargo fieldset {
+  .formulario-pedido fieldset {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 16px 18px 18px;
   }
 
-  .formulario-encargo :is(input, textarea) {
+  .formulario-pedido :is(input, textarea, select) {
     min-height: 44px;
   }
 }
 
-.formulario-encargo legend {
+.formulario-pedido legend {
   float: left;
   grid-column: 1 / -1;
   font-size: var(--t-subtitulo);
@@ -1656,26 +1668,21 @@ td strong {
   margin-bottom: 2px;
 }
 
-.formulario-encargo label {
+.formulario-pedido label {
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+}
+
+.formulario-pedido .campo {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: var(--t-apoyo);
-  font-weight: 600;
+  min-width: 0;
 }
 
-.formulario-encargo .campo-tel {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: var(--t-apoyo);
+.opcional {
   font-weight: 600;
-}
-
-.formulario-encargo .campo-tel .error {
-  color: var(--rojo);
-  font-weight: 600;
-  grid-column: auto;
+  color: var(--tenue);
 }
 
 .campo-ancho {
@@ -1683,9 +1690,9 @@ td strong {
 }
 
 .campo-check {
-  flex-direction: row !important;
+  display: flex;
   align-items: center;
-  gap: 10px !important;
+  gap: 10px;
   min-height: 44px;
 }
 
@@ -1759,19 +1766,19 @@ td strong {
    Celular (<768): compacto, "Envío" + "Faltan N datos" (la lista se despliega) y el botón; ~120 px.
    --alto-pie reserva ese alto al llevar un campo a la vista (scroll-padding/scroll-margin), para que el
    campo enfocado nunca quede debajo del pie. */
-.formulario-encargo {
+.formulario-pedido {
   --alto-pie: 136px;
 }
 
-html:has(.encargo-pie) {
+html:has(.pedido-pie) {
   scroll-padding-bottom: 136px;
 }
 
-.formulario-encargo :is(input, textarea, select, summary, .leaflet-container) {
+.formulario-pedido :is(input, textarea, select, summary, .leaflet-container) {
   scroll-margin-bottom: var(--alto-pie);
 }
 
-.encargo-pie {
+.pedido-pie {
   position: sticky;
   bottom: 0;
   z-index: 5;
@@ -1787,7 +1794,7 @@ html:has(.encargo-pie) {
   box-shadow: 0 -6px 16px rgb(0 0 0 / 0.08);
 }
 
-.encargo-pie-texto {
+.pedido-pie-texto {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1796,7 +1803,7 @@ html:has(.encargo-pie) {
   min-width: 0;
 }
 
-.encargo-envio {
+.pedido-envio {
   font-size: var(--t-cuerpo);
   font-weight: 800;
   line-height: 1.25;
@@ -1808,7 +1815,7 @@ html:has(.encargo-pie) {
 }
 
 /* En celular el texto completo de "Falta" queda solo para lectores (sigue siendo la descripción del botón). */
-.encargo-faltan {
+.pedido-faltan {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1818,7 +1825,7 @@ html:has(.encargo-pie) {
   white-space: nowrap;
 }
 
-.encargo-faltan-detalle summary {
+.pedido-faltan-detalle summary {
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -1829,7 +1836,7 @@ html:has(.encargo-pie) {
 }
 
 /* Flecha propia (display: flex quita el marcador nativo): apunta abajo cerrada y arriba abierta. */
-.encargo-faltan-detalle summary::after {
+.pedido-faltan-detalle summary::after {
   content: '';
   width: 7px;
   height: 7px;
@@ -1839,19 +1846,20 @@ html:has(.encargo-pie) {
   transform: translateY(-2px) rotate(45deg);
 }
 
-.encargo-faltan-detalle[open] summary::after {
+.pedido-faltan-detalle[open] summary::after {
   transform: translateY(2px) rotate(-135deg);
 }
 
-.encargo-faltan-detalle[open] {
+.pedido-faltan-detalle[open] {
   flex-basis: 100%;
 }
 
-.encargo-faltan-detalle[open] summary {
+.pedido-faltan-detalle[open] summary {
   min-height: 36px;
 }
 
-.encargo-faltan-detalle p {
+.pedido-faltan-detalle ul {
+  padding-left: 18px;
   margin: 0 0 4px;
   max-height: 30vh;
   overflow-y: auto;
@@ -1859,44 +1867,44 @@ html:has(.encargo-pie) {
   color: var(--texto);
 }
 
-.encargo-pie .primario {
+.pedido-pie .primario {
   width: 100%;
   min-height: 48px;
 }
 
 /* Celular horizontal (poca altura): pie en una sola fila (~58 px), así un mapa de 240 px cabe entre la barra y el pie. */
 @media (max-height: 500px) and (min-width: 480px) {
-  .formulario-encargo {
+  .formulario-pedido {
     --alto-pie: 62px;
   }
 
   /* 58 + 62: deja exactamente 240 px (el alto mínimo del mapa) en una pantalla de 360. */
-  html:has(.encargo-pie) {
+  html:has(.pedido-pie) {
     scroll-padding-top: 58px;
     scroll-padding-bottom: 62px;
   }
 
   /* El mapa (240 px) llena justo ese hueco: sin margen extra, que lo haría más alto que el hueco. */
-  .formulario-encargo .leaflet-container {
+  .formulario-pedido .leaflet-container {
     scroll-margin-bottom: 0;
   }
 
-  .encargo-pie {
+  .pedido-pie {
     flex-direction: row;
     align-items: center;
     padding-top: 6px;
     padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
   }
 
-  .encargo-pie .primario {
+  .pedido-pie .primario {
     min-height: 44px;
   }
 
-  .encargo-pie-texto {
+  .pedido-pie-texto {
     flex: 1;
   }
 
-  .encargo-pie .primario {
+  .pedido-pie .primario {
     flex: none;
     width: auto;
   }
@@ -1904,15 +1912,15 @@ html:has(.encargo-pie) {
 
 /* mantener igual que BP.tablet en useMedia.js */
 @media (min-width: 768px) {
-  .formulario-encargo {
+  .formulario-pedido {
     --alto-pie: 110px;
   }
 
-  html:has(.encargo-pie) {
+  html:has(.pedido-pie) {
     scroll-padding-bottom: 110px;
   }
 
-  .encargo-pie {
+  .pedido-pie {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -1922,17 +1930,17 @@ html:has(.encargo-pie) {
     border-radius: var(--radio);
   }
 
-  .encargo-pie-texto {
+  .pedido-pie-texto {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
   }
 
-  .encargo-envio {
+  .pedido-envio {
     font-size: var(--t-titulo);
   }
 
-  .encargo-envio.pendiente {
+  .pedido-envio.pendiente {
     font-size: var(--t-cuerpo);
   }
 
@@ -1941,11 +1949,11 @@ html:has(.encargo-pie) {
   }
 
   .pie-corto,
-  .encargo-faltan-detalle {
+  .pedido-faltan-detalle {
     display: none;
   }
 
-  .encargo-faltan {
+  .pedido-faltan {
     position: static;
     width: auto;
     height: auto;
@@ -1957,14 +1965,395 @@ html:has(.encargo-pie) {
     color: var(--tenue);
   }
 
-  .encargo-faltan:empty {
+  .pedido-faltan:empty {
     display: none;
   }
 
-  .encargo-pie .primario {
+  .pedido-pie .primario {
     flex: none;
     width: auto;
   }
+}
+
+/* Comida / Encargo: el elegido va relleno con la marca (como los filtros de Despacho). */
+.segmentado {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  background: var(--relleno);
+  border-radius: var(--radio);
+}
+
+.segmentado button {
+  min-width: 120px;
+  min-height: 44px;
+  padding: 8px 20px;
+  border: 0;
+  border-radius: var(--radio-chico);
+  background: transparent;
+  color: var(--texto);
+  font-size: var(--t-cuerpo);
+  font-weight: 800;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.segmentado button[aria-pressed='true'] {
+  background: var(--marca);
+  color: var(--blanco);
+}
+
+@media (hover: hover) {
+  .segmentado button[aria-pressed='false']:hover {
+    background: var(--blanco);
+  }
+}
+
+.direccion-local {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--acento-palido);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+}
+
+.aviso-cerrada {
+  color: var(--alerta);
+}
+
+/* ---------- Tabla de ítems ---------- */
+
+.tabla-items th {
+  padding: 0 6px 6px;
+  border-top: 0;
+  background: none;
+}
+
+.tabla-items td {
+  height: auto;
+  padding: 6px;
+  vertical-align: top;
+}
+
+.tabla-items tbody tr:hover td {
+  background: none;
+}
+
+.tabla-items .col-cant {
+  width: 76px;
+}
+
+.tabla-items .col-precio {
+  width: 140px;
+}
+
+.tabla-items .col-quitar {
+  width: 56px;
+}
+
+.col-cant input {
+  text-align: center;
+}
+
+.fila-item-error td {
+  padding-top: 0;
+}
+
+/* Etiqueta de cada celda: solo para lectores con la tabla a lo ancho (el encabezado ya la muestra). */
+.etiqueta-celda {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.campo-precio {
+  position: relative;
+}
+
+.campo-precio > span {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tenue);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.formulario-pedido .campo-precio input {
+  padding-left: 26px;
+}
+
+.quitar-item {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--blanco);
+  color: var(--rojo);
+  font-weight: 800;
+}
+
+.quitar-item:disabled {
+  color: var(--tenue);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .quitar-item:hover:not(:disabled) {
+    border-color: var(--rojo);
+    background: var(--rojo-fondo);
+  }
+}
+
+.agregar-item {
+  width: 100%;
+  min-height: 44px;
+  margin: 8px 0;
+  border: 2px dashed var(--marca);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--marca-oscura);
+  font-size: var(--t-cuerpo);
+  font-weight: 800;
+}
+
+@media (hover: hover) {
+  .agregar-item:hover {
+    background: var(--marca-suave);
+  }
+}
+
+.campo-ancho > .tenue,
+.campo-ancho > .error {
+  margin: 0 0 6px;
+}
+
+/* <480 (solo CSS): cada ítem en bloque; cantidad y ✕ en una línea, detalle y precio debajo a lo ancho. */
+@media (max-width: 479px) {
+  .tabla-items,
+  .tabla-items tbody,
+  .fila-item-error,
+  .fila-item-error td {
+    display: block;
+  }
+
+  .tabla-items thead {
+    display: none;
+  }
+
+  .fila-item {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) 44px;
+    grid-template-areas: 'cant . quitar' 'detalle detalle detalle' 'precio precio precio';
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla-items .fila-item td {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .fila-item .col-cant {
+    grid-area: cant;
+  }
+
+  .fila-item .col-detalle {
+    grid-area: detalle;
+  }
+
+  .fila-item .col-precio {
+    grid-area: precio;
+  }
+
+  .fila-item .col-quitar {
+    grid-area: quitar;
+    justify-content: flex-end;
+  }
+
+  .etiqueta-celda {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  .fila-item-error td {
+    padding: 6px 0 0;
+    border: 0;
+  }
+}
+
+/* ---------- Ticket (≥1024) ---------- */
+
+.ticket {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100dvh - 104px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  box-shadow: 0 2px 8px rgb(0 40 60 / 0.12);
+}
+
+.ticket h2 {
+  font-size: var(--t-subtitulo);
+}
+
+.ticket dl {
+  margin: 0;
+}
+
+.ticket-linea,
+.ticket-checklist li {
+  display: flex;
+  gap: 12px;
+  margin: 0 -6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: var(--t-apoyo);
+}
+
+.ticket-linea {
+  justify-content: space-between;
+}
+
+.ticket-linea dt {
+  flex: none;
+  color: var(--tenue);
+}
+
+.ticket-linea dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ticket-items {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  font-size: var(--t-apoyo);
+}
+
+.ticket-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticket-items li span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-items li span:last-child {
+  flex: none;
+}
+
+.ticket-total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 2px dashed var(--linea);
+  font-size: var(--t-cuerpo);
+}
+
+.ticket-total dd {
+  color: var(--marca-oscura);
+  font-weight: 800;
+}
+
+.ticket-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ticket-marca {
+  flex: none;
+  width: 1em;
+  font-weight: 800;
+}
+
+.ticket-checklist .listo .ticket-marca {
+  color: var(--verde);
+}
+
+.ticket-checklist .falta .ticket-marca {
+  color: var(--alerta);
+}
+
+.ticket .primario {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* ---------- Pedido creado ---------- */
+
+.pedido-creado {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+  padding: 20px;
+  background: var(--ok-fondo);
+  border: 1px solid var(--ok-borde);
+  border-radius: var(--radio);
+  color: var(--ok-texto);
+}
+
+.pedido-creado p {
+  margin: 0;
+}
+
+.pedido-asignacion-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pedido-creado-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+a.secundario {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* El texto de un pedido hecho en el panel trae un ítem por línea. */
+.texto-pedido {
+  white-space: pre-line;
 }
 
 @media (prefers-reduced-motion: reduce) {

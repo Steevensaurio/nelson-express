@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 // (cada uno lleva el comentario "mantener igual que BP en useMedia.js").
 export const BP = {
   tablet: 768, // menú plegable debajo; tablas de Ganancias desde aquí
+  pedido: 1024, // Nuevo pedido: formulario + ticket a dos columnas desde aquí; debajo, una columna y pie fijo
   tablaDespacho: 1280, // la tabla de Despacho desde aquí; debajo, tarjetas
 };
 
