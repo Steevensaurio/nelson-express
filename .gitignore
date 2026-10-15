@@ -15,3 +15,6 @@ node_modules/
 .expo/
 # Superpowers brainstorming (maquetas temporales)
 .superpowers/
+
+# Graphify (grafo generado del proyecto)
+graphify-out/
