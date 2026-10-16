@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
 
   carrera: { marginTop: 14 },
   carreraRotulo: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
-  carreraValor: { fontFamily: fuente.extra, fontSize: 40, lineHeight: 48, color: colores.verde },
+  carreraValor: { fontFamily: fuente.extra, fontSize: 28, lineHeight: 34, color: colores.verde },
   carreraKm: { ...tipo.apoyo, color: colores.tenue },
 
   bloqueCabecera: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bloqueTitulo: { fontSize: tipo.seccion.fontSize },
+  bloqueTitulo: { fontSize: tipo.subtitulo.fontSize },
   valor: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto },
   secundario: { ...tipo.apoyo, color: colores.tenue, marginTop: 3 },
   referencia: { ...tipo.apoyo, color: colores.tenue, marginTop: espacio.xs },

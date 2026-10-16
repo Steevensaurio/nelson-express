@@ -6,7 +6,7 @@ import { useCargaRapida } from '../hooks/useCargaRapida';
 import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { MOSTRAR_PRECIOS } from '../constants/config';
 import { colores, fuente, radio, tipo, espacio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boton, Esqueleto, Icono, Presionable, Text, estiloTarjeta } from '../components/ui';
+import { Aviso, AvisosCarga, Boton, Entrada, Esqueleto, Icono, Presionable, Rebote, Text, estiloTarjeta } from '../components/ui';
 
 // Foto del producto o, si no tiene, un recuadro con un ícono. Es decorativa: el nombre ya va en el texto.
 function FotoProducto({ producto, style }) {
@@ -119,13 +119,14 @@ export default function MenuScreen({ route, navigation }) {
               style={({ pressed }) => [styles.card, pressed && styles.cardPresionada]}
             >
               <FotoProducto producto={item} />
-              <View style={[styles.insignia, cantidad === 0 && styles.insigniaMas]}>
+              {/* Salta al cambiar la cantidad: confirma que el producto entró al carrito. */}
+              <Rebote valor={cantidad} escala={1.25} estilo={[styles.insignia, cantidad === 0 && styles.insigniaMas]}>
                 {cantidad > 0 ? (
                   <Text style={styles.insigniaTexto}>{cantidad}</Text>
                 ) : (
                   <Icono nombre="add" tamano={20} color={colores.primarioOscuro} />
                 )}
-              </View>
+              </Rebote>
               <View style={styles.info}>
                 <Text style={styles.nombre} numberOfLines={2}>{item.nombre}</Text>
                 {MOSTRAR_PRECIOS ? (
@@ -137,26 +138,31 @@ export default function MenuScreen({ route, navigation }) {
         }}
       />
 
+      {/* Sube desde abajo al agregar el primer producto, y el botón salta con cada cambio del total. */}
       {totalItems > 0 && (
-        <View style={[styles.barraConfirmar, { paddingBottom: espacio.m + insets.bottom }]}>
-          <Boton
-            titulo={`Confirmar pedido (${totalItems})${MOSTRAR_PRECIOS ? ` · $${totalPrecio.toFixed(2)}` : ''}`}
-            icono="bag-check-outline"
-            onPress={confirmarPedido}
-          />
-        </View>
+        <Entrada tipo="hoja" estilo={[styles.barraConfirmar, { paddingBottom: espacio.m + insets.bottom }]}>
+          <Rebote valor={totalItems} escala={1.04}>
+            <Boton
+              titulo={`Confirmar pedido (${totalItems})${MOSTRAR_PRECIOS ? ` · $${totalPrecio.toFixed(2)}` : ''}`}
+              icono="bag-check-outline"
+              onPress={confirmarPedido}
+            />
+          </Rebote>
+        </Entrada>
       )}
 
+      {/* El fondo oscuro se funde y la hoja sube por su cuenta (con "slide" el fondo también se deslizaba). */}
       <Modal
         visible={seleccionado !== null}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={cerrarProducto}
         aria-label={seleccionado?.nombre ?? 'Producto'} // react-native-web le pone role="dialog" y axe exige un nombre
       >
         <Pressable style={styles.fondoModal} onPress={cerrarProducto} accessible={false}>
           {seleccionado ? (
-            // Pressable interno: tocar la hoja no cierra el modal.
+            <Entrada tipo="hoja" estilo={styles.hojaEntrada}>
+            {/* Pressable interno: tocar la hoja no cierra el modal. */}
             <Pressable
               style={[styles.hoja, { paddingBottom: espacio.l + insets.bottom }]}
               onPress={() => {}}
@@ -183,7 +189,7 @@ export default function MenuScreen({ route, navigation }) {
                 ) : null}
 
                 <View style={styles.selector}>
-                  <Pressable
+                  <Presionable
                     style={({ pressed }) => [
                       styles.selectorBoton,
                       cantidadModal <= 1 && styles.selectorDeshabilitado,
@@ -196,22 +202,24 @@ export default function MenuScreen({ route, navigation }) {
                     aria-disabled={cantidadModal <= 1}
                   >
                     <Icono nombre="remove" tamano={24} color={colores.texto} />
-                  </Pressable>
-                  <Text
-                    style={styles.selectorCantidad}
-                    accessibilityLabel={`Cantidad: ${cantidadModal}`}
-                    accessibilityLiveRegion="polite"
-                  >
-                    {cantidadModal}
-                  </Text>
-                  <Pressable
+                  </Presionable>
+                  <Rebote valor={cantidadModal}>
+                    <Text
+                      style={styles.selectorCantidad}
+                      accessibilityLabel={`Cantidad: ${cantidadModal}`}
+                      accessibilityLiveRegion="polite"
+                    >
+                      {cantidadModal}
+                    </Text>
+                  </Rebote>
+                  <Presionable
                     style={({ pressed }) => [styles.selectorBoton, pressed && styles.selectorPresionado]}
                     onPress={() => setCantidadModal(c => c + 1)}
                     accessibilityRole="button"
                     accessibilityLabel="Aumentar cantidad"
                   >
                     <Icono nombre="add" tamano={24} color={colores.texto} />
-                  </Pressable>
+                  </Presionable>
                 </View>
 
                 <Boton
@@ -231,6 +239,7 @@ export default function MenuScreen({ route, navigation }) {
                 ) : null}
               </View>
             </Pressable>
+            </Entrada>
           ) : null}
         </Pressable>
       </Modal>
@@ -286,6 +295,7 @@ const styles = StyleSheet.create({
     borderTopColor: colores.borde,
   },
   fondoModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  hojaEntrada: { width: '100%' },
   hoja: {
     backgroundColor: colores.tarjeta,
     borderTopLeftRadius: 24,

@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   estadisticas: { ...estiloTarjeta, flexDirection: 'row', alignItems: 'center' },
   estadistica: { flex: 1, alignItems: 'center' },
   estadisticaLinea: { width: 1, alignSelf: 'stretch', backgroundColor: colores.borde },
-  estadisticaNumero: { fontFamily: fuente.extra, fontSize: 36, lineHeight: 44, color: colores.texto },
+  estadisticaNumero: { fontFamily: fuente.extra, fontSize: 28, lineHeight: 34, color: colores.texto },
   estadisticaTexto: { ...tipo.apoyo, fontFamily: fuente.negrita, color: colores.tenue },
   presionado: { opacity: 0.85 },
 

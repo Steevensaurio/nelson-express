@@ -66,7 +66,8 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style="dark" />
-      <Stack.Navigator screenOptions={opcionesCabecera}>
+      {/* En Android la pantalla nueva entra deslizando desde la derecha (como en iOS) en vez del fundido del sistema. */}
+      <Stack.Navigator screenOptions={{ ...opcionesCabecera, animation: 'ios_from_right' }}>
         {token ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />

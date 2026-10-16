@@ -75,6 +75,30 @@ function useAparecer({ activo = true, desde = 0, duracion = 160, retraso = 0 } =
   return v;
 }
 
+// Pequeño salto (1 → `escala` → 1, 250 ms) cada vez que `valor` cambia, nunca al montar: confirma que algo se
+// actualizó (un número del carrito, un estado nuevo, una entrega que llega). Solo transform; quieto con «reducir movimiento».
+export function useRebote(valor, escala = 1.15) {
+  const ref = useRef(null);
+  if (ref.current === null) ref.current = new Animated.Value(1);
+  const v = ref.current;
+  const previo = useRef(valor);
+  useEffect(() => {
+    if (Object.is(previo.current, valor)) return;
+    previo.current = valor;
+    if (movimientoReducido()) return;
+    Animated.sequence([
+      Animated.timing(v, { toValue: escala, duration: 90, easing: SALIDA, useNativeDriver: nativo }),
+      Animated.timing(v, { toValue: 1, duration: 160, easing: SALIDA, useNativeDriver: nativo }),
+    ]).start();
+  }, [valor]);
+  return { transform: [{ scale: v }] };
+}
+
+export function Rebote({ valor, escala, estilo, children }) {
+  const rebote = useRebote(valor, escala);
+  return <Animated.View style={[estilo, rebote]}>{children}</Animated.View>;
+}
+
 const PresionableAnimado = Animated.createAnimatedComponent(Pressable);
 
 // Pressable con retroalimentación física: se encoge a 0.97 al tocar (110 ms) y vuelve al soltar (160 ms), con ease-out.
@@ -175,20 +199,22 @@ export const Campo = forwardRef(function Campo(
 });
 
 // Etiqueta de estado: color sólido + ícono + palabra, para que el color nunca sea el único indicador.
+// Da un salto suave cuando el estado cambia en pantalla (p. ej. llega «En camino» por tiempo real).
 export function Insignia({ estado, estilo }) {
   const etiqueta = etiquetaEstado[estado] ?? estado;
   const color = colorEstado[estado] ?? colores.tenue;
+  const rebote = useRebote(estado, 1.08);
   return (
-    <View
+    <Animated.View
       accessible
       accessibilityLabel={`Estado: ${etiqueta}`}
-      style={[s.insignia, { backgroundColor: color }, estilo]}
+      style={[s.insignia, { backgroundColor: color }, estilo, rebote]}
     >
       <View style={s.insigniaIcono}>
         <Icono nombre={iconoEstado[estado] ?? 'ellipse-outline'} tamano={12} color={color} />
       </View>
       <Text style={s.insigniaTexto}>{etiqueta}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -377,6 +403,7 @@ export function Boleta({ children, pie, estilo, fondo = colores.fondo }) {
 // tipo 'fundido' (filas de una lista que llegan tras el esqueleto): solo opacidad, 160 ms, desde 40 % para que nunca
 // se vea un hueco, con un escalonado de 30 ms por fila hasta 150 ms. Las listas pasan `animar={false}` si ya tenían datos
 // guardados (nada que anunciar). Solo anima las primeras filas; sin movimiento si el usuario lo pidió.
+// tipo 'hoja' (hojas inferiores y barras pegadas abajo): igual que 'subir' pero desde 48 px.
 export function Entrada({ indice = 0, children, estilo, animar = true, tipo = 'subir' }) {
   const fundido = tipo === 'fundido';
   const v = useAparecer({
@@ -385,9 +412,10 @@ export function Entrada({ indice = 0, children, estilo, animar = true, tipo = 's
     duracion: fundido ? 160 : 280,
     retraso: fundido ? Math.min(indice * 30, 150) : indice * 45,
   });
+  const recorrido = tipo === 'hoja' ? 48 : 14;
   const animado = fundido
     ? { opacity: v }
-    : { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] };
+    : { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [recorrido, 0] }) }] };
   return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;
 }
 

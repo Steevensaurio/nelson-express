@@ -9,7 +9,7 @@ import { MAX_EDAD_MS } from '../services/cargaRapida';
 import { useTiempoReal } from '../context/RealtimeContext';
 import { esFinal, etiquetaEstado } from '../constants/estados';
 import { colores, fuente, tipo, radio, espacio } from '../constants/tema';
-import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Text, Titulo } from '../components/ui';
+import { Aviso, AvisosCarga, Boleta, Boton, Cabecera, Entrada, Esqueleto, Icono, Insignia, NumeroPedido, Presionable, Rebote, Text, Titulo } from '../components/ui';
 
 const INTERVALO_REFRESCO_MS = 5000;
 const INTERVALO_RESPALDO_MS = 30000;
@@ -118,9 +118,10 @@ export default function MisEntregasScreen({ navigation }) {
               onPress={() => setVerHistorial(f.historial)}
             >
               <Text style={[styles.filtroTexto, activo && styles.filtroTextoActivo]}>{f.texto}</Text>
-              <View style={[styles.contador, activo && styles.contadorActivo]}>
+              {/* Salta cuando cambia el número: llega una entrega nueva o una pasa al historial. */}
+              <Rebote valor={f.cantidad} estilo={[styles.contador, activo && styles.contadorActivo]}>
                 <Text style={[styles.contadorTexto, activo && styles.contadorTextoActivo]}>{f.cantidad}</Text>
-              </View>
+              </Rebote>
             </Presionable>
           );
         })}
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
   valor: { ...tipo.cuerpo, fontFamily: fuente.extra, color: colores.texto, marginTop: 1 },
   pie: { flexDirection: 'row', alignItems: 'center', gap: espacio.s },
   pieRotulo: { ...tipo.apoyo, fontFamily: fuente.negrita, flex: 1, color: colores.tenue },
-  precio: { fontFamily: fuente.extra, fontSize: 26, lineHeight: 32, color: colores.verde },
+  precio: { ...tipo.precio, color: colores.verde },
   vacio: { alignItems: 'center', gap: espacio.m, marginTop: 56, paddingHorizontal: 32 },
   vacioTexto: { textAlign: 'center', color: colores.tenue, fontSize: tipo.cuerpo.fontSize },
 });
