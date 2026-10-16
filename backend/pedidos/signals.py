@@ -3,6 +3,7 @@ from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from .models import Pedido
+from .push import avisar_pedido_asignado
 from .realtime import notificar_pedido
 
 
@@ -26,6 +27,10 @@ def avisar_cambio_de_pedido(sender, instance, **kwargs):
     # on_commit: el aviso sale recién cuando la transacción terminó, para que quien lo reciba
     # y vuelva a consultar ya encuentre el pedido completo (con sus detalles).
     transaction.on_commit(lambda: notificar_pedido(instance.pk, usuarios))
+    # Se le asignó a un motorizado nuevo (al crearlo o al reasignarlo): aviso push a su celular.
+    if instance.motorizado_id and instance.motorizado_id != getattr(instance, '_motorizado_anterior_id', None):
+        pedido_id = instance.pk
+        transaction.on_commit(lambda: avisar_pedido_asignado(pedido_id))
 
 
 @receiver(post_delete, sender=Pedido)

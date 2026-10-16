@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,8 @@ import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito
 import * as SplashScreen from 'expo-splash-screen';
 import { colores, fuente, opcionesCabecera, tipo } from './constants/tema';
 import { calentarServidor } from './services/api';
+import { leer } from './services/cache';
+import { activarAvisos, escucharToques } from './services/notificaciones';
 
 // El splash se queda hasta que la tipografía de marca esté lista, para no mostrar un cambio de letra.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -52,11 +54,27 @@ function MainTabs() {
   );
 }
 
+const navegacion = createNavigationContainerRef();
+
+// Tocar el aviso "Nuevo pedido" lleva al detalle si esa entrega ya está en la lista guardada; si no, a Mis entregas
+// (la lista se actualiza sola y la entrega aparece arriba).
+function abrirAviso(datos) {
+  if (!navegacion.isReady() || !navegacion.getRootState()?.routeNames.includes('Main')) return;
+  const entrega = leer('entregas')?.find((e) => e.id === datos?.pedido_id);
+  if (entrega) navegacion.navigate('EntregaDetalle', { entrega });
+  else navegacion.navigate('Main', { screen: 'Entregas' });
+}
+
 function AppNavigator() {
   const { token, login } = useAuth();
+  const sesionAbierta = Boolean(token);
+
+  // Con la sesión abierta, este celular se registra para recibir avisos push (pide permiso la primera vez).
+  useEffect(() => { if (sesionAbierta) activarAvisos(); }, [sesionAbierta]);
+  useEffect(() => escucharToques(abrirAviso), []);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navegacion}>
       <StatusBar style="dark" />
       {/* En Android la pantalla nueva entra deslizando desde la derecha (como en iOS) en vez del fundido del sistema. */}
       <Stack.Navigator screenOptions={{ ...opcionesCabecera, animation: 'ios_from_right' }}>

@@ -19,6 +19,9 @@ class Usuario(AbstractUser):
     # cuenta). "Cliente" no necesita bandera: cualquier cuenta puede usar esa app.
     es_motorizado = models.BooleanField(default=False, help_text='Puede entrar a la app de motorizados.')
     es_despachador = models.BooleanField(default=False, help_text='Puede entrar al panel de despacho.')
+    # Token de Expo del celular donde el motorizado tiene la sesión abierta: a él va el aviso push
+    # cuando se le asigna un pedido. Vacío = sin avisos (cerró sesión, no dio permiso o desinstaló la app).
+    push_token = models.CharField(max_length=200, blank=True, help_text='Token de Expo para avisos push (app de motorizados).')
 
     def __str__(self):
         return f'{self.username} ({self.rol})'

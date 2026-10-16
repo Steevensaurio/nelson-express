@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "780075256211",
+    "project_id": "nelson-express",
+    "storage_bucket": "nelson-express.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:780075256211:android:78327dd1e62bac3ee48066",
+        "android_client_info": {
+          "package_name": "com.nelsonexpress.motorizado"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtxthejU70YyAkEX-tvY0fl4Mi-H-QcME"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -18,3 +18,6 @@ node_modules/
 
 # Graphify (grafo generado del proyecto)
 graphify-out/
+
+# Clave privada de Firebase (cuenta de servicio): nunca al repositorio
+*firebase-adminsdk*.json

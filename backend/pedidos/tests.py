@@ -1,3 +1,6 @@
+import io
+from unittest import mock
+
 from decimal import Decimal
 
 from django.db import connection
@@ -6,6 +9,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from . import push
 from .models import DetallePedido, Negocio, Pedido, Producto, Sucursal, Tarifa, Usuario
 
 
@@ -245,3 +249,74 @@ class DespachoCostoEnvioTests(TestCase):
         self.assertEqual(r.status_code, 201, r.data)
         self.assertEqual(Pedido.objects.get(pk=r.data['id']).costo_envio,
                          Decimal(str(envio_entre(-0.25, -79.17, -0.26, -79.18)['costo_envio'])))
+
+
+class PushTests(TestCase):
+    TOKEN = 'ExponentPushToken[abc123]'
+
+    def setUp(self):
+        self.cliente = Usuario.objects.create_user('cli_push')
+        self.moto = Usuario.objects.create_user('moto_push', es_motorizado=True)
+        self.api = APIClient()
+        self.api.force_authenticate(self.moto)
+
+    def crear_pedido(self, **extra):
+        return Pedido.objects.create(
+            cliente=self.cliente, tipo=Pedido.Tipo.ENCARGO, descripcion='Algo',
+            recogida_direccion='Farmacia Cruz Azul', recogida_lat=-2, recogida_lng=-79,
+            destino_direccion='Casa', destino_lat=-2, destino_lng=-79, **extra,
+        )
+
+    def test_guardar_y_borrar_token(self):
+        self.assertEqual(self.api.put('/api/push-token/', {'token': self.TOKEN}, format='json').status_code, 204)
+        self.moto.refresh_from_db()
+        self.assertEqual(self.moto.push_token, self.TOKEN)
+        self.assertEqual(self.api.delete('/api/push-token/').status_code, 204)
+        self.moto.refresh_from_db()
+        self.assertEqual(self.moto.push_token, '')
+
+    def test_token_invalido_o_sin_ser_motorizado(self):
+        self.assertEqual(self.api.put('/api/push-token/', {'token': 'hola'}, format='json').status_code, 400)
+        otro = APIClient()
+        otro.force_authenticate(self.cliente)
+        self.assertEqual(otro.put('/api/push-token/', {'token': self.TOKEN}, format='json').status_code, 403)
+
+    def test_el_token_pasa_al_ultimo_motorizado_que_lo_registra(self):
+        otro = Usuario.objects.create_user('moto_push2', es_motorizado=True, push_token=self.TOKEN)
+        self.api.put('/api/push-token/', {'token': self.TOKEN}, format='json')
+        otro.refresh_from_db()
+        self.assertEqual(otro.push_token, '')
+
+    def test_avisa_al_asignar_y_no_al_cambiar_estado(self):
+        Usuario.objects.filter(pk=self.moto.pk).update(push_token=self.TOKEN)
+        pedido = self.crear_pedido()
+        with mock.patch('pedidos.push.enviar_en_segundo_plano') as enviar:
+            with self.captureOnCommitCallbacks(execute=True):
+                pedido.motorizado = self.moto
+                pedido.save()
+            enviar.assert_called_once_with(
+                self.moto.pk, self.TOKEN, f'Nuevo pedido #{pedido.pk}', 'Recoger en Farmacia Cruz Azul', {'pedido_id': pedido.pk},
+            )
+            enviar.reset_mock()
+            with self.captureOnCommitCallbacks(execute=True):
+                pedido.estado = Pedido.Estado.RECOGIDO
+                pedido.save()
+            enviar.assert_not_called()
+
+    def test_sin_token_no_avisa(self):
+        with mock.patch('pedidos.push.enviar_en_segundo_plano') as enviar:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.crear_pedido(motorizado=self.moto)
+            enviar.assert_not_called()
+
+    def test_token_caducado_se_borra(self):
+        Usuario.objects.filter(pk=self.moto.pk).update(push_token=self.TOKEN)
+        respuesta = mock.MagicMock()
+        respuesta.__enter__.return_value = io.BytesIO(
+            b'{"data": {"status": "error", "details": {"error": "DeviceNotRegistered"}}}'
+        )
+        with mock.patch('pedidos.push.urllib.request.urlopen', return_value=respuesta), \
+                mock.patch('pedidos.push.close_old_connections'):
+            push._enviar(self.moto.pk, self.TOKEN, 't', 'c', {})
+        self.moto.refresh_from_db()
+        self.assertEqual(self.moto.push_token, '')

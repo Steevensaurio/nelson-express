@@ -3,6 +3,7 @@ import api, { registrarAlRenovar, registrarCierreDeSesion } from '../services/ap
 import { borrarSesion, guardarSesion, leerSesion } from '../services/sesion';
 import { generacion, guardar, limpiarCache } from '../services/cache';
 import { debeCerrarSesion } from '../services/renovacion';
+import { desactivarAvisos } from '../services/notificaciones';
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = useCallback(() => {
+    desactivarAvisos(); // antes de borrar el access: el servidor deja de mandar avisos a este celular
     delete api.defaults.headers.common['Authorization'];
     borrarSesion();
     limpiarCache();

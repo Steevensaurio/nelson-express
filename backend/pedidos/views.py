@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 from .models import Pedido, Tarifa, Negocio, Producto, Direccion, Usuario, ESTADOS_FINALES, ESTADOS_ACTIVOS, SIGUIENTE_ESTADO, ESTADOS_CANCELABLES
 from .permissions import EsDespachador, EsMotorizado
+from .push import es_token_expo
 from .tarifas import envio_entre, opciones_de_envio
 from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.db import transaction
@@ -33,6 +34,24 @@ class SaludView(APIView):
 
     def get(self, request):
         return Response({'ok': True})
+
+
+class PushTokenView(APIView):
+    """La app de motorizados guarda (PUT) o borra (DELETE, al cerrar sesión) el token push de su celular."""
+    permission_classes = [EsMotorizado]
+
+    def put(self, request):
+        token = str(request.data.get('token', '')).strip()
+        if len(token) > 200 or not es_token_expo(token):
+            return Response({'token': ['Token push no válido.']}, status=status.HTTP_400_BAD_REQUEST)
+        # Un celular = una sesión: si otro motorizado usó antes este teléfono, deja de recibir sus avisos.
+        Usuario.objects.filter(push_token=token).exclude(pk=request.user.pk).update(push_token='')
+        Usuario.objects.filter(pk=request.user.pk).update(push_token=token)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request):
+        Usuario.objects.filter(pk=request.user.pk).update(push_token='')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NegocioListView(generics.ListAPIView):
