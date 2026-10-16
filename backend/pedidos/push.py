@@ -52,20 +52,23 @@ def _corto(texto, largo=60):
 
 
 def texto_aviso(pedido):
-    """Título y cuerpo del aviso "pedido asignado".
+    """Título y cuerpo del aviso "pedido asignado" (diseño aprobado: A + ruta de B, precio en el título).
 
-    El título dice qué pasó; el cuerpo va de lo más a lo menos importante, una idea por línea, porque
-    Android plegado solo muestra la primera: dónde recoger, a dónde llevar, cuánto gana y si debe pagar algo.
+    Android no deja colores ni etiquetas en una notificación normal, así que lo que gana va en el título.
+    Plegado solo se ve la primera línea del cuerpo: la ruta "de → a". Al desplegar sigue el detalle.
     """
     encargo = pedido.tipo == Pedido.Tipo.ENCARGO
-    titulo = f'Se te asignó un nuevo {"encargo" if encargo else "pedido"} · #{pedido.pk}'
+    titulo = 'Tienes un nuevo pedido' + (f' · ${pedido.costo_envio:.2f}' if pedido.costo_envio is not None else '')
     if pedido.negocio:
         origen = pedido.negocio.nombre + (f' ({pedido.sucursal.nombre})' if pedido.sucursal else '')
     else:
         origen = pedido.recogida_direccion
-    lineas = [f'Recoge en: {_corto(origen)}', f'Entrega en: {_corto(pedido.destino_direccion)}']
-    if pedido.costo_envio is not None:
-        lineas.append(f'Tu carrera: ${pedido.costo_envio:.2f}')
+    lineas = [
+        f'{_corto(origen, 30)} → {_corto(pedido.destino_direccion, 30)}',
+        f'Pedido #{pedido.pk}',
+        f'Recoge en: {_corto(origen)}',
+        f'Entrega en: {_corto(pedido.destino_direccion)}',
+    ]
     if encargo and pedido.pagar_en_recogida and pedido.monto_estimado:
         lineas.append(f'Pagas al recoger: aprox. ${pedido.monto_estimado:.2f}')
     return titulo, '\n'.join(lineas)

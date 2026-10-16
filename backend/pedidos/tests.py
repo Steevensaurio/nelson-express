@@ -296,8 +296,9 @@ class PushTests(TestCase):
                 pedido.motorizado = self.moto
                 pedido.save()
             enviar.assert_called_once_with(
-                self.moto.pk, self.TOKEN, f'Se te asignó un nuevo encargo · #{pedido.pk}',
-                'Recoge en: Farmacia Cruz Azul\nEntrega en: Casa', {'pedido_id': pedido.pk},
+                self.moto.pk, self.TOKEN, 'Tienes un nuevo pedido',
+                f'Farmacia Cruz Azul → Casa\nPedido #{pedido.pk}\nRecoge en: Farmacia Cruz Azul\nEntrega en: Casa',
+                {'pedido_id': pedido.pk},
             )
             enviar.reset_mock()
             with self.captureOnCommitCallbacks(execute=True):
@@ -307,17 +308,18 @@ class PushTests(TestCase):
 
     def test_texto_con_carrera_pago_y_restaurante(self):
         encargo = self.crear_pedido(costo_envio=Decimal('2.5'), pagar_en_recogida=True, monto_estimado=Decimal('7'))
-        self.assertEqual(push.texto_aviso(encargo)[1], (
-            'Recoge en: Farmacia Cruz Azul\nEntrega en: Casa\nTu carrera: $2.50\nPagas al recoger: aprox. $7.00'
-        ))
+        self.assertEqual(push.texto_aviso(encargo), ('Tienes un nuevo pedido · $2.50', (
+            f'Farmacia Cruz Azul → Casa\nPedido #{encargo.pk}\nRecoge en: Farmacia Cruz Azul\nEntrega en: Casa\n'
+            'Pagas al recoger: aprox. $7.00'
+        )))
         negocio = Negocio.objects.create(nombre='Don Pollo')
         sucursal = Sucursal.objects.create(negocio=negocio, nombre='Centro', direccion='Calle 1', lat=-2, lng=-79)
         comida = self.crear_pedido(destino_direccion='x' * 80)
         comida.tipo, comida.negocio, comida.sucursal = Pedido.Tipo.COMIDA, negocio, sucursal
-        titulo, cuerpo = push.texto_aviso(comida)
-        self.assertEqual(titulo, f'Se te asignó un nuevo pedido · #{comida.pk}')
-        self.assertEqual(cuerpo.split('\n')[0], 'Recoge en: Don Pollo (Centro)')
-        self.assertEqual(cuerpo.split('\n')[1], 'Entrega en: ' + 'x' * 59 + '…')
+        lineas = push.texto_aviso(comida)[1].split('\n')
+        self.assertEqual(lineas[0], 'Don Pollo (Centro) → ' + 'x' * 29 + '…')
+        self.assertEqual(lineas[2], 'Recoge en: Don Pollo (Centro)')
+        self.assertEqual(lineas[3], 'Entrega en: ' + 'x' * 59 + '…')
 
     def test_sin_token_no_avisa(self):
         with mock.patch('pedidos.push.enviar_en_segundo_plano') as enviar:
