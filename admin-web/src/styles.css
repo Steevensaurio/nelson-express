@@ -2282,6 +2282,11 @@ button.selector-moto:active:not([aria-disabled='true']) {
   color: var(--tenue);
 }
 
+.requerido {
+  color: var(--rojo);
+  font-weight: 800;
+}
+
 .campo-ancho {
   grid-column: 1 / -1;
 }
@@ -2411,59 +2416,6 @@ html:has(.pedido-pie) {
   display: none;
 }
 
-/* En celular el texto completo de "Falta" queda solo para lectores (sigue siendo la descripción del botón). */
-.pedido-faltan {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-}
-
-.pedido-faltan-detalle summary {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--marca-oscura);
-  font-size: var(--t-apoyo);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* Flecha propia (display: flex quita el marcador nativo): apunta abajo cerrada y arriba abierta. */
-.pedido-faltan-detalle summary::after {
-  content: '';
-  width: 7px;
-  height: 7px;
-  margin-left: 8px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: translateY(-2px) rotate(45deg);
-}
-
-.pedido-faltan-detalle[open] summary::after {
-  transform: translateY(2px) rotate(-135deg);
-}
-
-.pedido-faltan-detalle[open] {
-  flex-basis: 100%;
-}
-
-.pedido-faltan-detalle[open] summary {
-  min-height: 36px;
-}
-
-.pedido-faltan-detalle ul {
-  padding-left: 18px;
-  margin: 0 0 4px;
-  max-height: 30vh;
-  overflow-y: auto;
-  font-size: var(--t-etiqueta);
-  color: var(--texto);
-}
-
 .pedido-pie .primario {
   width: 100%;
   min-height: 48px;
@@ -2545,24 +2497,7 @@ html:has(.pedido-pie) {
     display: inline;
   }
 
-  .pie-corto,
-  .pedido-faltan-detalle {
-    display: none;
-  }
-
-  .pedido-faltan {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
-    font-size: var(--t-etiqueta);
-    color: var(--tenue);
-  }
-
-  .pedido-faltan:empty {
+  .pie-corto {
     display: none;
   }
 
@@ -2820,8 +2755,7 @@ html:has(.pedido-pie) {
   margin: 0;
 }
 
-.ticket-linea,
-.ticket-checklist li {
+.ticket-linea {
   display: flex;
   gap: 12px;
   margin: 0 -6px;
@@ -2884,26 +2818,6 @@ html:has(.pedido-pie) {
 .ticket-total dd {
   color: var(--marca-oscura);
   font-weight: 800;
-}
-
-.ticket-checklist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.ticket-marca {
-  flex: none;
-  width: 1em;
-  font-weight: 800;
-}
-
-.ticket-checklist .listo .ticket-marca {
-  color: var(--verde);
-}
-
-.ticket-checklist .falta .ticket-marca {
-  color: var(--alerta);
 }
 
 .ticket .primario {

@@ -109,24 +109,15 @@ function Linea({ etiqueta, valor, extra = null, className = '' }) {
   );
 }
 
-function PasoChecklist({ nombre, faltan }) {
-  const ref = useRealce(faltan.length === 0);
-  return (
-    <li ref={ref} className={faltan.length ? 'falta' : 'listo'}>
-      <span className="ticket-marca" aria-hidden="true">{faltan.length ? '●' : '✓'}</span>
-      <span>
-        <strong>{nombre}</strong>
-        {faltan.length ? `: falta ${faltan.join(', ')}` : <span className="solo-lectores">: completo</span>}
-      </span>
-    </li>
-  );
-}
+// Asterisco rojo de "obligatorio": solo visual, los lectores ya oyen aria-required.
+const Requerido = () => <span className="requerido" aria-hidden="true"> *</span>;
 
 function Campo({ id, etiqueta, opcional, error, className = '', ...props }) {
   return (
     <div className={`campo ${className}`}>
       <label htmlFor={id}>
         {etiqueta}
+        {props['aria-required'] === 'true' ? <Requerido /> : null}
         {opcional ? <span className="opcional"> (opcional)</span> : null}
       </label>
       <input
@@ -503,7 +494,7 @@ export default function NuevoPedido() {
       <Barra />
       <main className="contenido" id="contenido" tabIndex={-1}>
         <h1>Nuevo pedido</h1>
-        <p className="tenue">Para clientes que piden por llamada o WhatsApp. Queda Pendiente en el panel de despacho.</p>
+        <p className="tenue">Para clientes que piden por llamada o WhatsApp. Queda Pendiente en el panel de despacho. Lo marcado con <span className="requerido">*</span> es obligatorio.</p>
 
         {creado ? (
           <section className="pedido-creado" aria-labelledby="pedido-creado-titulo">
@@ -567,7 +558,7 @@ export default function NuevoPedido() {
                     </p>
                   ) : null}
                   <div className="campo">
-                    <label htmlFor="campo-negocio">Restaurante</label>
+                    <label htmlFor="campo-negocio">Restaurante<Requerido /></label>
                     <select
                       id="campo-negocio" value={f.negocioId} aria-required="true"
                       disabled={!lista.length} onChange={(e) => elegirNegocio(e.target.value)}
@@ -577,7 +568,7 @@ export default function NuevoPedido() {
                     </select>
                   </div>
                   <div className="campo">
-                    <label htmlFor="campo-sucursal">Sucursal</label>
+                    <label htmlFor="campo-sucursal">Sucursal<Requerido /></label>
                     <select
                       id="campo-sucursal" value={f.sucursalId} aria-required="true"
                       disabled={!negocio} onChange={(e) => cambiar('sucursalId', e.target.value)}
@@ -631,7 +622,7 @@ export default function NuevoPedido() {
                     <thead>
                       <tr>
                         <th scope="col" className="col-cant">Cant.</th>
-                        <th scope="col">Detalle</th>
+                        <th scope="col">Detalle<Requerido /></th>
                         <th scope="col" className="col-precio">Precio c/u <span className="opcional">(opcional)</span></th>
                         <th scope="col" className="col-quitar"><span className="solo-lectores">Quitar</span></th>
                       </tr>
@@ -661,7 +652,7 @@ export default function NuevoPedido() {
                             </td>
                             <td className="col-detalle">
                               <label className="etiqueta-celda" htmlFor={`item-${it.id}-detalle`}>
-                                Detalle<span className="solo-lectores"> del ítem {it.n}</span>
+                                Detalle<span className="solo-lectores"> del ítem {it.n}</span><Requerido />
                               </label>
                               <input
                                 {...props('detalle')} maxLength={MAX_TEXTO}
@@ -877,9 +868,6 @@ export default function NuevoPedido() {
                     valor={cobrar === null ? '—' : `${dinero(cobrar)}${sinPrecio ? ' + ítems sin precio' : ''} aprox.`}
                   />
                 </dl>
-                <ul className="ticket-checklist" aria-label="Qué falta">
-                  {pasos.map((p) => <PasoChecklist key={p.nombre} {...p} />)}
-                </ul>
                 <p className="solo-lectores" id="pedido-faltan">{textoFaltan}</p>
                 {errorGeneral ? <p className="error" role="alert">{errorGeneral}</p> : null}
                 {boton}
@@ -892,14 +880,7 @@ export default function NuevoPedido() {
                     Envío: {textoEnvio}
                     {cobrar !== null && conPrecio.length ? <span className="pie-cobrar"> · cobrar ≈ {dinero(cobrar)}{sinPrecio ? ' + ítems sin precio' : ''}</span> : null}
                   </span>
-                  {/* Texto completo: visible desde 768 px; en celular solo para lectores (y para aria-describedby). */}
-                  <p className="pedido-faltan" id="pedido-faltan" role="status">{textoFaltan}</p>
-                  {completo ? null : (
-                    <details className="pedido-faltan-detalle">
-                      <summary>Faltan {faltantes.length} {faltantes.length === 1 ? 'dato' : 'datos'}</summary>
-                      <ul>{faltantes.map((x) => <li key={x}>{x}</li>)}</ul>
-                    </details>
-                  )}
+                  <p className="solo-lectores" id="pedido-faltan">{textoFaltan}</p>
                 </div>
                 {boton}
               </div>
