@@ -46,12 +46,34 @@ def enviar_en_segundo_plano(*args):
     threading.Thread(target=_enviar, args=args, daemon=True).start()
 
 
+def _corto(texto, largo=60):
+    texto = ' '.join(texto.split())
+    return texto if len(texto) <= largo else texto[:largo - 1].rstrip() + '…'
+
+
+def texto_aviso(pedido):
+    """Título y cuerpo del aviso "pedido asignado".
+
+    El título dice qué pasó; el cuerpo va de lo más a lo menos importante, una idea por línea, porque
+    Android plegado solo muestra la primera: dónde recoger, a dónde llevar, cuánto gana y si debe pagar algo.
+    """
+    encargo = pedido.tipo == Pedido.Tipo.ENCARGO
+    titulo = f'Se te asignó un nuevo {"encargo" if encargo else "pedido"} · #{pedido.pk}'
+    if pedido.negocio:
+        origen = pedido.negocio.nombre + (f' ({pedido.sucursal.nombre})' if pedido.sucursal else '')
+    else:
+        origen = pedido.recogida_direccion
+    lineas = [f'Recoge en: {_corto(origen)}', f'Entrega en: {_corto(pedido.destino_direccion)}']
+    if pedido.costo_envio is not None:
+        lineas.append(f'Tu carrera: ${pedido.costo_envio:.2f}')
+    if encargo and pedido.pagar_en_recogida and pedido.monto_estimado:
+        lineas.append(f'Pagas al recoger: aprox. ${pedido.monto_estimado:.2f}')
+    return titulo, '\n'.join(lineas)
+
+
 def avisar_pedido_asignado(pedido_id):
-    pedido = Pedido.objects.select_related('motorizado', 'negocio').filter(pk=pedido_id).first()
+    pedido = Pedido.objects.select_related('motorizado', 'negocio', 'sucursal').filter(pk=pedido_id).first()
     if not pedido or not pedido.motorizado or not pedido.motorizado.push_token:
         return
-    recogida = pedido.negocio.nombre if pedido.negocio else pedido.recogida_direccion
-    enviar_en_segundo_plano(
-        pedido.motorizado_id, pedido.motorizado.push_token,
-        f'Nuevo pedido #{pedido.pk}', f'Recoger en {recogida}', {'pedido_id': pedido.pk},
-    )
+    titulo, cuerpo = texto_aviso(pedido)
+    enviar_en_segundo_plano(pedido.motorizado_id, pedido.motorizado.push_token, titulo, cuerpo, {'pedido_id': pedido.pk})

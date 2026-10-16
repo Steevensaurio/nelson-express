@@ -41,7 +41,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
+          "icon": "./assets/notificacion-icono.png",
           "color": "#007cab",
           "defaultChannel": "pedidos"
         }

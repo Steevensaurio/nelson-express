@@ -261,11 +261,12 @@ class PushTests(TestCase):
         self.api.force_authenticate(self.moto)
 
     def crear_pedido(self, **extra):
-        return Pedido.objects.create(
+        datos = dict(
             cliente=self.cliente, tipo=Pedido.Tipo.ENCARGO, descripcion='Algo',
             recogida_direccion='Farmacia Cruz Azul', recogida_lat=-2, recogida_lng=-79,
-            destino_direccion='Casa', destino_lat=-2, destino_lng=-79, **extra,
+            destino_direccion='Casa', destino_lat=-2, destino_lng=-79,
         )
+        return Pedido.objects.create(**{**datos, **extra})
 
     def test_guardar_y_borrar_token(self):
         self.assertEqual(self.api.put('/api/push-token/', {'token': self.TOKEN}, format='json').status_code, 204)
@@ -295,13 +296,28 @@ class PushTests(TestCase):
                 pedido.motorizado = self.moto
                 pedido.save()
             enviar.assert_called_once_with(
-                self.moto.pk, self.TOKEN, f'Nuevo pedido #{pedido.pk}', 'Recoger en Farmacia Cruz Azul', {'pedido_id': pedido.pk},
+                self.moto.pk, self.TOKEN, f'Se te asignó un nuevo encargo · #{pedido.pk}',
+                'Recoge en: Farmacia Cruz Azul\nEntrega en: Casa', {'pedido_id': pedido.pk},
             )
             enviar.reset_mock()
             with self.captureOnCommitCallbacks(execute=True):
                 pedido.estado = Pedido.Estado.RECOGIDO
                 pedido.save()
             enviar.assert_not_called()
+
+    def test_texto_con_carrera_pago_y_restaurante(self):
+        encargo = self.crear_pedido(costo_envio=Decimal('2.5'), pagar_en_recogida=True, monto_estimado=Decimal('7'))
+        self.assertEqual(push.texto_aviso(encargo)[1], (
+            'Recoge en: Farmacia Cruz Azul\nEntrega en: Casa\nTu carrera: $2.50\nPagas al recoger: aprox. $7.00'
+        ))
+        negocio = Negocio.objects.create(nombre='Don Pollo')
+        sucursal = Sucursal.objects.create(negocio=negocio, nombre='Centro', direccion='Calle 1', lat=-2, lng=-79)
+        comida = self.crear_pedido(destino_direccion='x' * 80)
+        comida.tipo, comida.negocio, comida.sucursal = Pedido.Tipo.COMIDA, negocio, sucursal
+        titulo, cuerpo = push.texto_aviso(comida)
+        self.assertEqual(titulo, f'Se te asignó un nuevo pedido · #{comida.pk}')
+        self.assertEqual(cuerpo.split('\n')[0], 'Recoge en: Don Pollo (Centro)')
+        self.assertEqual(cuerpo.split('\n')[1], 'Entrega en: ' + 'x' * 59 + '…')
 
     def test_sin_token_no_avisa(self):
         with mock.patch('pedidos.push.enviar_en_segundo_plano') as enviar:
